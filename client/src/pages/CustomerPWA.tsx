@@ -412,25 +412,43 @@ export default function CustomerPWA() {
           <TabsContent value="share" className="space-y-4">
             {coupons.length > 0 ? (
               <div className="space-y-4">
+                <h3 className="text-lg font-semibold mb-4">Share Your Coupons</h3>
                 {coupons.map((coupon) => (
-                  <CouponDisplay
-                    key={coupon.id}
-                    campaign={{
-                      name: coupon.shopName,
-                      couponColor: "#2563eb",
-                      couponTextColor: "#ffffff",
-                      pointsPerDollar: 1,
-                      discountPercentage: 10,
-                    }}
-                    customer={{ ...customer!, referralCode: coupon.referralCode }}
-                    onShare={() => setShowShareSheet(true)}
-                  />
+                  <div key={coupon.id} className="space-y-4">
+                    <CouponDisplay
+                      campaign={{
+                        id: coupon.id,
+                        name: coupon.shopName,
+                        couponColor: "#2563eb",
+                        couponTextColor: "#ffffff",
+                        pointsPerDollar: 1,
+                        discountPercentage: 10,
+                      }}
+                      customer={{ 
+                        id: customer!.id,
+                        name: customer!.name,
+                        phone: customer!.phone,
+                        email: customer!.email,
+                        referralCode: coupon.referralCode,
+                        totalPoints: coupon.totalPoints,
+                        redeemedPoints: coupon.redeemedPoints
+                      }}
+                      onShare={() => {
+                        setSelectedCoupon(coupon);
+                        setShowShareSheet(true);
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
               <Card>
                 <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">Create a shop coupon to start sharing</p>
+                  <Gift className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-4">Create a shop coupon to start sharing</p>
+                  <Button onClick={() => setShowCouponCreation(true)}>
+                    Create Your First Coupon
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -458,13 +476,15 @@ export default function CustomerPWA() {
         </Tabs>
       </main>
 
-      <ShareSheet
-        open={showShareSheet}
-        onOpenChange={setShowShareSheet}
-        referralCode={customer?.referralCode || ""}
-        campaignName="Referral Rewards"
-        discountPercentage={10}
-      />
+      {selectedCoupon && (
+        <ShareSheet
+          open={showShareSheet}
+          onOpenChange={setShowShareSheet}
+          referralCode={selectedCoupon.referralCode}
+          campaignName={selectedCoupon.shopName}
+          discountPercentage={10}
+        />
+      )}
     </div>
   );
 }
