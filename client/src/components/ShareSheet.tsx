@@ -12,8 +12,8 @@ interface ShareSheetProps {
 }
 
 export function ShareSheet({ open, onOpenChange, referralCode, campaignName, discountPercentage }: ShareSheetProps) {
-  const shareUrl = `${window.location.origin}/customer`;
-  const shareText = `Check out ${campaignName}! Use my referral code ${referralCode} when you visit and get ${discountPercentage}% off! Download the app: ${shareUrl}`;
+  const shareUrl = `${window.location.origin}/shared/${referralCode}`;
+  const shareText = `Check out ${campaignName}! Use my referral code ${referralCode} when you visit and get ${discountPercentage}% off! Join here: ${shareUrl}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);

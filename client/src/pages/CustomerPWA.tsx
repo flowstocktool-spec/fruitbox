@@ -24,6 +24,7 @@ export default function CustomerPWA() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showCouponCreation, setShowCouponCreation] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
+  const [sharedCoupons, setSharedCoupons] = useState<any[]>([]);
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
@@ -58,6 +59,30 @@ export default function CustomerPWA() {
     queryFn: () => getCustomerCoupons(customer!.id),
     enabled: !!customer,
   });
+
+  // Handle shared coupon from localStorage
+  useEffect(() => {
+    const handleSharedCoupon = async () => {
+      const sharedCouponCode = localStorage.getItem('sharedCouponCode');
+      if (sharedCouponCode && customer) {
+        try {
+          const couponOwner = await getCustomerByCode(sharedCouponCode);
+          const ownerCoupons = await getCustomerCoupons(couponOwner.id);
+          setSharedCoupons(ownerCoupons.map(coupon => ({
+            ...coupon,
+            ownerName: couponOwner.name,
+            isShared: true,
+            originalReferralCode: sharedCouponCode
+          })));
+          localStorage.removeItem('sharedCouponCode'); // Clear after processing
+        } catch (error) {
+          console.error('Failed to load shared coupon:', error);
+        }
+      }
+    };
+
+    handleSharedCoupon();
+  }, [customer]);
 
   // Transactions for selected coupon
   const { data: transactions = [] } = useQuery({
@@ -266,52 +291,92 @@ export default function CustomerPWA() {
               pointsToNextReward={2000}
             />
 
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">My Shop Coupons</h3>
-              <Button onClick={() => setShowCouponCreation(true)} size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Shop
-              </Button>
+            {/* My Created Coupons Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">My Shop Coupons</h3>
+                <Button onClick={() => setShowCouponCreation(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Shop
+                </Button>
+              </div>
+
+              {coupons.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-6">
+                    <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">No shop coupons yet</p>
+                    <Button onClick={() => setShowCouponCreation(true)} size="sm">
+                      Create Your First Coupon
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {coupons.map((coupon) => (
+                    <Card key={coupon.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold">{coupon.shopName}</h4>
+                          <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
+                            My Coupon
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Points Earned</p>
+                            <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Redeemed</p>
+                            <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Remaining</p>
+                            <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          Code: {coupon.referralCode}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {coupons.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">No shop coupons yet</p>
-                  <Button onClick={() => setShowCouponCreation(true)}>
-                    Create Your First Coupon
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
+            {/* Shared Coupons Section */}
+            {sharedCoupons.length > 0 && (
               <div className="space-y-4">
-                {coupons.map((coupon) => (
-                  <Card key={coupon.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold">{coupon.shopName}</h4>
-                        <span className="text-sm text-muted-foreground">
-                          Code: {coupon.referralCode}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Points Earned</p>
-                          <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+                <h3 className="text-lg font-semibold">Shared with Me</h3>
+                <div className="space-y-3">
+                  {sharedCoupons.map((coupon) => (
+                    <Card key={`shared-${coupon.id}`} className="cursor-pointer hover:shadow-md transition-shadow border-blue-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold">{coupon.shopName}</h4>
+                          <span className="text-xs text-muted-foreground bg-blue-100 px-2 py-1 rounded">
+                            Shared by {coupon.ownerName}
+                          </span>
                         </div>
-                        <div>
-                          <p className="text-muted-foreground">Redeemed</p>
-                          <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+                        <div className="text-sm">
+                          <p className="text-muted-foreground mb-2">Use this referral code when shopping:</p>
+                          <div className="bg-blue-50 p-2 rounded flex items-center justify-between">
+                            <code className="font-mono font-bold text-blue-700">{coupon.originalReferralCode}</code>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => navigator.clipboard.writeText(coupon.originalReferralCode)}
+                            >
+                              Copy
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-muted-foreground">Remaining</p>
-                          <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -359,7 +424,7 @@ export default function CustomerPWA() {
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            {coupons.length === 0 ? (
+            {coupons.length === 0 && sharedCoupons.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
                   <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -373,36 +438,73 @@ export default function CustomerPWA() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Select a coupon to upload bill:</h3>
-                  <div className="space-y-2">
-                    {coupons.map((coupon) => (
-                      <Card 
-                        key={coupon.id} 
-                        className={`cursor-pointer transition-all ${
-                          selectedCoupon?.id === coupon.id 
-                            ? 'ring-2 ring-primary bg-primary/5' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setSelectedCoupon(coupon)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">{coupon.shopName}</h4>
-                            <span className="text-sm text-muted-foreground">
-                              {coupon.totalPoints - coupon.redeemedPoints} points available
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  
+                  {/* My Coupons */}
+                  {coupons.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">My Coupons</h4>
+                      {coupons.map((coupon) => (
+                        <Card 
+                          key={coupon.id} 
+                          className={`cursor-pointer transition-all ${
+                            selectedCoupon?.id === coupon.id && !selectedCoupon?.isShared
+                              ? 'ring-2 ring-primary bg-primary/5' 
+                              : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setSelectedCoupon({ ...coupon, isShared: false })}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold">{coupon.shopName}</h4>
+                              <span className="text-sm text-muted-foreground">
+                                {coupon.totalPoints - coupon.redeemedPoints} points available
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Shared Coupons */}
+                  {sharedCoupons.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">Shared with Me</h4>
+                      {sharedCoupons.map((coupon) => (
+                        <Card 
+                          key={`shared-${coupon.id}`} 
+                          className={`cursor-pointer transition-all border-blue-200 ${
+                            selectedCoupon?.id === coupon.id && selectedCoupon?.isShared
+                              ? 'ring-2 ring-blue-500 bg-blue-50' 
+                              : 'hover:bg-blue-50/50'
+                          }`}
+                          onClick={() => setSelectedCoupon({ ...coupon, isShared: true })}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-semibold">{coupon.shopName}</h4>
+                                <p className="text-xs text-muted-foreground">Shared by {coupon.ownerName}</p>
+                              </div>
+                              <span className="text-sm text-blue-600">
+                                Use code: {coupon.originalReferralCode}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {selectedCoupon && (
                   <BillUpload
                     customerId={customer!.id}
-                    couponId={selectedCoupon.id}
+                    couponId={selectedCoupon.isShared ? null : selectedCoupon.id}
                     pointsPerDollar={1}
                     minPurchaseAmount={0}
+                    referralCode={selectedCoupon.isShared ? selectedCoupon.originalReferralCode : undefined}
+                    shopName={selectedCoupon.shopName}
                   />
                 )}
               </div>

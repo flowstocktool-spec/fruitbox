@@ -9,15 +9,16 @@ import Landing from "@/pages/Landing";
 import StoreDashboard from "@/pages/StoreDashboard";
 import CustomerPWA from "@/pages/CustomerPWA";
 import JoinCampaign from "@/pages/JoinCampaign";
+import JoinSharedCoupon from "@/pages/JoinSharedCoupon";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/store" component={StoreDashboard} />
-      <Route path="/customer" component={CustomerPWA} />
-      <Route path="/customer/:code" component={CustomerPWA} />
+      <Route path="/customer/:code?" component={CustomerPWA} />
       <Route path="/join/:campaignId" component={JoinCampaign} />
+      <Route path="/shared/:code" component={JoinSharedCoupon} />
       <Route component={NotFound} />
     </Switch>
   );

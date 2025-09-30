@@ -49,7 +49,7 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
 
           <div className="bg-white p-4 rounded-lg inline-block" data-testid="qr-code-container">
             <QRCodeSVG
-              value={`${window.location.origin}/customer`}
+              value={`${window.location.origin}/shared/${customer.referralCode}`}
               size={180}
               level="M"
               includeMargin={false}

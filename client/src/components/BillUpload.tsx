@@ -21,14 +21,14 @@ type BillUploadData = z.infer<typeof billUploadSchema>;
 
 interface BillUploadProps {
   customerId: string;
-  campaignId?: string;
-  couponId?: string;
+  couponId: string | null;
   pointsPerDollar: number;
   minPurchaseAmount: number;
-  onSuccess?: () => void;
+  referralCode?: string;
+  shopName?: string;
 }
 
-export function BillUpload({ customerId, campaignId, couponId, pointsPerDollar, minPurchaseAmount, onSuccess }: BillUploadProps) {
+export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseAmount, referralCode, shopName }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
@@ -41,33 +41,25 @@ export function BillUpload({ customerId, campaignId, couponId, pointsPerDollar, 
   });
 
   const uploadMutation = useMutation({
-    mutationFn: (data: { amount: number; file?: File }) => {
-      const transactionData = {
-        customerId,
-        campaignId: campaignId || null,
-        couponId: couponId || null,
-        type: 'purchase',
-        amount: parseFloat(data.amount.toString()),
-        points: Math.floor(parseFloat(data.amount.toString()) * pointsPerDollar),
-        status: 'pending',
-      };
-      return createTransaction(transactionData, data.file);
-    },
+    mutationFn: (data: any) => createTransaction(data, selectedFile),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      toast({
-        title: "Bill uploaded!",
-        description: "Your bill has been submitted for approval.",
-      });
       form.reset();
       setSelectedFile(null);
       setPreviewUrl(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
+      toast({
+        title: "Bill uploaded successfully!",
+        description: referralCode
+          ? `Your bill is submitted using referral code ${referralCode}. Pending approval.`
+          : "Your bill is pending approval.",
+      });
       onSuccess?.();
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to upload bill. Please try again.",
+        title: "Upload failed",
+        description: "Please try again.",
         variant: "destructive",
       });
     },
@@ -93,8 +85,14 @@ export function BillUpload({ customerId, campaignId, couponId, pointsPerDollar, 
     }
 
     uploadMutation.mutate({
+      customerId,
+      campaignId: couponId,
       amount: data.amount,
-      file: selectedFile || undefined,
+      points: Math.floor(data.amount * pointsPerDollar),
+      status: 'pending',
+      type: 'purchase',
+      referralCode: referralCode,
+      shopName: shopName,
     });
   };
 
