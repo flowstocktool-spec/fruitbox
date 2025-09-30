@@ -460,7 +460,7 @@ export default function StoreDashboard() {
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              Customers can scan this QR code to install the PWA and access their account
+              Customers can scan this QR code to install the PWA and create their account
             </p>
             <Button
               variant="outline"

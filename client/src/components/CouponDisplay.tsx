@@ -16,11 +16,17 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
     console.log("Copied referral code");
   };
 
+  // Provide default values for campaign properties
+  const couponColor = campaign.couponColor || "#2563eb";
+  const couponTextColor = campaign.couponTextColor || "#ffffff";
+  const pointsPerDollar = campaign.pointsPerDollar || 1;
+  const discountPercentage = campaign.discountPercentage || 10;
+
   return (
     <Card 
       className="overflow-hidden"
       style={{ 
-        background: `linear-gradient(135deg, ${campaign.couponColor} 0%, ${campaign.couponColor}ee 100%)`,
+        background: `linear-gradient(135deg, ${couponColor} 0%, ${couponColor}ee 100%)`,
       }}
       data-testid="card-coupon"
     >
@@ -29,15 +35,15 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
           <div>
             <h3 
               className="text-2xl font-bold font-heading mb-2"
-              style={{ color: campaign.couponTextColor }}
+              style={{ color: couponTextColor }}
             >
               {campaign.name}
             </h3>
             <p 
               className="text-sm opacity-90"
-              style={{ color: campaign.couponTextColor }}
+              style={{ color: couponTextColor }}
             >
-              Share and earn {campaign.pointsPerDollar} points per $1 spent
+              Share and earn {pointsPerDollar} points per $1 spent
             </p>
           </div>
 
@@ -53,14 +59,14 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
           <div>
             <p 
               className="text-xs mb-2 opacity-75"
-              style={{ color: campaign.couponTextColor }}
+              style={{ color: couponTextColor }}
             >
               Your Referral Code
             </p>
             <div className="flex items-center justify-center gap-2">
               <code 
                 className="text-2xl font-bold font-mono px-4 py-2 rounded-md bg-white/20"
-                style={{ color: campaign.couponTextColor }}
+                style={{ color: couponTextColor }}
                 data-testid="text-referral-code"
               >
                 {customer.referralCode}
@@ -80,7 +86,7 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
           <Button
             onClick={onShare}
             className="w-full bg-white/20 hover:bg-white/30 border-white/30"
-            style={{ color: campaign.couponTextColor }}
+            style={{ color: couponTextColor }}
             data-testid="button-share-coupon"
           >
             <Share2 className="h-4 w-4 mr-2" />
@@ -89,9 +95,9 @@ export function CouponDisplay({ campaign, customer, onShare }: CouponDisplayProp
 
           <p 
             className="text-xs opacity-75 mt-4"
-            style={{ color: campaign.couponTextColor }}
+            style={{ color: couponTextColor }}
           >
-            Friends get {campaign.discountPercentage}% off their first purchase
+            Friends get {discountPercentage}% off their first purchase
           </p>
         </div>
       </CardContent>
