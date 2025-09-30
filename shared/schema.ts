@@ -50,7 +50,10 @@ export const transactions = pgTable("transactions", {
 export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
+export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true }).extend({
+  amount: z.coerce.number(),
+  points: z.coerce.number(),
+});
 
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;

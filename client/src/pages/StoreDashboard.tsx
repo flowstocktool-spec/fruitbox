@@ -1,72 +1,105 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutDashboard, Receipt, TrendingUp, Settings as SettingsIcon } from "lucide-react";
+import { Plus, LayoutDashboard, Receipt, TrendingUp } from "lucide-react";
 import { StatsCard } from "@/components/StatsCard";
 import { CampaignCard } from "@/components/CampaignCard";
 import { BillApprovalCard } from "@/components/BillApprovalCard";
 import { CampaignBuilder } from "@/components/CampaignBuilder";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
+import { getCampaigns, getTransactions, createCampaign, updateTransactionStatus, getCampaignStats } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function StoreDashboard() {
   const [showCampaignBuilder, setShowCampaignBuilder] = useState(false);
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const campaigns = [
-    {
-      id: "1",
-      storeId: "store-1",
-      name: "Summer Rewards Campaign",
-      description: "Earn points on every purchase and get your friends 10% off!",
-      pointsPerDollar: 5,
-      minPurchaseAmount: 25,
-      discountPercentage: 10,
-      couponColor: "#2563eb",
-      couponTextColor: "#ffffff",
-      isActive: true,
-      createdAt: new Date(),
-    },
-    {
-      id: "2",
-      storeId: "store-1",
-      name: "VIP Loyalty Program",
-      description: "Exclusive rewards for our best customers",
-      pointsPerDollar: 10,
-      minPurchaseAmount: 50,
-      discountPercentage: 15,
-      couponColor: "#7c3aed",
-      couponTextColor: "#ffffff",
-      isActive: true,
-      createdAt: new Date(),
-    },
-  ];
+  // For demo, use the first store ID from seed data
+  const storeId = "demo-store-id"; // In production, get from auth context
 
-  const pendingBills = [
-    {
-      id: "txn-1",
-      customerId: "cust-1",
-      campaignId: "1",
-      type: "purchase",
-      amount: 125,
-      points: 625,
-      status: "pending",
-      billImageUrl: "https://images.unsplash.com/photo-1554224311-beee4f7a1788?w=400&h=300&fit=crop",
-      createdAt: new Date("2024-01-15T10:30:00"),
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+    queryKey: ['/api/campaigns', storeId],
+    queryFn: () => getCampaigns(storeId),
+  });
+
+  const { data: allTransactions = [] } = useQuery({
+    queryKey: ['/api/transactions', 'all'],
+    queryFn: async () => {
+      if (campaigns.length === 0) return [];
+      const txns = await Promise.all(
+        campaigns.map(c => getTransactions(undefined, c.id))
+      );
+      return txns.flat();
     },
-    {
-      id: "txn-2",
-      customerId: "cust-2",
-      campaignId: "1",
-      type: "purchase",
-      amount: 89,
-      points: 445,
-      status: "pending",
-      billImageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=300&fit=crop",
-      createdAt: new Date("2024-01-15T14:20:00"),
+    enabled: campaigns.length > 0,
+  });
+
+  const pendingBills = allTransactions.filter(t => t.status === 'pending');
+
+  const createCampaignMutation = useMutation({
+    mutationFn: createCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      setShowCampaignBuilder(false);
+      toast({
+        title: "Campaign created!",
+        description: "Your referral campaign is now active.",
+      });
     },
-  ];
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create campaign. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const approveTransactionMutation = useMutation({
+    mutationFn: (id: string) => updateTransactionStatus(id, 'approved'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      toast({
+        title: "Bill approved!",
+        description: "Points have been awarded to the customer.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to approve bill. It may already be approved.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectTransactionMutation = useMutation({
+    mutationFn: (id: string) => updateTransactionStatus(id, 'rejected'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      toast({
+        title: "Bill rejected",
+        description: "The transaction has been rejected.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reject bill. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const totalRevenue = allTransactions
+    .filter(t => t.status === 'approved')
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,24 +142,22 @@ export default function StoreDashboard() {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatsCard
-                title="Total Customers"
-                value="1,234"
-                description="Active referrers"
-                icon={LayoutDashboard}
-                trend={{ value: 12, isPositive: true }}
-              />
-              <StatsCard
-                title="Total Revenue"
-                value="$45,678"
-                description="From referrals"
-                icon={TrendingUp}
-                trend={{ value: 8, isPositive: true }}
-              />
-              <StatsCard
                 title="Active Campaigns"
                 value={campaigns.filter(c => c.isActive).length}
                 description="Running now"
                 icon={TrendingUp}
+              />
+              <StatsCard
+                title="Total Revenue"
+                value={`$${totalRevenue.toLocaleString()}`}
+                description="From referrals"
+                icon={TrendingUp}
+              />
+              <StatsCard
+                title="Total Transactions"
+                value={allTransactions.length}
+                description="All time"
+                icon={LayoutDashboard}
               />
               <StatsCard
                 title="Pending Approvals"
@@ -137,19 +168,23 @@ export default function StoreDashboard() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold font-heading mb-4">Recent Activity</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pendingBills.slice(0, 2).map((bill) => (
-                  <BillApprovalCard
-                    key={bill.id}
-                    transaction={bill}
-                    customerName="Customer"
-                    onApprove={() => console.log("Approved", bill.id)}
-                    onReject={() => console.log("Rejected", bill.id)}
-                    onView={() => console.log("View", bill.id)}
-                  />
-                ))}
-              </div>
+              <h2 className="text-lg font-semibold font-heading mb-4">Recent Approvals</h2>
+              {pendingBills.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">No pending approvals</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pendingBills.slice(0, 4).map((bill) => (
+                    <BillApprovalCard
+                      key={bill.id}
+                      transaction={bill}
+                      customerName="Customer"
+                      onApprove={() => approveTransactionMutation.mutate(bill.id)}
+                      onReject={() => rejectTransactionMutation.mutate(bill.id)}
+                      onView={() => console.log("View", bill.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -162,32 +197,42 @@ export default function StoreDashboard() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {campaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  onViewQR={() => setSelectedQR(campaign.id)}
-                  onSettings={() => console.log("Settings", campaign.id)}
-                />
-              ))}
-            </div>
+            {campaignsLoading ? (
+              <p className="text-muted-foreground text-center py-8">Loading campaigns...</p>
+            ) : campaigns.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No campaigns yet. Create your first one!</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {campaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onViewQR={() => setSelectedQR(campaign.id)}
+                    onSettings={() => console.log("Settings", campaign.id)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="approvals" className="space-y-4">
             <h2 className="text-2xl font-bold font-heading">Pending Approvals</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingBills.map((bill) => (
-                <BillApprovalCard
-                  key={bill.id}
-                  transaction={bill}
-                  customerName="Customer Name"
-                  onApprove={() => console.log("Approved", bill.id)}
-                  onReject={() => console.log("Rejected", bill.id)}
-                  onView={() => console.log("View", bill.id)}
-                />
-              ))}
-            </div>
+            {pendingBills.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No pending approvals</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingBills.map((bill) => (
+                  <BillApprovalCard
+                    key={bill.id}
+                    transaction={bill}
+                    customerName="Customer Name"
+                    onApprove={() => approveTransactionMutation.mutate(bill.id)}
+                    onReject={() => rejectTransactionMutation.mutate(bill.id)}
+                    onView={() => console.log("View", bill.id)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
@@ -196,8 +241,12 @@ export default function StoreDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <CampaignBuilder
             onSubmit={(data) => {
-              console.log("New campaign:", data);
-              setShowCampaignBuilder(false);
+              createCampaignMutation.mutate({
+                ...data,
+                storeId,
+                couponTextColor: "#ffffff",
+                isActive: true,
+              });
             }}
           />
         </DialogContent>
@@ -205,10 +254,8 @@ export default function StoreDashboard() {
 
       <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-heading">Campaign QR Code</DialogTitle>
-          </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
+            <h3 className="text-lg font-semibold font-heading">Campaign QR Code</h3>
             <div className="bg-white p-4 rounded-lg">
               <QRCodeSVG
                 value={`${window.location.origin}/join/${selectedQR}`}
@@ -222,13 +269,31 @@ export default function StoreDashboard() {
             <Button
               variant="outline"
               onClick={() => {
-                const canvas = document.querySelector('canvas');
-                if (canvas) {
-                  const url = canvas.toDataURL();
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `campaign-${selectedQR}-qr.png`;
-                  a.click();
+                const svg = document.querySelector('svg');
+                if (svg) {
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  const svgData = new XMLSerializer().serializeToString(svg);
+                  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                  const url = URL.createObjectURL(svgBlob);
+                  
+                  img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx?.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(url);
+                    
+                    canvas.toBlob((blob) => {
+                      if (blob) {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `campaign-${selectedQR}-qr.png`;
+                        a.click();
+                      }
+                    });
+                  };
+                  img.src = url;
                 }
               }}
               data-testid="button-download-qr"

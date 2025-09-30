@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift, History, User } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
@@ -8,92 +9,70 @@ import { CouponDisplay } from "@/components/CouponDisplay";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ShareSheet } from "@/components/ShareSheet";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { getCustomerByCode, getCampaign, getTransactions } from "@/lib/api";
 
 export default function CustomerPWA() {
+  const { code } = useParams<{ code?: string }>();
   const [showShareSheet, setShowShareSheet] = useState(false);
 
-  const campaign = {
-    id: "1",
-    storeId: "store-1",
-    name: "Summer Rewards",
-    description: "Earn points on every purchase!",
-    pointsPerDollar: 5,
-    minPurchaseAmount: 25,
-    discountPercentage: 10,
-    couponColor: "#7c3aed",
-    couponTextColor: "#ffffff",
-    isActive: true,
-    createdAt: new Date(),
-  };
+  // Use code from URL params, fallback to demo code
+  const customerCode = code || "SARAH2024";
 
-  const customer = {
-    id: "cust-1",
-    campaignId: "1",
-    name: "Alex Rivera",
-    phone: "+1234567890",
-    referralCode: "ALEX2024",
-    totalPoints: 2750,
-    redeemedPoints: 1500,
-    createdAt: new Date(),
-  };
+  const { data: customer, isLoading: customerLoading, isError: customerError } = useQuery({
+    queryKey: ['/api/customers/code', customerCode],
+    queryFn: () => getCustomerByCode(customerCode),
+  });
 
-  const transactions = [
-    {
-      id: "1",
-      customerId: "c1",
-      campaignId: "camp1",
-      type: "purchase",
-      amount: 150,
-      points: 750,
-      status: "approved",
-      billImageUrl: null,
-      createdAt: new Date("2024-01-15"),
-    },
-    {
-      id: "2",
-      customerId: "c1",
-      campaignId: "camp1",
-      type: "referral",
-      amount: 0,
-      points: 500,
-      status: "approved",
-      billImageUrl: null,
-      createdAt: new Date("2024-01-12"),
-    },
-    {
-      id: "3",
-      customerId: "c1",
-      campaignId: "camp1",
-      type: "purchase",
-      amount: 85,
-      points: 425,
-      status: "pending",
-      billImageUrl: null,
-      createdAt: new Date("2024-01-14"),
-    },
-    {
-      id: "4",
-      customerId: "c1",
-      campaignId: "camp1",
-      type: "redemption",
-      amount: 0,
-      points: 1000,
-      status: "approved",
-      billImageUrl: null,
-      createdAt: new Date("2024-01-10"),
-    },
-    {
-      id: "5",
-      customerId: "c1",
-      campaignId: "camp1",
-      type: "referral",
-      amount: 0,
-      points: 500,
-      status: "approved",
-      billImageUrl: null,
-      createdAt: new Date("2024-01-08"),
-    },
-  ];
+  const { data: campaign } = useQuery({
+    queryKey: ['/api/campaigns', customer?.campaignId],
+    queryFn: () => getCampaign(customer!.campaignId),
+    enabled: !!customer,
+  });
+
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['/api/transactions', customer?.id],
+    queryFn: () => getTransactions(customer!.id),
+    enabled: !!customer,
+  });
+
+  const referralCount = transactions.filter(t => t.type === 'referral' && t.status === 'approved').length;
+  const monthlyReferrals = transactions.filter(t => {
+    if (t.type !== 'referral' || t.status !== 'approved') return false;
+    const date = new Date(t.createdAt);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }).length;
+
+  if (customerLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (customerError || !customer) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="font-heading">Customer Not Found</CardTitle>
+            <CardDescription>
+              This referral code doesn't exist. Please check the code and try again.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading campaign...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -192,11 +171,15 @@ export default function CustomerPWA() {
               <CardContent className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Referrals</p>
-                  <p className="text-2xl font-bold font-heading" data-testid="text-total-referrals">12</p>
+                  <p className="text-2xl font-bold font-heading" data-testid="text-total-referrals">
+                    {referralCount}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold font-heading" data-testid="text-monthly-referrals">3</p>
+                  <p className="text-2xl font-bold font-heading" data-testid="text-monthly-referrals">
+                    {monthlyReferrals}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -209,11 +192,15 @@ export default function CustomerPWA() {
                 <CardDescription>Your recent activity and points</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
-                  {transactions.map((txn) => (
-                    <TransactionItem key={txn.id} transaction={txn} />
-                  ))}
-                </div>
+                {transactions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No transactions yet</p>
+                ) : (
+                  <div className="space-y-1">
+                    {transactions.map((txn) => (
+                      <TransactionItem key={txn.id} transaction={txn} />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

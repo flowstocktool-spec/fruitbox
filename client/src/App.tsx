@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import StoreDashboard from "@/pages/StoreDashboard";
 import CustomerPWA from "@/pages/CustomerPWA";
+import JoinCampaign from "@/pages/JoinCampaign";
 
 function Router() {
   return (
@@ -15,6 +16,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/store" component={StoreDashboard} />
       <Route path="/customer" component={CustomerPWA} />
+      <Route path="/customer/:code" component={CustomerPWA} />
+      <Route path="/join/:campaignId" component={JoinCampaign} />
       <Route component={NotFound} />
     </Switch>
   );
