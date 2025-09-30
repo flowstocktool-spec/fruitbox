@@ -359,20 +359,53 @@ export default function CustomerPWA() {
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            {selectedCoupon ? (
-              <BillUpload
-                customerId={customer!.id}
-                couponId={selectedCoupon.id}
-                pointsPerDollar={1}
-                minPurchaseAmount={0}
-              />
-            ) : (
+            {coupons.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
                   <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Select a coupon first to upload bills</p>
+                  <p className="text-muted-foreground mb-4">No coupons available</p>
+                  <Button onClick={() => setShowCouponCreation(true)}>
+                    Create Your First Coupon
+                  </Button>
                 </CardContent>
               </Card>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Select a coupon to upload bill:</h3>
+                  <div className="space-y-2">
+                    {coupons.map((coupon) => (
+                      <Card 
+                        key={coupon.id} 
+                        className={`cursor-pointer transition-all ${
+                          selectedCoupon?.id === coupon.id 
+                            ? 'ring-2 ring-primary bg-primary/5' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => setSelectedCoupon(coupon)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold">{coupon.shopName}</h4>
+                            <span className="text-sm text-muted-foreground">
+                              {coupon.totalPoints - coupon.redeemedPoints} points available
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+                
+                {selectedCoupon && (
+                  <BillUpload
+                    customerId={customer!.id}
+                    couponId={selectedCoupon.id}
+                    pointsPerDollar={1}
+                    minPurchaseAmount={0}
+                  />
+                )}
+              </div>
             )}
           </TabsContent>
 
@@ -382,7 +415,7 @@ export default function CustomerPWA() {
                 {coupons.map((coupon) => (
                   <CouponDisplay
                     key={coupon.id}
-                    coupon={{
+                    campaign={{
                       name: coupon.shopName,
                       couponColor: "#2563eb",
                       couponTextColor: "#ffffff",
