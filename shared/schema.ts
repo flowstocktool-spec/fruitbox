@@ -26,7 +26,7 @@ export const campaigns = pgTable("campaigns", {
 
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  campaignId: varchar("campaign_id").notNull().references(() => campaigns.id),
+  campaignId: varchar("campaign_id").references(() => campaigns.id),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),

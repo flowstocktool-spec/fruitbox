@@ -71,6 +71,7 @@ export default function CustomerPWA() {
       const newCode = await generateReferralCode();
       return createCustomer({
         ...data,
+        campaignId: null, // PWA customers don't belong to specific campaigns initially
         referralCode: newCode,
         totalPoints: 0,
         redeemedPoints: 0,
