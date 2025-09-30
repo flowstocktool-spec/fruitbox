@@ -1,4 +1,4 @@
-import { type Store, type InsertStore, type Campaign, type InsertCampaign, type Customer, type InsertCustomer, type Transaction, type InsertTransaction } from "@shared/schema";
+import { type Store, type InsertStore, type Campaign, type InsertCampaign, type Customer, type InsertCustomer, type CustomerCoupon, type InsertCustomerCoupon, type Transaction, type InsertTransaction } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -17,6 +17,11 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomerPoints(id: string, totalPoints: number): Promise<Customer | undefined>;
   
+  getCustomerCoupons(customerId: string): Promise<CustomerCoupon[]>;
+  getCustomerCouponByCode(code: string): Promise<CustomerCoupon | undefined>;
+  createCustomerCoupon(coupon: InsertCustomerCoupon): Promise<CustomerCoupon>;
+  updateCustomerCouponPoints(id: string, totalPoints: number, redeemedPoints: number): Promise<CustomerCoupon | undefined>;
+  
   getTransaction(id: string): Promise<Transaction | undefined>;
   getTransactionsByCustomerId(customerId: string): Promise<Transaction[]>;
   getTransactionsByCampaignId(campaignId: string): Promise<Transaction[]>;
@@ -28,12 +33,14 @@ export class MemStorage implements IStorage {
   private stores: Map<string, Store>;
   private campaigns: Map<string, Campaign>;
   private customers: Map<string, Customer>;
+  private customerCoupons: Map<string, CustomerCoupon>;
   private transactions: Map<string, Transaction>;
 
   constructor() {
     this.stores = new Map();
     this.campaigns = new Map();
     this.customers = new Map();
+    this.customerCoupons = new Map();
     this.transactions = new Map();
   }
 
@@ -122,6 +129,39 @@ export class MemStorage implements IStorage {
     
     const updated = { ...customer, totalPoints };
     this.customers.set(id, updated);
+    return updated;
+  }
+
+  async getCustomerCoupons(customerId: string): Promise<CustomerCoupon[]> {
+    return Array.from(this.customerCoupons.values()).filter(c => c.customerId === customerId);
+  }
+
+  async getCustomerCouponByCode(code: string): Promise<CustomerCoupon | undefined> {
+    return Array.from(this.customerCoupons.values()).find(c => c.referralCode === code);
+  }
+
+  async createCustomerCoupon(insertCoupon: InsertCustomerCoupon): Promise<CustomerCoupon> {
+    const id = randomUUID();
+    const coupon: CustomerCoupon = {
+      id,
+      customerId: insertCoupon.customerId,
+      shopName: insertCoupon.shopName,
+      shopId: insertCoupon.shopId ?? null,
+      referralCode: insertCoupon.referralCode,
+      totalPoints: insertCoupon.totalPoints ?? 0,
+      redeemedPoints: insertCoupon.redeemedPoints ?? 0,
+      createdAt: new Date(),
+    };
+    this.customerCoupons.set(id, coupon);
+    return coupon;
+  }
+
+  async updateCustomerCouponPoints(id: string, totalPoints: number, redeemedPoints: number): Promise<CustomerCoupon | undefined> {
+    const coupon = this.customerCoupons.get(id);
+    if (!coupon) return undefined;
+    
+    const updated = { ...coupon, totalPoints, redeemedPoints };
+    this.customerCoupons.set(id, updated);
     return updated;
   }
 

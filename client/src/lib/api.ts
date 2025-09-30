@@ -101,3 +101,19 @@ export async function generateReferralCode(): Promise<string> {
   const data = await res.json();
   return data.code;
 }
+
+export async function getCustomerCoupons(customerId: string) {
+  const res = await fetch(`/api/customer-coupons/${customerId}`);
+  if (!res.ok) throw new Error("Failed to fetch customer coupons");
+  return res.json();
+}
+
+export async function createCustomerCoupon(data: any) {
+  const res = await fetch("/api/customer-coupons", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create customer coupon");
+  return res.json();
+}

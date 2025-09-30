@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { insertCampaignSchema, insertCustomerSchema, insertTransactionSchema } from "@shared/schema";
+import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 
 const upload = multer({ 
@@ -210,6 +210,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(customers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
+  // Customer coupon routes
+  app.get("/api/customer-coupons/:customerId", async (req, res) => {
+    try {
+      const coupons = await storage.getCustomerCoupons(req.params.customerId);
+      res.json(coupons);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer coupons" });
+    }
+  });
+
+  app.post("/api/customer-coupons", async (req, res) => {
+    try {
+      // Generate unique referral code for this coupon
+      const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      };
+      
+      let referralCode = generateCode();
+      let exists = await storage.getCustomerCouponByCode(referralCode);
+      
+      while (exists) {
+        referralCode = generateCode();
+        exists = await storage.getCustomerCouponByCode(referralCode);
+      }
+
+      const data = insertCustomerCouponSchema.parse({
+        ...req.body,
+        referralCode,
+      });
+      
+      const coupon = await storage.createCustomerCoupon(data);
+      res.status(201).json(coupon);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create customer coupon" });
     }
   });
 

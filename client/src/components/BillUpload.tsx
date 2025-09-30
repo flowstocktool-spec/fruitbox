@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,13 +21,14 @@ type BillUploadData = z.infer<typeof billUploadSchema>;
 
 interface BillUploadProps {
   customerId: string;
-  campaignId: string;
+  campaignId?: string;
+  couponId?: string;
   pointsPerDollar: number;
   minPurchaseAmount: number;
   onSuccess?: () => void;
 }
 
-export function BillUpload({ customerId, campaignId, pointsPerDollar, minPurchaseAmount, onSuccess }: BillUploadProps) {
+export function BillUpload({ customerId, campaignId, couponId, pointsPerDollar, minPurchaseAmount, onSuccess }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
@@ -42,15 +42,16 @@ export function BillUpload({ customerId, campaignId, pointsPerDollar, minPurchas
 
   const uploadMutation = useMutation({
     mutationFn: (data: { amount: number; file?: File }) => {
-      const points = Math.floor(data.amount * pointsPerDollar);
-      return createTransaction({
+      const transactionData = {
         customerId,
-        campaignId,
+        campaignId: campaignId || null,
+        couponId: couponId || null,
         type: 'purchase',
-        amount: data.amount,
-        points,
+        amount: parseFloat(data.amount.toString()),
+        points: Math.floor(parseFloat(data.amount.toString()) * pointsPerDollar),
         status: 'pending',
-      }, data.file);
+      };
+      return createTransaction(transactionData, data.file);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
@@ -155,7 +156,7 @@ export function BillUpload({ customerId, campaignId, pointsPerDollar, minPurchas
                     Take Photo
                   </Button>
                 </div>
-                
+
                 <input
                   id="bill-file"
                   type="file"

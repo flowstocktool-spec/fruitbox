@@ -36,10 +36,22 @@ export const customers = pgTable("customers", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const customerCoupons = pgTable("customer_coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  shopName: text("shop_name").notNull(),
+  shopId: varchar("shop_id"),
+  referralCode: text("referral_code").notNull().unique(),
+  totalPoints: integer("total_points").notNull().default(0),
+  redeemedPoints: integer("redeemed_points").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
-  campaignId: varchar("campaign_id").notNull().references(() => campaigns.id),
+  campaignId: varchar("campaign_id").references(() => campaigns.id),
+  couponId: varchar("coupon_id").references(() => customerCoupons.id),
   type: text("type").notNull(),
   amount: integer("amount").notNull(),
   points: integer("points").notNull(),
@@ -51,6 +63,7 @@ export const transactions = pgTable("transactions", {
 export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
+export const insertCustomerCouponSchema = createInsertSchema(customerCoupons).omit({ id: true, createdAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true }).extend({
   amount: z.coerce.number(),
   points: z.coerce.number(),
@@ -62,5 +75,7 @@ export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
+export type InsertCustomerCoupon = z.infer<typeof insertCustomerCouponSchema>;
+export type CustomerCoupon = typeof customerCoupons.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;

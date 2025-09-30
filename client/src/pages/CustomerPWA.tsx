@@ -7,14 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, History, User, Receipt, UserPlus } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Plus, Store } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { CouponDisplay } from "@/components/CouponDisplay";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ShareSheet } from "@/components/ShareSheet";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
-import { getCustomerByCode, getCampaign, getTransactions, createCustomer, generateReferralCode } from "@/lib/api";
+import { getCustomerByCode, getCampaign, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, createCustomerCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,38 +22,48 @@ export default function CustomerPWA() {
   const { code } = useParams<{ code?: string }>();
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showCouponCreation, setShowCouponCreation] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
     email: ""
   });
+  const [couponData, setCouponData] = useState({
+    shopName: "",
+    shopId: ""
+  });
   const { toast } = useToast();
 
-  // Use code from URL params, fallback to check localStorage or demo code
+  // Get customer code from URL or localStorage
   const getCustomerCode = () => {
     if (code) return code;
-    const storedCode = localStorage.getItem('customerReferralCode');
-    return storedCode || "SARAH2024";
+    const storedCode = localStorage.getItem('customerCode');
+    return storedCode;
   };
 
   const customerCode = getCustomerCode();
 
+  // Customer query
   const { data: customer, isLoading: customerLoading, isError: customerError } = useQuery({
     queryKey: ['/api/customers/code', customerCode],
-    queryFn: () => getCustomerByCode(customerCode),
+    queryFn: () => getCustomerByCode(customerCode!),
+    enabled: !!customerCode,
     retry: false,
   });
 
-  const { data: campaign } = useQuery({
-    queryKey: ['/api/campaigns', customer?.campaignId],
-    queryFn: () => getCampaign(customer!.campaignId),
+  // Customer coupons query
+  const { data: coupons = [], refetch: refetchCoupons } = useQuery({
+    queryKey: ['/api/customer-coupons', customer?.id],
+    queryFn: () => getCustomerCoupons(customer!.id),
     enabled: !!customer,
   });
 
+  // Transactions for selected coupon
   const { data: transactions = [] } = useQuery({
-    queryKey: ['/api/transactions', customer?.id],
-    queryFn: () => getTransactions(customer!.id),
-    enabled: !!customer,
+    queryKey: ['/api/transactions', customer?.id, selectedCoupon?.id],
+    queryFn: () => getTransactions(customer!.id, selectedCoupon?.id),
+    enabled: !!customer && !!selectedCoupon,
   });
 
   const createCustomerMutation = useMutation({
@@ -62,13 +72,12 @@ export default function CustomerPWA() {
       return createCustomer({
         ...data,
         referralCode: newCode,
-        campaignId: "3671d408-c8ae-4386-9793-fed02be9bb35", // Default to demo campaign
         totalPoints: 0,
         redeemedPoints: 0,
       });
     },
     onSuccess: (newCustomer) => {
-      localStorage.setItem('customerReferralCode', newCustomer.referralCode);
+      localStorage.setItem('customerCode', newCustomer.referralCode);
       queryClient.invalidateQueries({ queryKey: ['/api/customers/code'] });
       setShowRegistration(false);
       toast({
@@ -85,9 +94,28 @@ export default function CustomerPWA() {
     },
   });
 
+  const createCouponMutation = useMutation({
+    mutationFn: (data: any) => createCustomerCoupon(data),
+    onSuccess: () => {
+      setShowCouponCreation(false);
+      setCouponData({ shopName: "", shopId: "" });
+      refetchCoupons();
+      toast({
+        title: "Success!",
+        description: "New coupon created for the shop.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create coupon. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
-    // Show registration if customer not found and not using demo code
-    if (customerError && customerCode !== "SARAH2024") {
+    if (!customerCode || customerError) {
       setShowRegistration(true);
     }
   }, [customerError, customerCode]);
@@ -103,6 +131,23 @@ export default function CustomerPWA() {
       return;
     }
     createCustomerMutation.mutate(registrationData);
+  };
+
+  const handleCouponCreation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponData.shopName) {
+      toast({
+        title: "Error",
+        description: "Please enter shop name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createCouponMutation.mutate({
+      customerId: customer!.id,
+      shopName: couponData.shopName,
+      shopId: couponData.shopId || null,
+    });
   };
 
   if (customerLoading) {
@@ -123,7 +168,7 @@ export default function CustomerPWA() {
             </div>
             <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
             <CardDescription className="text-center">
-              Join our referral program and start earning points!
+              Join the referral program and start earning points!
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -173,21 +218,8 @@ export default function CustomerPWA() {
     );
   }
 
-  if (!campaign) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading campaign...</p>
-      </div>
-    );
-  }
-
-  const referralCount = transactions.filter(t => t.type === 'referral' && t.status === 'approved').length;
-  const monthlyReferrals = transactions.filter(t => {
-    if (t.type !== 'referral' || t.status !== 'approved') return false;
-    const date = new Date(t.createdAt);
-    const now = new Date();
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-  }).length;
+  const totalPoints = coupons.reduce((sum, coupon) => sum + coupon.totalPoints, 0);
+  const totalRedeemed = coupons.reduce((sum, coupon) => sum + coupon.redeemedPoints, 0);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -195,10 +227,10 @@ export default function CustomerPWA() {
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold font-heading" data-testid="text-customer-name">
-                {customer.name}
+              <h1 className="text-xl font-bold font-heading">
+                {customer?.name}
               </h1>
-              <p className="text-sm text-muted-foreground">{campaign.name}</p>
+              <p className="text-sm text-muted-foreground">Referral Rewards</p>
             </div>
             <ThemeToggle />
           </div>
@@ -206,111 +238,168 @@ export default function CustomerPWA() {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
-        <Tabs defaultValue="rewards" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4" data-testid="tabs-customer-navigation">
-            <TabsTrigger value="rewards" data-testid="tab-rewards">
+        <Tabs defaultValue="coupons" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="coupons">
               <Gift className="h-4 w-4 mr-1" />
-              Rewards
+              Coupons
             </TabsTrigger>
-            <TabsTrigger value="upload" data-testid="tab-upload">
+            <TabsTrigger value="upload">
               <Receipt className="h-4 w-4 mr-1" />
               Upload
             </TabsTrigger>
-            <TabsTrigger value="coupon" data-testid="tab-coupon">
+            <TabsTrigger value="share">
               <User className="h-4 w-4 mr-1" />
-              Coupon
+              Share
             </TabsTrigger>
-            <TabsTrigger value="history" data-testid="tab-history">
+            <TabsTrigger value="history">
               <History className="h-4 w-4 mr-1" />
               History
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="rewards" className="space-y-6">
+          <TabsContent value="coupons" className="space-y-6">
             <PointsDashboard
-              totalPoints={customer.totalPoints}
-              redeemedPoints={customer.redeemedPoints}
+              totalPoints={totalPoints}
+              redeemedPoints={totalRedeemed}
               pointsToNextReward={2000}
             />
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">How It Works</CardTitle>
-                <CardDescription>Earn points and unlock rewards</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-chart-2/20 flex items-center justify-center text-chart-2 font-semibold">
-                    1
-                  </div>
-                  <div>
-                    <p className="font-medium">Share Your Code</p>
-                    <p className="text-sm text-muted-foreground">
-                      Friends get {campaign.discountPercentage}% off their first purchase
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-chart-2/20 flex items-center justify-center text-chart-2 font-semibold">
-                    2
-                  </div>
-                  <div>
-                    <p className="font-medium">They Purchase</p>
-                    <p className="text-sm text-muted-foreground">
-                      Earn {campaign.pointsPerDollar} points for every $1 they spend
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-chart-2/20 flex items-center justify-center text-chart-2 font-semibold">
-                    3
-                  </div>
-                  <div>
-                    <p className="font-medium">Redeem Rewards</p>
-                    <p className="text-sm text-muted-foreground">
-                      Use your points for discounts and exclusive offers
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">My Shop Coupons</h3>
+              <Button onClick={() => setShowCouponCreation(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Shop
+              </Button>
+            </div>
+
+            {coupons.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-4">No shop coupons yet</p>
+                  <Button onClick={() => setShowCouponCreation(true)}>
+                    Create Your First Coupon
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {coupons.map((coupon) => (
+                  <Card key={coupon.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold">{coupon.shopName}</h4>
+                        <span className="text-sm text-muted-foreground">
+                          Code: {coupon.referralCode}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Points Earned</p>
+                          <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Redeemed</p>
+                          <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Remaining</p>
+                          <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {showCouponCreation && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <Card className="w-full max-w-md">
+                  <CardHeader>
+                    <CardTitle>Create Shop Coupon</CardTitle>
+                    <CardDescription>Add a new shop to start earning points</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCouponCreation} className="space-y-4">
+                      <div>
+                        <Label htmlFor="shopName">Shop Name *</Label>
+                        <Input
+                          id="shopName"
+                          value={couponData.shopName}
+                          onChange={(e) => setCouponData({ ...couponData, shopName: e.target.value })}
+                          placeholder="Enter shop name"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="shopId">Shop ID (Optional)</Label>
+                        <Input
+                          id="shopId"
+                          value={couponData.shopId}
+                          onChange={(e) => setCouponData({ ...couponData, shopId: e.target.value })}
+                          placeholder="Enter shop ID if known"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="submit" className="flex-1" disabled={createCouponMutation.isPending}>
+                          {createCouponMutation.isPending ? "Creating..." : "Create Coupon"}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setShowCouponCreation(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            <BillUpload
-              customerId={customer.id}
-              campaignId={customer.campaignId}
-              pointsPerDollar={campaign.pointsPerDollar}
-              minPurchaseAmount={campaign.minPurchaseAmount}
-            />
+            {selectedCoupon ? (
+              <BillUpload
+                customerId={customer!.id}
+                couponId={selectedCoupon.id}
+                pointsPerDollar={1}
+                minPurchaseAmount={0}
+              />
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Select a coupon first to upload bills</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
-          <TabsContent value="coupon" className="space-y-4">
-            <CouponDisplay
-              campaign={campaign}
-              customer={customer}
-              onShare={() => setShowShareSheet(true)}
-            />
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading text-base">Referral Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Referrals</p>
-                  <p className="text-2xl font-bold font-heading" data-testid="text-total-referrals">
-                    {referralCount}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold font-heading" data-testid="text-monthly-referrals">
-                    {monthlyReferrals}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="share" className="space-y-4">
+            {coupons.length > 0 ? (
+              <div className="space-y-4">
+                {coupons.map((coupon) => (
+                  <CouponDisplay
+                    key={coupon.id}
+                    coupon={{
+                      name: coupon.shopName,
+                      couponColor: "#2563eb",
+                      couponTextColor: "#ffffff",
+                      pointsPerDollar: 1,
+                      discountPercentage: 10,
+                    }}
+                    customer={{ ...customer!, referralCode: coupon.referralCode }}
+                    onShare={() => setShowShareSheet(true)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground">Create a shop coupon to start sharing</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
@@ -338,9 +427,9 @@ export default function CustomerPWA() {
       <ShareSheet
         open={showShareSheet}
         onOpenChange={setShowShareSheet}
-        referralCode={customer.referralCode}
-        campaignName={campaign.name}
-        discountPercentage={campaign.discountPercentage}
+        referralCode={customer?.referralCode || ""}
+        campaignName="Referral Rewards"
+        discountPercentage={10}
       />
     </div>
   );
