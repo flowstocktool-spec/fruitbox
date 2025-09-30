@@ -3,12 +3,13 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, History, User } from "lucide-react";
+import { Gift, History, User, Receipt } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { CouponDisplay } from "@/components/CouponDisplay";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ShareSheet } from "@/components/ShareSheet";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BillUpload } from "@/components/BillUpload";
 import { getCustomerByCode, getCampaign, getTransactions } from "@/lib/api";
 
 export default function CustomerPWA() {
@@ -92,17 +93,21 @@ export default function CustomerPWA() {
 
       <main className="max-w-md mx-auto px-4 py-6">
         <Tabs defaultValue="rewards" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3" data-testid="tabs-customer-navigation">
+          <TabsList className="grid w-full grid-cols-4" data-testid="tabs-customer-navigation">
             <TabsTrigger value="rewards" data-testid="tab-rewards">
-              <Gift className="h-4 w-4 mr-2" />
+              <Gift className="h-4 w-4 mr-1" />
               Rewards
             </TabsTrigger>
+            <TabsTrigger value="upload" data-testid="tab-upload">
+              <Receipt className="h-4 w-4 mr-1" />
+              Upload
+            </TabsTrigger>
             <TabsTrigger value="coupon" data-testid="tab-coupon">
-              <User className="h-4 w-4 mr-2" />
-              My Coupon
+              <User className="h-4 w-4 mr-1" />
+              Coupon
             </TabsTrigger>
             <TabsTrigger value="history" data-testid="tab-history">
-              <History className="h-4 w-4 mr-2" />
+              <History className="h-4 w-4 mr-1" />
               History
             </TabsTrigger>
           </TabsList>
@@ -155,6 +160,15 @@ export default function CustomerPWA() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="upload" className="space-y-4">
+            <BillUpload
+              customerId={customer.id}
+              campaignId={customer.campaignId}
+              pointsPerDollar={campaign.pointsPerDollar}
+              minPurchaseAmount={campaign.minPurchaseAmount}
+            />
           </TabsContent>
 
           <TabsContent value="coupon" className="space-y-4">

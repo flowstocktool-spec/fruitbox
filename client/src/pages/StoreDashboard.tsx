@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function StoreDashboard() {
   const [showCampaignBuilder, setShowCampaignBuilder] = useState(false);
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
+  const [selectedCampaignForSettings, setSelectedCampaignForSettings] = useState<any>(null);
   const { toast } = useToast();
 
   // For demo, use the first store ID from seed data
@@ -173,16 +174,19 @@ export default function StoreDashboard() {
                 <p className="text-muted-foreground text-center py-8">No pending approvals</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pendingBills.slice(0, 4).map((bill) => (
-                    <BillApprovalCard
-                      key={bill.id}
-                      transaction={bill}
-                      customerName="Customer"
-                      onApprove={() => approveTransactionMutation.mutate(bill.id)}
-                      onReject={() => rejectTransactionMutation.mutate(bill.id)}
-                      onView={() => console.log("View", bill.id)}
-                    />
-                  ))}
+                  {pendingBills.slice(0, 4).map((bill) => {
+                    const customer = campaigns.find(c => c.id === bill.campaignId);
+                    return (
+                      <BillApprovalCard
+                        key={bill.id}
+                        transaction={bill}
+                        customerName={`Campaign: ${customer?.name || 'Unknown'}`}
+                        onApprove={() => approveTransactionMutation.mutate(bill.id)}
+                        onReject={() => rejectTransactionMutation.mutate(bill.id)}
+                        onView={() => console.log("View", bill.id)}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -208,7 +212,7 @@ export default function StoreDashboard() {
                     key={campaign.id}
                     campaign={campaign}
                     onViewQR={() => setSelectedQR(campaign.id)}
-                    onSettings={() => console.log("Settings", campaign.id)}
+                    onSettings={() => setSelectedCampaignForSettings(campaign)}
                   />
                 ))}
               </div>
@@ -221,16 +225,19 @@ export default function StoreDashboard() {
               <p className="text-muted-foreground text-center py-8">No pending approvals</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingBills.map((bill) => (
-                  <BillApprovalCard
-                    key={bill.id}
-                    transaction={bill}
-                    customerName="Customer Name"
-                    onApprove={() => approveTransactionMutation.mutate(bill.id)}
-                    onReject={() => rejectTransactionMutation.mutate(bill.id)}
-                    onView={() => console.log("View", bill.id)}
-                  />
-                ))}
+                {pendingBills.map((bill) => {
+                  const customer = campaigns.find(c => c.id === bill.campaignId);
+                  return (
+                    <BillApprovalCard
+                      key={bill.id}
+                      transaction={bill}
+                      customerName={`Campaign: ${customer?.name || 'Unknown'}`}
+                      onApprove={() => approveTransactionMutation.mutate(bill.id)}
+                      onReject={() => rejectTransactionMutation.mutate(bill.id)}
+                      onView={() => console.log("View", bill.id)}
+                    />
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -258,13 +265,13 @@ export default function StoreDashboard() {
             <h3 className="text-lg font-semibold font-heading">Campaign QR Code</h3>
             <div className="bg-white p-4 rounded-lg">
               <QRCodeSVG
-                value={`${window.location.origin}/join/${selectedQR}`}
+                value={`${window.location.origin}/customer`}
                 size={250}
                 level="H"
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              Customers can scan this QR code to join your campaign
+              Customers can scan this QR code to install the PWA and access their account
             </p>
             <Button
               variant="outline"
@@ -301,6 +308,33 @@ export default function StoreDashboard() {
               Download QR Code
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedCampaignForSettings} onOpenChange={() => setSelectedCampaignForSettings(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <h3 className="text-lg font-semibold font-heading mb-4">Campaign Settings</h3>
+          {selectedCampaignForSettings && (
+            <CampaignBuilder
+              defaultValues={{
+                name: selectedCampaignForSettings.name,
+                description: selectedCampaignForSettings.description || "",
+                pointsPerDollar: selectedCampaignForSettings.pointsPerDollar,
+                minPurchaseAmount: selectedCampaignForSettings.minPurchaseAmount,
+                discountPercentage: selectedCampaignForSettings.discountPercentage,
+                couponColor: selectedCampaignForSettings.couponColor,
+              }}
+              onSubmit={(data) => {
+                // TODO: Implement campaign update API
+                console.log("Update campaign:", selectedCampaignForSettings.id, data);
+                setSelectedCampaignForSettings(null);
+                toast({
+                  title: "Settings updated!",
+                  description: "Campaign settings have been updated.",
+                });
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
