@@ -203,6 +203,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get customers by campaign
+  app.get("/api/customers/campaign/:campaignId", async (req, res) => {
+    try {
+      const customers = await storage.getCustomersByCampaignId(req.params.campaignId);
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
   // Generate unique referral code
   app.get("/api/generate-code", async (req, res) => {
     const generateCode = () => {

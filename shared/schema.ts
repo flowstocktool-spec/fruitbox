@@ -29,6 +29,7 @@ export const customers = pgTable("customers", {
   campaignId: varchar("campaign_id").notNull().references(() => campaigns.id),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
+  email: text("email"),
   referralCode: text("referral_code").notNull().unique(),
   totalPoints: integer("total_points").notNull().default(0),
   redeemedPoints: integer("redeemed_points").notNull().default(0),

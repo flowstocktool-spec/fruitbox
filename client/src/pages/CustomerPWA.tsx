@@ -1,27 +1,47 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, History, User, Receipt } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Gift, History, User, Receipt, UserPlus } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { CouponDisplay } from "@/components/CouponDisplay";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ShareSheet } from "@/components/ShareSheet";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
-import { getCustomerByCode, getCampaign, getTransactions } from "@/lib/api";
+import { getCustomerByCode, getCampaign, getTransactions, createCustomer, generateReferralCode } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerPWA() {
   const { code } = useParams<{ code?: string }>();
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [registrationData, setRegistrationData] = useState({
+    name: "",
+    phone: "",
+    email: ""
+  });
+  const { toast } = useToast();
 
-  // Use code from URL params, fallback to demo code
-  const customerCode = code || "SARAH2024";
+  // Use code from URL params, fallback to check localStorage or demo code
+  const getCustomerCode = () => {
+    if (code) return code;
+    const storedCode = localStorage.getItem('customerReferralCode');
+    return storedCode || "SARAH2024";
+  };
+
+  const customerCode = getCustomerCode();
 
   const { data: customer, isLoading: customerLoading, isError: customerError } = useQuery({
     queryKey: ['/api/customers/code', customerCode],
     queryFn: () => getCustomerByCode(customerCode),
+    retry: false,
   });
 
   const { data: campaign } = useQuery({
@@ -36,13 +56,54 @@ export default function CustomerPWA() {
     enabled: !!customer,
   });
 
-  const referralCount = transactions.filter(t => t.type === 'referral' && t.status === 'approved').length;
-  const monthlyReferrals = transactions.filter(t => {
-    if (t.type !== 'referral' || t.status !== 'approved') return false;
-    const date = new Date(t.createdAt);
-    const now = new Date();
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-  }).length;
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const newCode = await generateReferralCode();
+      return createCustomer({
+        ...data,
+        referralCode: newCode,
+        campaignId: "3671d408-c8ae-4386-9793-fed02be9bb35", // Default to demo campaign
+        totalPoints: 0,
+        redeemedPoints: 0,
+      });
+    },
+    onSuccess: (newCustomer) => {
+      localStorage.setItem('customerReferralCode', newCustomer.referralCode);
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/code'] });
+      setShowRegistration(false);
+      toast({
+        title: "Welcome!",
+        description: "Your account has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    // Show registration if customer not found and not using demo code
+    if (customerError && customerCode !== "SARAH2024") {
+      setShowRegistration(true);
+    }
+  }, [customerError, customerCode]);
+
+  const handleRegistration = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registrationData.name || !registrationData.phone) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createCustomerMutation.mutate(registrationData);
+  };
 
   if (customerLoading) {
     return (
@@ -52,16 +113,61 @@ export default function CustomerPWA() {
     );
   }
 
-  if (customerError || !customer) {
+  if (showRegistration || (customerError && !customer)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md">
+        <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="font-heading">Customer Not Found</CardTitle>
-            <CardDescription>
-              This referral code doesn't exist. Please check the code and try again.
+            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
+            <CardDescription className="text-center">
+              Join our referral program and start earning points!
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegistration} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={registrationData.name}
+                  onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={registrationData.phone}
+                  onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
+                  placeholder="Enter your phone number"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email (Optional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={registrationData.email}
+                  onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={createCustomerMutation.isPending}
+              >
+                {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+              </Button>
+            </form>
+          </CardContent>
         </Card>
       </div>
     );
@@ -74,6 +180,14 @@ export default function CustomerPWA() {
       </div>
     );
   }
+
+  const referralCount = transactions.filter(t => t.type === 'referral' && t.status === 'approved').length;
+  const monthlyReferrals = transactions.filter(t => {
+    if (t.type !== 'referral' || t.status !== 'approved') return false;
+    const date = new Date(t.createdAt);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }).length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
