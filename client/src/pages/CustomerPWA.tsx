@@ -7,20 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, History, User, Receipt, UserPlus, Plus, Store } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Plus, Store, Share2 } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { CouponDisplay } from "@/components/CouponDisplay";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ShareSheet } from "@/components/ShareSheet";
+import { CouponShareSheet } from "@/components/CouponShareSheet";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
-import { getCustomerByCode, getCampaign, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, createCustomerCoupon } from "@/lib/api";
+import { getCustomerByCode, getCampaign, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, createCustomerCoupon, createSharedCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerPWA() {
   const { code } = useParams<{ code?: string }>();
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showCouponShareSheet, setShowCouponShareSheet] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [sharingCoupon, setSharingCoupon] = useState<any>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showCouponCreation, setShowCouponCreation] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
@@ -139,6 +143,33 @@ export default function CustomerPWA() {
       });
     },
   });
+
+  const shareCouponMutation = useMutation({
+    mutationFn: (data: any) => createSharedCoupon(data),
+    onSuccess: (sharedCoupon: any) => {
+      setShareToken(sharedCoupon.shareToken);
+      setShowCouponShareSheet(true);
+      toast({
+        title: "Share Link Created!",
+        description: "You can now share your coupon with friends.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create share link. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleShareCoupon = (coupon: any) => {
+    setSharingCoupon(coupon);
+    shareCouponMutation.mutate({
+      couponId: coupon.id,
+      sharedByCustomerId: customer!.id,
+    });
+  };
 
   useEffect(() => {
     if (!customerCode || customerError) {
@@ -314,7 +345,7 @@ export default function CustomerPWA() {
               ) : (
                 <div className="space-y-3">
                   {coupons.map((coupon) => (
-                    <Card key={coupon.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={coupon.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold">{coupon.shopName}</h4>
@@ -322,7 +353,7 @@ export default function CustomerPWA() {
                             My Coupon
                           </span>
                         </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-3 gap-4 text-sm mb-3">
                           <div>
                             <p className="text-muted-foreground">Points Earned</p>
                             <p className="font-bold text-green-600">{coupon.totalPoints}</p>
@@ -336,8 +367,20 @@ export default function CustomerPWA() {
                             <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
                           </div>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          Code: {coupon.referralCode}
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-muted-foreground">
+                            Code: {coupon.referralCode}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleShareCoupon(coupon)}
+                            disabled={shareCouponMutation.isPending}
+                            data-testid={`button-share-coupon-${coupon.id}`}
+                          >
+                            <Share2 className="h-4 w-4 mr-1" />
+                            Share
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
