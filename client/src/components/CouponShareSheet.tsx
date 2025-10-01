@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Mail, Copy, Share2, Loader2 } from "lucide-react";
 import { SiWhatsapp, SiFacebook, SiX } from "react-icons/si";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface CouponShareSheetProps {
   open: boolean;
@@ -80,7 +80,7 @@ export function CouponShareSheet({ open, onOpenChange, shareToken, shopName, loa
         <div className="space-y-4">
           {/* QR Code */}
           <div className="flex justify-center p-4 bg-white rounded-lg">
-            <QRCode value={shareUrl} size={200} level="H" />
+            <QRCodeSVG value={shareUrl} size={200} level="H" />
           </div>
 
           {/* Share Buttons */}

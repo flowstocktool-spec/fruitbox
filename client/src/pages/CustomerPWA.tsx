@@ -630,6 +630,16 @@ export default function CustomerPWA() {
           discountPercentage={10}
         />
       )}
+
+      {sharingCoupon && (
+        <CouponShareSheet
+          open={showCouponShareSheet}
+          onOpenChange={setShowCouponShareSheet}
+          shareToken={shareToken}
+          shopName={sharingCoupon.shopName}
+          loading={shareCouponMutation.isPending}
+        />
+      )}
     </div>
   );
 }
