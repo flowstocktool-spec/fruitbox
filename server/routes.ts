@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertTransactionSchema } from "@shared/schema";
+import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertSharedCouponSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 
 const upload = multer({ 
@@ -278,6 +278,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.json({ code });
+  });
+
+  // Shared coupon routes
+  app.post("/api/shared-coupons", async (req, res) => {
+    try {
+      // Generate unique share token
+      const generateToken = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let token = '';
+        for (let i = 0; i < 16; i++) {
+          token += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return token;
+      };
+      
+      let shareToken = generateToken();
+      let exists = await storage.getSharedCouponByToken(shareToken);
+      
+      while (exists) {
+        shareToken = generateToken();
+        exists = await storage.getSharedCouponByToken(shareToken);
+      }
+
+      const data = insertSharedCouponSchema.parse({
+        ...req.body,
+        shareToken,
+        status: "pending",
+      });
+      
+      const sharedCoupon = await storage.createSharedCoupon(data);
+      res.status(201).json(sharedCoupon);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create shared coupon" });
+    }
+  });
+
+  app.get("/api/shared-coupons/token/:token", async (req, res) => {
+    try {
+      const sharedCoupon = await storage.getSharedCouponByToken(req.params.token);
+      if (!sharedCoupon) {
+        return res.status(404).json({ error: "Shared coupon not found" });
+      }
+      
+      // Get the original coupon details
+      const coupon = await storage.getCustomerCouponByCode(
+        (await storage.getCustomerCoupons(sharedCoupon.sharedByCustomerId))
+          .find(c => c.id === sharedCoupon.couponId)?.referralCode || ""
+      );
+      
+      if (!coupon) {
+        return res.status(404).json({ error: "Original coupon not found" });
+      }
+      
+      res.json({ sharedCoupon, coupon });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shared coupon" });
+    }
+  });
+
+  app.post("/api/shared-coupons/:id/claim", async (req, res) => {
+    try {
+      const { customerId } = req.body;
+      if (!customerId) {
+        return res.status(400).json({ error: "customerId is required" });
+      }
+
+      const sharedCoupon = await storage.getSharedCoupon(req.params.id);
+      if (!sharedCoupon) {
+        return res.status(404).json({ error: "Shared coupon not found" });
+      }
+
+      if (sharedCoupon.status === "claimed") {
+        return res.status(409).json({ error: "Coupon already claimed" });
+      }
+
+      // Get the original coupon
+      const originalCoupon = await storage.getCustomerCoupons(sharedCoupon.sharedByCustomerId)
+        .then(coupons => coupons.find(c => c.id === sharedCoupon.couponId));
+
+      if (!originalCoupon) {
+        return res.status(404).json({ error: "Original coupon not found" });
+      }
+
+      // Create a new coupon for the claiming customer
+      const newCoupon = await storage.createCustomerCoupon({
+        customerId,
+        shopName: originalCoupon.shopName,
+        shopId: originalCoupon.shopId,
+        referralCode: originalCoupon.referralCode + '-' + customerId.substring(0, 4),
+        totalPoints: 0,
+        redeemedPoints: 0,
+      });
+
+      // Mark the shared coupon as claimed
+      await storage.claimSharedCoupon(req.params.id, customerId);
+
+      res.status(200).json({ sharedCoupon, newCoupon });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to claim shared coupon" });
+    }
   });
 
   const httpServer = createServer(app);
