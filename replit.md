@@ -13,6 +13,18 @@ The application consists of:
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**October 1, 2025 - Coupon Sharing Feature**
+- Added comprehensive coupon sharing flow where Customer A can share coupons with Customer B
+- Implemented sharedCoupons database table to track sharing relationships
+- Created JoinSharedCoupon page for shared coupon URL handling with PWA install prompt
+- Built CouponShareSheet component with QR code generation and social media sharing (WhatsApp, Facebook, X, Email, SMS)
+- Updated CustomerPWA to display shared coupons in "My Shop Coupons" section
+- Added Share buttons to all coupon cards for easy viral distribution
+- Enhanced BillUpload component to show discount calculations (discount % and final amount)
+- Complete flow: Customer A shares → Customer B accesses URL → Installs PWA → Creates account → Claims coupon → Makes discounted purchase
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -60,6 +72,7 @@ Preferred communication style: Simple, everyday language.
   - `/api/customers` - Customer management and referral code lookups
   - `/api/transactions` - Transaction submission and approval workflow
   - `/api/stats` - Analytics endpoints for dashboard metrics
+  - `/api/shared-coupons` - Coupon sharing and claiming (NEW)
 - Error handling middleware with status code propagation
 - Request logging middleware for API calls
 
@@ -74,7 +87,7 @@ Preferred communication style: Simple, everyday language.
 
 **Database Schema** (Drizzle ORM with PostgreSQL)
 
-Four main tables with UUID primary keys:
+Five main tables with UUID primary keys:
 
 1. **stores**: Store accounts
    - Credentials (email, password)
@@ -98,6 +111,12 @@ Four main tables with UUID primary keys:
    - Amount and calculated points
    - Status workflow (pending, approved, rejected)
    - Optional bill image URL
+
+5. **sharedCoupons**: Coupon sharing relationships (NEW)
+   - Links sharer customer to share token
+   - Tracks claimed status and claiming customer
+   - Enables viral coupon distribution flow
+   - Used for PWA installation and account creation via shared URLs
 
 **Data Access Pattern**
 - Abstracted through IStorage interface for future database swapping
