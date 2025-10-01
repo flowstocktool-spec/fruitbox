@@ -1,4 +1,4 @@
-import { type Store, type InsertStore, type Campaign, type InsertCampaign, type Customer, type InsertCustomer, type CustomerCoupon, type InsertCustomerCoupon, type Transaction, type InsertTransaction } from "@shared/schema";
+import { type Store, type InsertStore, type Campaign, type InsertCampaign, type Customer, type InsertCustomer, type CustomerCoupon, type InsertCustomerCoupon, type SharedCoupon, type InsertSharedCoupon, type Transaction, type InsertTransaction } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -22,6 +22,12 @@ export interface IStorage {
   createCustomerCoupon(coupon: InsertCustomerCoupon): Promise<CustomerCoupon>;
   updateCustomerCouponPoints(id: string, totalPoints: number, redeemedPoints: number): Promise<CustomerCoupon | undefined>;
   
+  getSharedCoupon(id: string): Promise<SharedCoupon | undefined>;
+  getSharedCouponByToken(token: string): Promise<SharedCoupon | undefined>;
+  getSharedCouponsByCouponId(couponId: string): Promise<SharedCoupon[]>;
+  createSharedCoupon(sharedCoupon: InsertSharedCoupon): Promise<SharedCoupon>;
+  claimSharedCoupon(id: string, claimedByCustomerId: string): Promise<SharedCoupon | undefined>;
+  
   getTransaction(id: string): Promise<Transaction | undefined>;
   getTransactionsByCustomerId(customerId: string): Promise<Transaction[]>;
   getTransactionsByCampaignId(campaignId: string): Promise<Transaction[]>;
@@ -34,6 +40,7 @@ export class MemStorage implements IStorage {
   private campaigns: Map<string, Campaign>;
   private customers: Map<string, Customer>;
   private customerCoupons: Map<string, CustomerCoupon>;
+  private sharedCoupons: Map<string, SharedCoupon>;
   private transactions: Map<string, Transaction>;
 
   constructor() {
@@ -41,6 +48,7 @@ export class MemStorage implements IStorage {
     this.campaigns = new Map();
     this.customers = new Map();
     this.customerCoupons = new Map();
+    this.sharedCoupons = new Map();
     this.transactions = new Map();
   }
 
@@ -163,6 +171,42 @@ export class MemStorage implements IStorage {
     
     const updated = { ...coupon, totalPoints, redeemedPoints };
     this.customerCoupons.set(id, updated);
+    return updated;
+  }
+
+  async getSharedCoupon(id: string): Promise<SharedCoupon | undefined> {
+    return this.sharedCoupons.get(id);
+  }
+
+  async getSharedCouponByToken(token: string): Promise<SharedCoupon | undefined> {
+    return Array.from(this.sharedCoupons.values()).find(sc => sc.shareToken === token);
+  }
+
+  async getSharedCouponsByCouponId(couponId: string): Promise<SharedCoupon[]> {
+    return Array.from(this.sharedCoupons.values()).filter(sc => sc.couponId === couponId);
+  }
+
+  async createSharedCoupon(insertSharedCoupon: InsertSharedCoupon): Promise<SharedCoupon> {
+    const id = randomUUID();
+    const sharedCoupon: SharedCoupon = {
+      id,
+      couponId: insertSharedCoupon.couponId,
+      sharedByCustomerId: insertSharedCoupon.sharedByCustomerId,
+      shareToken: insertSharedCoupon.shareToken,
+      claimedByCustomerId: insertSharedCoupon.claimedByCustomerId ?? null,
+      status: insertSharedCoupon.status ?? "pending",
+      createdAt: new Date(),
+    };
+    this.sharedCoupons.set(id, sharedCoupon);
+    return sharedCoupon;
+  }
+
+  async claimSharedCoupon(id: string, claimedByCustomerId: string): Promise<SharedCoupon | undefined> {
+    const sharedCoupon = this.sharedCoupons.get(id);
+    if (!sharedCoupon) return undefined;
+    
+    const updated = { ...sharedCoupon, claimedByCustomerId, status: "claimed" };
+    this.sharedCoupons.set(id, updated);
     return updated;
   }
 
