@@ -117,3 +117,32 @@ export async function createCustomerCoupon(data: any) {
   if (!res.ok) throw new Error("Failed to create customer coupon");
   return res.json();
 }
+
+export async function createSharedCoupon(data: any) {
+  const res = await fetch("/api/shared-coupons", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create shared coupon");
+  return res.json();
+}
+
+export async function getSharedCouponByToken(token: string) {
+  const res = await fetch(`/api/shared-coupons/token/${token}`);
+  if (!res.ok) throw new Error("Failed to fetch shared coupon");
+  return res.json();
+}
+
+export async function claimSharedCoupon(id: string, customerId: string) {
+  const res = await fetch(`/api/shared-coupons/${id}/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customerId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to claim coupon");
+  }
+  return res.json();
+}

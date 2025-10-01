@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -6,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, UserPlus, ArrowRight } from "lucide-react";
-import { createCustomer, generateReferralCode, getCustomerByCode } from "@/lib/api";
+import { Gift, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { createCustomer, claimSharedCoupon, getSharedCouponByToken } from "@/lib/api";
+import type { CustomerCoupon, SharedCoupon, Customer } from "@shared/schema";
 
 export default function JoinSharedCoupon() {
-  const { code } = useParams<{ code?: string }>();
+  const { token } = useParams<{ token?: string }>();
   const [, setLocation] = useLocation();
   const [registrationData, setRegistrationData] = useState({
     name: "",
@@ -23,34 +23,62 @@ export default function JoinSharedCoupon() {
 
   // Check if user already has an account
   const existingCustomerCode = localStorage.getItem('customerCode');
+  const existingCustomerId = localStorage.getItem('customerId');
   
-  // Get the coupon owner's info
-  const { data: couponOwner, isLoading, isError } = useQuery({
-    queryKey: ['/api/customers/code', code],
-    queryFn: () => getCustomerByCode(code!),
-    enabled: !!code,
+  // Get the shared coupon info
+  const { data: sharedCouponData, isLoading, isError } = useQuery<{
+    sharedCoupon: SharedCoupon;
+    coupon: CustomerCoupon;
+  }>({
+    queryKey: ['/api/shared-coupons/token', token],
+    queryFn: () => getSharedCouponByToken(token!),
+    enabled: !!token,
     retry: false,
   });
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const newCode = await generateReferralCode();
+      // Generate unique referral code
+      const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      };
+      
       return createCustomer({
         ...data,
         campaignId: null,
-        referralCode: newCode,
+        referralCode: generateCode(),
         totalPoints: 0,
         redeemedPoints: 0,
       });
     },
-    onSuccess: (newCustomer) => {
+    onSuccess: async (newCustomer: Customer) => {
       localStorage.setItem('customerCode', newCustomer.referralCode);
-      localStorage.setItem('sharedCouponCode', code!);
-      queryClient.invalidateQueries({ queryKey: ['/api/customers/code'] });
-      toast({
-        title: "Welcome!",
-        description: "Account created! Redirecting to your dashboard...",
-      });
+      localStorage.setItem('customerId', newCustomer.id);
+      
+      // Claim the shared coupon
+      if (sharedCouponData?.sharedCoupon) {
+        try {
+          await claimSharedCoupon(sharedCouponData.sharedCoupon.id, newCustomer.id);
+          
+          queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
+          toast({
+            title: "Success!",
+            description: "Account created and coupon claimed! Redirecting...",
+          });
+        } catch (error) {
+          toast({
+            title: "Account Created",
+            description: "But there was an issue claiming the coupon.",
+            variant: "destructive",
+          });
+        }
+      }
+      
       setTimeout(() => {
         setLocation('/customer');
       }, 1500);
@@ -64,13 +92,40 @@ export default function JoinSharedCoupon() {
     },
   });
 
+  const claimCouponMutation = useMutation({
+    mutationFn: async () => {
+      if (!sharedCouponData?.sharedCoupon || !existingCustomerId) {
+        throw new Error("Missing data");
+      }
+      
+      return claimSharedCoupon(sharedCouponData.sharedCoupon.id, existingCustomerId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
+      toast({
+        title: "Success!",
+        description: "Coupon claimed! Redirecting to your dashboard...",
+      });
+      setTimeout(() => {
+        setLocation('/customer');
+      }, 1500);
+    },
+    onError: (error: any) => {
+      const message = error.message || "Failed to claim coupon";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
-    if (existingCustomerCode) {
-      // User already has account, store the shared coupon and redirect
-      localStorage.setItem('sharedCouponCode', code!);
-      setLocation('/customer');
+    if (existingCustomerCode && existingCustomerId && sharedCouponData?.sharedCoupon) {
+      // User already has account, claim the coupon
+      claimCouponMutation.mutate();
     }
-  }, [existingCustomerCode, code, setLocation]);
+  }, [existingCustomerCode, existingCustomerId, sharedCouponData]);
 
   const handleRegistration = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,19 +140,18 @@ export default function JoinSharedCoupon() {
     createCustomerMutation.mutate(registrationData);
   };
 
-  const handleExistingUser = () => {
-    setLocation('/customer');
-  };
-
-  if (isLoading) {
+  if (isLoading || claimCouponMutation.isPending) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center" data-testid="loading-container">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading shared coupon...</p>
+        </div>
       </div>
     );
   }
 
-  if (isError || !couponOwner) {
+  if (isError || !sharedCouponData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -114,6 +168,36 @@ export default function JoinSharedCoupon() {
             <Button 
               onClick={() => setLocation('/')} 
               className="w-full"
+              data-testid="button-go-home"
+            >
+              Go Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { sharedCoupon, coupon } = sharedCouponData;
+
+  if (sharedCoupon.status === "claimed") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <Gift className="h-6 w-6 text-amber-500" />
+            </div>
+            <CardTitle>Already Claimed</CardTitle>
+            <CardDescription>
+              This coupon has already been claimed and is no longer available.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setLocation('/')} 
+              className="w-full"
+              data-testid="button-go-home-claimed"
             >
               Go Home
             </Button>
@@ -130,35 +214,26 @@ export default function JoinSharedCoupon() {
           <div className="w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
             <Gift className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="font-heading text-2xl">You're Invited!</CardTitle>
+          <CardTitle className="font-heading text-2xl" data-testid="text-title">You're Invited!</CardTitle>
           <CardDescription className="text-base">
-            <strong>{couponOwner.name}</strong> shared their referral coupon with you.
-            Join now to start earning rewards!
+            Someone shared a coupon from <strong>{coupon.shopName}</strong> with you.
+            Create an account to claim it and start shopping at a discounted price!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center p-4 bg-primary/10 rounded-lg">
-            <p className="text-sm font-medium text-primary mb-1">Referral Code</p>
-            <p className="text-xl font-bold font-mono">{code}</p>
+            <p className="text-sm font-medium text-primary mb-1">Shop</p>
+            <p className="text-xl font-bold" data-testid="text-shop-name">{coupon.shopName}</p>
           </div>
 
           <div className="space-y-4">
-            <Button 
-              onClick={handleExistingUser}
-              variant="outline" 
-              className="w-full"
-            >
-              I Already Have an Account
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or create new account
+                  Create your account
                 </span>
               </div>
             </div>
@@ -172,6 +247,7 @@ export default function JoinSharedCoupon() {
                   onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
                   placeholder="Enter your full name"
                   required
+                  data-testid="input-name"
                 />
               </div>
               <div>
@@ -183,6 +259,7 @@ export default function JoinSharedCoupon() {
                   onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
                   placeholder="Enter your phone number"
                   required
+                  data-testid="input-phone"
                 />
               </div>
               <div>
@@ -193,14 +270,16 @@ export default function JoinSharedCoupon() {
                   value={registrationData.email}
                   onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
                   placeholder="Enter your email"
+                  data-testid="input-email"
                 />
               </div>
               <Button 
                 type="submit" 
                 className="w-full" 
                 disabled={createCustomerMutation.isPending}
+                data-testid="button-submit"
               >
-                {createCustomerMutation.isPending ? "Creating Account..." : "Join & Start Earning"}
+                {createCustomerMutation.isPending ? "Creating Account..." : "Claim Coupon & Start Shopping"}
                 <UserPlus className="h-4 w-4 ml-2" />
               </Button>
             </form>

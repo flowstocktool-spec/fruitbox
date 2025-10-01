@@ -155,7 +155,7 @@ export class MemStorage implements IStorage {
       id,
       customerId: insertCoupon.customerId,
       shopName: insertCoupon.shopName,
-      shopId: insertCoupon.shopId ?? null,
+      shopId: insertCoupon.shopId !== undefined ? insertCoupon.shopId : null,
       referralCode: insertCoupon.referralCode,
       totalPoints: insertCoupon.totalPoints ?? 0,
       redeemedPoints: insertCoupon.redeemedPoints ?? 0,
@@ -223,12 +223,13 @@ export class MemStorage implements IStorage {
     const transaction: Transaction = {
       id,
       customerId: insertTransaction.customerId,
-      campaignId: insertTransaction.campaignId,
+      campaignId: insertTransaction.campaignId !== undefined ? insertTransaction.campaignId : null,
+      couponId: insertTransaction.couponId !== undefined ? insertTransaction.couponId : null,
       type: insertTransaction.type,
       amount: insertTransaction.amount,
       points: insertTransaction.points,
       status: insertTransaction.status ?? "pending",
-      billImageUrl: insertTransaction.billImageUrl ?? null,
+      billImageUrl: insertTransaction.billImageUrl !== undefined ? insertTransaction.billImageUrl : null,
       createdAt: new Date(),
     };
     this.transactions.set(id, transaction);
