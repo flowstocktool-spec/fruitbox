@@ -24,11 +24,13 @@ interface BillUploadProps {
   couponId: string | null;
   pointsPerDollar: number;
   minPurchaseAmount: number;
+  discountPercentage?: number;
   referralCode?: string;
   shopName?: string;
+  onSuccess?: () => void;
 }
 
-export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseAmount, referralCode, shopName }: BillUploadProps) {
+export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
@@ -184,10 +186,20 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
               </div>
             </div>
 
-            <div className="bg-muted p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="text-sm text-muted-foreground">
                 <strong>Points to earn:</strong> {Math.floor((form.watch('amount') || 0) * pointsPerDollar)} points
               </p>
+              {discountPercentage > 0 && form.watch('amount') > 0 && (
+                <p className="text-sm font-medium text-green-600">
+                  <strong>Discount ({discountPercentage}%):</strong> ${((form.watch('amount') || 0) * discountPercentage / 100).toFixed(2)}
+                </p>
+              )}
+              {discountPercentage > 0 && form.watch('amount') > 0 && (
+                <p className="text-sm font-semibold text-primary">
+                  <strong>Final Amount:</strong> ${((form.watch('amount') || 0) * (1 - discountPercentage / 100)).toFixed(2)}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
                 <strong>Minimum purchase:</strong> ${minPurchaseAmount}
               </p>
