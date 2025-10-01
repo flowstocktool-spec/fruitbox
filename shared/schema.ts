@@ -47,6 +47,16 @@ export const customerCoupons = pgTable("customer_coupons", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const sharedCoupons = pgTable("shared_coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  couponId: varchar("coupon_id").notNull().references(() => customerCoupons.id),
+  sharedByCustomerId: varchar("shared_by_customer_id").notNull().references(() => customers.id),
+  shareToken: text("share_token").notNull().unique(),
+  claimedByCustomerId: varchar("claimed_by_customer_id").references(() => customers.id),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
@@ -64,6 +74,7 @@ export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertCustomerCouponSchema = createInsertSchema(customerCoupons).omit({ id: true, createdAt: true });
+export const insertSharedCouponSchema = createInsertSchema(sharedCoupons).omit({ id: true, createdAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true }).extend({
   amount: z.coerce.number(),
   points: z.coerce.number(),
@@ -77,5 +88,7 @@ export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomerCoupon = z.infer<typeof insertCustomerCouponSchema>;
 export type CustomerCoupon = typeof customerCoupons.$inferSelect;
+export type InsertSharedCoupon = z.infer<typeof insertSharedCouponSchema>;
+export type SharedCoupon = typeof sharedCoupons.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
