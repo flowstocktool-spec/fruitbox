@@ -52,6 +52,7 @@ export default function JoinSharedCoupon() {
   });
 
   console.log("Query state:", { isLoading, isError, error, hasData: !!sharedCouponData });
+  console.log("Shared coupon data:", sharedCouponData);
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -207,6 +208,7 @@ export default function JoinSharedCoupon() {
   }
 
   if (isError || (!isLoading && !sharedCouponData)) {
+    console.log("Rendering error state");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -233,7 +235,13 @@ export default function JoinSharedCoupon() {
     );
   }
 
+  if (!sharedCouponData) {
+    console.log("No shared coupon data yet, but not loading or error");
+    return null;
+  }
+
   const { sharedCoupon, coupon } = sharedCouponData;
+  console.log("Rendering main content with:", { sharedCoupon, coupon });
 
   if (sharedCoupon.status === "claimed") {
     return (
