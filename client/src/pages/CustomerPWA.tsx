@@ -60,7 +60,7 @@ export default function CustomerPWA() {
   // Customer coupons query
   const { data: coupons = [], refetch: refetchCoupons } = useQuery({
     queryKey: ['/api/customer-coupons', customer?.id],
-    queryFn: () => getCustomerCoupons(customer!.id),
+    queryFn: () => getCustomerCoupons(customer?.id ?? ''),
     enabled: !!customer,
   });
 
@@ -91,7 +91,7 @@ export default function CustomerPWA() {
   // Transactions for selected coupon
   const { data: transactions = [] } = useQuery({
     queryKey: ['/api/transactions', customer?.id, selectedCoupon?.id],
-    queryFn: () => getTransactions(customer!.id, selectedCoupon?.id),
+    queryFn: () => getTransactions(customer?.id ?? '', selectedCoupon?.id),
     enabled: !!customer && !!selectedCoupon,
   });
 
@@ -201,7 +201,7 @@ export default function CustomerPWA() {
       return;
     }
     createCouponMutation.mutate({
-      customerId: customer!.id,
+      customerId: customer?.id ?? '',
       shopName: couponData.shopName,
       shopId: couponData.shopId || null,
     });
@@ -271,6 +271,15 @@ export default function CustomerPWA() {
             </form>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Safety check - should not reach here without customer
+  if (!customer) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Please create an account to continue.</p>
       </div>
     );
   }
@@ -482,7 +491,7 @@ export default function CustomerPWA() {
               </div>
 
               <BillUpload
-                customerId={customer!.id}
+                customerId={customer.id}
                 couponId={null}
                 pointsPerDollar={1}
                 minPurchaseAmount={0}
@@ -507,10 +516,10 @@ export default function CustomerPWA() {
                         discountPercentage: 10,
                       }}
                       customer={{ 
-                        id: customer!.id,
-                        name: customer!.name,
-                        phone: customer!.phone,
-                        email: customer!.email,
+                        id: customer.id,
+                        name: customer.name,
+                        phone: customer.phone,
+                        email: customer.email,
                         referralCode: coupon.referralCode,
                         totalPoints: coupon.totalPoints,
                         redeemedPoints: coupon.redeemedPoints
