@@ -13,11 +13,14 @@ import type { CustomerCoupon, SharedCoupon, Customer } from "@shared/schema";
 
 export default function JoinSharedCoupon() {
   const params = useParams<{ token: string }>();
-  const token = params.token;
+  // Extract token directly from URL as fallback
+  const pathToken = window.location.pathname.split('/shared-coupon/')[1];
+  const token = params.token || pathToken;
   const [, setLocation] = useLocation();
   
   console.log("URL params:", params);
-  console.log("Token from URL:", token);
+  console.log("Path token:", pathToken);
+  console.log("Final token:", token);
   console.log("Current location:", window.location.pathname);
   
   const [registrationData, setRegistrationData] = useState({
