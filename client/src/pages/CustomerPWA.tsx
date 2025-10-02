@@ -467,91 +467,29 @@ export default function CustomerPWA() {
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            {coupons.length === 0 && sharedCoupons.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">No coupons available</p>
-                  <Button onClick={() => setShowCouponCreation(true)}>
-                    Create Your First Coupon
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Select a coupon to upload bill:</h3>
-                  
-                  {/* My Coupons */}
-                  {coupons.length > 0 && (
-                    <div className="space-y-2 mb-4">
-                      <h4 className="text-sm font-medium text-muted-foreground">My Coupons</h4>
-                      {coupons.map((coupon) => (
-                        <Card 
-                          key={coupon.id} 
-                          className={`cursor-pointer transition-all ${
-                            selectedCoupon?.id === coupon.id && !selectedCoupon?.isShared
-                              ? 'ring-2 ring-primary bg-primary/5' 
-                              : 'hover:bg-muted/50'
-                          }`}
-                          onClick={() => setSelectedCoupon({ ...coupon, isShared: false })}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold">{coupon.shopName}</h4>
-                              <span className="text-sm text-muted-foreground">
-                                {coupon.totalPoints - coupon.redeemedPoints} points available
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Shared Coupons */}
-                  {sharedCoupons.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Shared with Me</h4>
-                      {sharedCoupons.map((coupon) => (
-                        <Card 
-                          key={`shared-${coupon.id}`} 
-                          className={`cursor-pointer transition-all border-blue-200 ${
-                            selectedCoupon?.id === coupon.id && selectedCoupon?.isShared
-                              ? 'ring-2 ring-blue-500 bg-blue-50' 
-                              : 'hover:bg-blue-50/50'
-                          }`}
-                          onClick={() => setSelectedCoupon({ ...coupon, isShared: true })}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h4 className="font-semibold">{coupon.shopName}</h4>
-                                <p className="text-xs text-muted-foreground">Shared by {coupon.ownerName}</p>
-                              </div>
-                              <span className="text-sm text-blue-600">
-                                Use code: {coupon.originalReferralCode}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                {selectedCoupon && (
-                  <BillUpload
-                    customerId={customer!.id}
-                    couponId={selectedCoupon.isShared ? null : selectedCoupon.id}
-                    pointsPerDollar={1}
-                    minPurchaseAmount={0}
-                    referralCode={selectedCoupon.isShared ? selectedCoupon.originalReferralCode : undefined}
-                    shopName={selectedCoupon.shopName}
-                  />
-                )}
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">How to Upload a Bill</h3>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Take a photo or select your purchase bill</li>
+                  <li>Enter the purchase amount</li>
+                  <li>(Optional) Enter an affiliate's coupon code to give them credit</li>
+                  <li>Submit for approval</li>
+                </ol>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 If someone referred you, use their code to help them earn points!
+                </p>
               </div>
-            )}
+
+              <BillUpload
+                customerId={customer!.id}
+                couponId={null}
+                pointsPerDollar={1}
+                minPurchaseAmount={0}
+                discountPercentage={10}
+                shopName={shopName}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="share" className="space-y-4">

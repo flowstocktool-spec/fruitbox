@@ -33,6 +33,9 @@ interface BillUploadProps {
 export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [affiliateCode, setAffiliateCode] = useState(referralCode || "");
+  const [affiliateDetails, setAffiliateDetails] = useState<any>(null);
+  const [loadingAffiliate, setLoadingAffiliate] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<BillUploadData>({
@@ -67,6 +70,42 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
     },
   });
 
+  const fetchAffiliateDetails = async (code: string) => {
+    if (!code.trim()) {
+      setAffiliateDetails(null);
+      return;
+    }
+    
+    setLoadingAffiliate(true);
+    try {
+      const response = await fetch(`/api/customers/code/${code}`);
+      if (response.ok) {
+        const customer = await response.json();
+        setAffiliateDetails(customer);
+        toast({
+          title: "Affiliate Found!",
+          description: `You'll be using ${customer.name}'s referral code.`,
+        });
+      } else {
+        setAffiliateDetails(null);
+        toast({
+          title: "Invalid Code",
+          description: "The coupon code you entered is not valid.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setAffiliateDetails(null);
+      toast({
+        title: "Error",
+        description: "Failed to verify coupon code.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingAffiliate(false);
+    }
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -93,7 +132,7 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       points: Math.floor(data.amount * pointsPerDollar),
       status: 'pending',
       type: 'purchase',
-      referralCode: referralCode,
+      referralCode: affiliateCode || referralCode,
       shopName: shopName,
     });
   };
@@ -107,6 +146,40 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {!referralCode && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Affiliate Coupon Code (Optional)</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={affiliateCode}
+                    onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                    data-testid="input-affiliate-code"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fetchAffiliateDetails(affiliateCode)}
+                    disabled={loadingAffiliate || !affiliateCode.trim()}
+                    data-testid="button-verify-code"
+                  >
+                    {loadingAffiliate ? "Verifying..." : "Verify"}
+                  </Button>
+                </div>
+                {affiliateDetails && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                    <p className="text-sm text-green-800">
+                      ✓ Using <strong>{affiliateDetails.name}</strong>'s referral code
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      They will earn points when your purchase is approved!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <FormField
               control={form.control}
               name="amount"

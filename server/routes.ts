@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertSharedCouponSchema, insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
@@ -93,38 +93,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const customerId = req.query.customerId as string;
       const campaignId = req.query.campaignId as string;
-      
+
       if (customerId) {
         const transactions = await storage.getTransactionsByCustomerId(customerId);
         return res.json(transactions);
       }
-      
+
       if (campaignId) {
         const transactions = await storage.getTransactionsByCampaignId(campaignId);
         return res.json(transactions);
       }
-      
+
       res.status(400).json({ error: "customerId or campaignId is required" });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch transactions" });
     }
   });
 
-  app.post("/api/transactions", upload.single('billImage'), async (req, res) => {
+  // Create transaction
+  app.post("/api/transactions", upload.single("billImage"), async (req, res) => {
     try {
       const data = insertTransactionSchema.parse(req.body);
-      
-      // Convert bill image to base64 if uploaded
-      let billImageUrl = data.billImageUrl;
+
+      let billImageUrl = null;
       if (req.file) {
+        // Assuming saveFile is a function that saves the file and returns a URL or identifier
+        // If storage is in memory, this might be different. For now, assuming it stores and returns a path/URL.
+        // For simplicity and matching the original `storage` usage, let's assume `storage.saveFile` exists or we adapt.
+        // The original code used `multer.memoryStorage()` and `req.file.buffer.toString('base64')`.
+        // Let's stick to that pattern if `saveFile` isn't defined elsewhere.
         billImageUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       }
-      
+
       const transaction = await storage.createTransaction({
         ...data,
         billImageUrl,
       });
-      
+
       res.status(201).json(transaction);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -134,45 +139,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update transaction status
   app.patch("/api/transactions/:id", async (req, res) => {
     try {
+      const { id } = req.params;
       const { status } = req.body;
-      if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
-      }
-      
-      const existingTransaction = await storage.getTransaction(req.params.id);
+
+      // Fetch existing transaction to check current status and referral code
+      const existingTransaction = await storage.getTransaction(id);
       if (!existingTransaction) {
         return res.status(404).json({ error: "Transaction not found" });
       }
-      
+
       // Prevent re-approval or invalid transitions (idempotency check)
       if (existingTransaction.status === status) {
         return res.json(existingTransaction); // Already in this state, return as-is
       }
-      
       if (existingTransaction.status === 'approved' && status === 'approved') {
         return res.status(409).json({ error: "Transaction already approved" });
       }
-      
-      const transaction = await storage.updateTransactionStatus(req.params.id, status);
+
+
+      const transaction = await storage.updateTransactionStatus(id, status);
       if (!transaction) {
         return res.status(404).json({ error: "Transaction not found" });
       }
-      
-      // Only award points on transition to approved (not if already approved)
-      if (status === 'approved' && existingTransaction.status !== 'approved') {
+
+      // If approved, award points
+      if (status === "approved" && existingTransaction.status !== 'approved') {
+        // Award points to the purchasing customer
         const customer = await storage.getCustomer(transaction.customerId);
+
         if (customer) {
           await storage.updateCustomerPoints(
             customer.id,
             customer.totalPoints + transaction.points
           );
         }
+
+        // If referral code was used, award points to the affiliate
+        if (transaction.referralCode) {
+          const affiliate = await storage.getCustomerByReferralCode(transaction.referralCode);
+
+          if (affiliate) {
+            // Award affiliate points (e.g., 10% of transaction points)
+            const affiliatePoints = Math.floor(transaction.points * 0.1);
+
+            await storage.updateCustomerPoints(
+              affiliate.id,
+              affiliate.totalPoints + affiliatePoints
+            );
+
+            // Create a transaction record for the affiliate earning
+            await storage.createTransaction({
+              customerId: affiliate.id,
+              campaignId: transaction.campaignId,
+              couponId: transaction.couponId,
+              type: 'referral_bonus',
+              amount: transaction.amount, // Or perhaps a different amount based on shop rules
+              points: affiliatePoints,
+              status: 'approved',
+              shopName: transaction.shopName, // Assuming shopName is available on transaction
+              referralCode: null, // No referral code for the bonus transaction itself
+              billImageUrl: null, // No bill image for bonus
+            });
+          }
+        }
       }
-      
+
       res.json(transaction);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
       res.status(500).json({ error: "Failed to update transaction" });
     }
   });
@@ -182,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const transactions = await storage.getTransactionsByCampaignId(req.params.campaignId);
       const customers = await storage.getCustomersByCampaignId(req.params.campaignId);
-      
+
       const totalCustomers = customers.length;
       const totalRevenue = transactions
         .filter(t => t.status === 'approved')
@@ -191,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(t => t.status === 'approved')
         .reduce((sum, t) => sum + t.points, 0);
       const pendingApprovals = transactions.filter(t => t.status === 'pending').length;
-      
+
       res.json({
         totalCustomers,
         totalRevenue,
@@ -234,10 +273,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return code;
       };
-      
+
       let referralCode = generateCode();
       let exists = await storage.getCustomerCouponByCode(referralCode);
-      
+
       while (exists) {
         referralCode = generateCode();
         exists = await storage.getCustomerCouponByCode(referralCode);
@@ -247,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         referralCode,
       });
-      
+
       const coupon = await storage.createCustomerCoupon(data);
       res.status(201).json(coupon);
     } catch (error) {
@@ -268,15 +307,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       return code;
     };
-    
+
     let code = generateCode();
     let exists = await storage.getCustomerByReferralCode(code);
-    
+
     while (exists) {
       code = generateCode();
       exists = await storage.getCustomerByReferralCode(code);
     }
-    
+
     res.json({ code });
   });
 
@@ -292,10 +331,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return token;
       };
-      
+
       let shareToken = generateToken();
       let exists = await storage.getSharedCouponByToken(shareToken);
-      
+
       while (exists) {
         shareToken = generateToken();
         exists = await storage.getSharedCouponByToken(shareToken);
@@ -306,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shareToken,
         status: "pending",
       });
-      
+
       const sharedCoupon = await storage.createSharedCoupon(data);
       res.status(201).json(sharedCoupon);
     } catch (error) {
@@ -323,17 +362,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!sharedCoupon) {
         return res.status(404).json({ error: "Shared coupon not found" });
       }
-      
+
       // Get the original coupon details
       const coupon = await storage.getCustomerCouponByCode(
         (await storage.getCustomerCoupons(sharedCoupon.sharedByCustomerId))
           .find(c => c.id === sharedCoupon.couponId)?.referralCode || ""
       );
-      
+
       if (!coupon) {
         return res.status(404).json({ error: "Original coupon not found" });
       }
-      
+
       res.json({ sharedCoupon, coupon });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch shared coupon" });

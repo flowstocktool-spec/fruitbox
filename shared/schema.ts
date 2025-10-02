@@ -67,6 +67,8 @@ export const transactions = pgTable("transactions", {
   points: integer("points").notNull(),
   status: text("status").notNull().default("pending"),
   billImageUrl: text("bill_image_url"),
+  referralCode: text("referral_code"),
+  shopName: text("shop_name"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
