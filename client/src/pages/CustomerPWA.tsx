@@ -487,7 +487,6 @@ export default function CustomerPWA() {
                 pointsPerDollar={1}
                 minPurchaseAmount={0}
                 discountPercentage={10}
-                shopName={shopName}
               />
             </div>
           </TabsContent>
