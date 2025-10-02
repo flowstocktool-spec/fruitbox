@@ -12,10 +12,14 @@ import { createCustomer, claimSharedCoupon, getSharedCouponByToken } from "@/lib
 import type { CustomerCoupon, SharedCoupon, Customer } from "@shared/schema";
 
 export default function JoinSharedCoupon() {
-  const { token } = useParams<{ token: string }>();
+  const params = useParams<{ token: string }>();
+  const token = params.token;
   const [, setLocation] = useLocation();
   
+  console.log("URL params:", params);
   console.log("Token from URL:", token);
+  console.log("Current location:", window.location.pathname);
+  
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
@@ -28,15 +32,23 @@ export default function JoinSharedCoupon() {
   const existingCustomerId = localStorage.getItem('customerId');
   
   // Get the shared coupon info
-  const { data: sharedCouponData, isLoading, isError } = useQuery<{
+  const { data: sharedCouponData, isLoading, isError, error } = useQuery<{
     sharedCoupon: SharedCoupon;
     coupon: CustomerCoupon;
   }>({
     queryKey: ['/api/shared-coupons/token', token],
-    queryFn: () => getSharedCouponByToken(token!),
+    queryFn: () => {
+      console.log("Fetching shared coupon with token:", token);
+      if (!token) {
+        throw new Error("No token provided");
+      }
+      return getSharedCouponByToken(token);
+    },
     enabled: !!token,
     retry: false,
   });
+
+  console.log("Query state:", { isLoading, isError, error, hasData: !!sharedCouponData });
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -164,7 +176,34 @@ export default function JoinSharedCoupon() {
     );
   }
 
-  if (isError || !sharedCouponData) {
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-12 h-12 rounded-lg bg-destructive/20 flex items-center justify-center mx-auto mb-4">
+              <Gift className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>Invalid Link</CardTitle>
+            <CardDescription>
+              This link is missing the coupon token. Please check the URL.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setLocation('/')} 
+              className="w-full"
+              data-testid="button-go-home"
+            >
+              Go Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isError || (!isLoading && !sharedCouponData)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -174,7 +213,7 @@ export default function JoinSharedCoupon() {
             </div>
             <CardTitle>Coupon Not Found</CardTitle>
             <CardDescription>
-              This coupon link is no longer active or doesn't exist.
+              {error instanceof Error ? error.message : "This coupon link is no longer active or doesn't exist."}
             </CardDescription>
           </CardHeader>
           <CardContent>
