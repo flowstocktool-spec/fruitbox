@@ -19,7 +19,7 @@ function Router() {
       <Route path="/customer/:code?" component={CustomerPWA} />
       <Route path="/join/:campaignId" component={JoinCampaign} />
       <Route path="/shared-coupon/:token" component={JoinSharedCoupon} />
-      <Route component={NotFound} />
+      <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
 }

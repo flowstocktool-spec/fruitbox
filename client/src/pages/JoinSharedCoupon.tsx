@@ -12,7 +12,7 @@ import { createCustomer, claimSharedCoupon, getSharedCouponByToken } from "@/lib
 import type { CustomerCoupon, SharedCoupon, Customer } from "@shared/schema";
 
 export default function JoinSharedCoupon() {
-  const { token } = useParams<{ token?: string }>();
+  const { token } = useParams<{ token: string }>();
   const [, setLocation] = useLocation();
   const [registrationData, setRegistrationData] = useState({
     name: "",
