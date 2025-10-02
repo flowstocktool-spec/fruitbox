@@ -14,6 +14,8 @@ import type { CustomerCoupon, SharedCoupon, Customer } from "@shared/schema";
 export default function JoinSharedCoupon() {
   const { token } = useParams<{ token: string }>();
   const [, setLocation] = useLocation();
+  
+  console.log("Token from URL:", token);
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
@@ -121,11 +123,11 @@ export default function JoinSharedCoupon() {
   });
 
   useEffect(() => {
-    if (existingCustomerCode && existingCustomerId && sharedCouponData?.sharedCoupon) {
+    if (existingCustomerCode && existingCustomerId && sharedCouponData?.sharedCoupon && !claimCouponMutation.isPending && !claimCouponMutation.isSuccess) {
       // User already has account, claim the coupon
       claimCouponMutation.mutate();
     }
-  }, [existingCustomerCode, existingCustomerId, sharedCouponData]);
+  }, [existingCustomerCode, existingCustomerId, sharedCouponData?.sharedCoupon]);
 
   const handleRegistration = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,12 +142,23 @@ export default function JoinSharedCoupon() {
     createCustomerMutation.mutate(registrationData);
   };
 
-  if (isLoading || claimCouponMutation.isPending) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" data-testid="loading-container">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Loading shared coupon...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (claimCouponMutation.isPending) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" data-testid="loading-container">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Claiming your coupon...</p>
         </div>
       </div>
     );
