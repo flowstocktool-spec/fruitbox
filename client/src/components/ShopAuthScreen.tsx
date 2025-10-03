@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Store } from "lucide-react";
 import { loginShopOwner, registerShopOwner } from "@/lib/api";
@@ -26,6 +27,7 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
     category: "",
     address: "",
     phone: "",
+    currencySymbol: "$",
     pointsPerDollar: 1,
     discountPercentage: 10,
   });
@@ -233,9 +235,33 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
                   />
                 </div>
 
+                <div>
+                  <Label htmlFor="currencySymbol">Currency Symbol</Label>
+                  <Select
+                    value={registerData.currencySymbol}
+                    onValueChange={(value) => setRegisterData({ ...registerData, currencySymbol: value })}
+                  >
+                    <SelectTrigger id="currencySymbol">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="$">$ - US Dollar</SelectItem>
+                      <SelectItem value="₹">₹ - Indian Rupee</SelectItem>
+                      <SelectItem value="€">€ - Euro</SelectItem>
+                      <SelectItem value="£">£ - British Pound</SelectItem>
+                      <SelectItem value="¥">¥ - Japanese Yen</SelectItem>
+                      <SelectItem value="₩">₩ - Korean Won</SelectItem>
+                      <SelectItem value="₦">₦ - Nigerian Naira</SelectItem>
+                      <SelectItem value="R">R - South African Rand</SelectItem>
+                      <SelectItem value="A$">A$ - Australian Dollar</SelectItem>
+                      <SelectItem value="C$">C$ - Canadian Dollar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="pointsPerDollar">Points per ₹1</Label>
+                    <Label htmlFor="pointsPerDollar">Points per {registerData.currencySymbol}1</Label>
                     <Input
                       id="pointsPerDollar"
                       type="number"

@@ -128,7 +128,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                       </Button>
                     </div>
                     <p className="text-xs text-green-700 dark:text-green-300">
-                      💰 Share this code to earn {shop.pointsPerDollar} points per ₹1 spent by referrals
+                      💰 Share this code to earn {shop.pointsPerDollar} points per {shop.currencySymbol || '$'}1 spent by referrals
                     </p>
                   </div>
                 )}
@@ -137,7 +137,7 @@ export function MyShops({ customerId }: MyShopsProps) {
           <CardContent className="space-y-3">
             <div className="flex gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground">Points/₹</p>
+                <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
                 <p className="font-bold text-green-600" data-testid={`shop-points-${shop.id}`}>{shop.pointsPerDollar}</p>
               </div>
               <div>
@@ -184,7 +184,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-1">
                           <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <p className="text-xs text-muted-foreground">Points/₹</p>
+                          <p className="text-xs text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
                         </div>
                         <p className="text-2xl font-bold text-green-600 dark:text-green-400">{shop.pointsPerDollar}</p>
                       </CardContent>

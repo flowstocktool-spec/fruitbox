@@ -169,7 +169,7 @@ function ShopCard({
         <div className="flex items-center justify-between">
           <div className="flex gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Points/₹</p>
+              <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
               <p className="font-bold text-green-600">{shop.pointsPerDollar}</p>
             </div>
             <div>
@@ -230,12 +230,12 @@ function ShopCard({
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
                       <div>
-                        <p className="text-muted-foreground">Points/₹</p>
+                        <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
                         <p className="font-bold text-green-600">{campaign.pointsPerDollar}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Min Purchase</p>
-                        <p className="font-bold">₹{campaign.minPurchaseAmount}</p>
+                        <p className="font-bold">{shop.currencySymbol || '$'}{campaign.minPurchaseAmount}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Discount</p>

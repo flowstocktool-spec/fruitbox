@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createShopProfile, updateShopProfile } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 interface ShopSettingsProps {
   shopProfile?: any;
   onSuccess?: () => void;
+  onUpdate?: (profile: any) => void;
 }
 
-export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
+export function ShopSettings({ shopProfile, onSuccess, onUpdate }: ShopSettingsProps) {
   const isEdit = !!shopProfile;
   const { toast } = useToast();
   
@@ -28,6 +30,7 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
     phone: shopProfile?.phone || "",
     pointsPerDollar: shopProfile?.pointsPerDollar || 1,
     discountPercentage: shopProfile?.discountPercentage || 10,
+    currencySymbol: shopProfile?.currencySymbol || "$",
   });
 
   const mutation = useMutation({
@@ -37,12 +40,15 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
       }
       return createShopProfile(data);
     },
-    onSuccess: () => {
+    onSuccess: (updatedProfile) => {
       queryClient.invalidateQueries({ queryKey: ['/api/shop-profiles'] });
       toast({
         title: "Success!",
         description: isEdit ? "Shop settings updated" : "Shop profile created",
       });
+      if (updatedProfile && onUpdate) {
+        onUpdate(updatedProfile);
+      }
       onSuccess?.();
     },
     onError: () => {
@@ -133,18 +139,45 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
           <CardDescription>Configure how customers earn points</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="pointsPerDollar">Points per ₹1</Label>
+              <Label htmlFor="currencySymbol">Currency Symbol</Label>
+              <Select
+                value={formData.currencySymbol}
+                onValueChange={(value) => setFormData({ ...formData, currencySymbol: value })}
+              >
+                <SelectTrigger id="currencySymbol" data-testid="select-currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="$">$ - US Dollar</SelectItem>
+                  <SelectItem value="₹">₹ - Indian Rupee</SelectItem>
+                  <SelectItem value="€">€ - Euro</SelectItem>
+                  <SelectItem value="£">£ - British Pound</SelectItem>
+                  <SelectItem value="¥">¥ - Japanese Yen</SelectItem>
+                  <SelectItem value="₩">₩ - Korean Won</SelectItem>
+                  <SelectItem value="₦">₦ - Nigerian Naira</SelectItem>
+                  <SelectItem value="R">R - South African Rand</SelectItem>
+                  <SelectItem value="A$">A$ - Australian Dollar</SelectItem>
+                  <SelectItem value="C$">C$ - Canadian Dollar</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Currency displayed across the app
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="pointsPerDollar">Points per {formData.currencySymbol}1</Label>
               <Input
                 id="pointsPerDollar"
                 type="number"
                 min="1"
                 value={formData.pointsPerDollar}
                 onChange={(e) => setFormData({ ...formData, pointsPerDollar: parseInt(e.target.value) })}
+                data-testid="input-points-per-dollar"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Points customers earn for every ₹1 spent
+                Points customers earn for every {formData.currencySymbol}1 spent
               </p>
             </div>
             <div>
@@ -156,6 +189,7 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
                 max="100"
                 value={formData.discountPercentage}
                 onChange={(e) => setFormData({ ...formData, discountPercentage: parseInt(e.target.value) })}
+                data-testid="input-discount-percentage"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Discount customers get when using referral codes
