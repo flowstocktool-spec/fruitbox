@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampaignBuilder } from "@/components/CampaignBuilder";
 import { CampaignCard } from "@/components/CampaignCard";
 import { BillApprovalCard } from "@/components/BillApprovalCard";
 import { StatsCard } from "@/components/StatsCard";
 import { ShopSettings } from "@/components/ShopSettings";
+import { ShopAuthScreen } from "@/components/ShopAuthScreen";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import { Store, LogOut, Settings, TrendingUp, Users, DollarSign } from "lucide-react";
@@ -17,13 +16,11 @@ import {
   getCampaigns,
   getTransactions,
   getShopProfile,
-  loginShopOwner,
 } from "@/lib/api";
 
 export default function StoreDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shopProfile, setShopProfile] = useState<any>(null);
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -42,46 +39,10 @@ export default function StoreDashboard() {
     }
   }, []);
 
-  const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      return loginShopOwner(username, password);
-    },
-    onSuccess: (data) => {
-      setShopProfile(data);
-      setIsAuthenticated(true);
-      localStorage.setItem("shopOwnerId", data.id);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.shopName}!`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginData.username || !loginData.password) {
-      toast({
-        title: "Error",
-        description: "Please enter username and password",
-        variant: "destructive",
-      });
-      return;
-    }
-    loginMutation.mutate(loginData);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("shopOwnerId");
     setShopProfile(null);
     setIsAuthenticated(false);
-    setLoginData({ username: "", password: "" });
     queryClient.clear();
     toast({
       title: "Logged out",
@@ -109,53 +70,15 @@ export default function StoreDashboard() {
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <Store className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="font-heading text-center">Shop Owner Login</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to manage your referral campaigns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={loginData.username}
-                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                  placeholder="Enter your username"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? "Logging in..." : "Login"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ShopAuthScreen onSuccess={(profile) => {
+      setShopProfile(profile);
+      setIsAuthenticated(true);
+      localStorage.setItem("shopOwnerId", profile.id);
+      toast({
+        title: "Success",
+        description: `Welcome, ${profile.shopName}!`,
+      });
+    }} />;
   }
 
   // Main dashboard after authentication

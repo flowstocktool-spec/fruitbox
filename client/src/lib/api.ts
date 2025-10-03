@@ -197,6 +197,32 @@ export async function updateShopProfile(id: string, data: any) {
   return res.json();
 }
 
+export async function registerShopOwner(data: any) {
+  const res = await fetch("/api/shops/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to register shop");
+  }
+  return res.json();
+}
+
+export async function loginShopOwner(username: string, password: string) {
+  const res = await fetch("/api/shops/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Login failed");
+  }
+  return res.json();
+}
+
 export async function getShopCustomers(shopProfileId: string) {
   const response = await fetch(`/api/shop-profiles/${shopProfileId}/customers`);
   if (!response.ok) {

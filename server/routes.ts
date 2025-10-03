@@ -100,6 +100,39 @@ export function registerRoutes(app: Express): Server {
 
   // ========== SHOP OWNER AUTHENTICATION ==========
   
+  // Shop Owner Registration
+  app.post("/api/shops/register", async (req, res) => {
+    try {
+      const validatedData = insertShopProfileSchema.parse(req.body);
+      
+      // Check if username already exists
+      const [existingByUsername] = await db.select()
+        .from(shopProfiles)
+        .where(eq(shopProfiles.username, validatedData.username))
+        .limit(1);
+      
+      if (existingByUsername) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      
+      // Check if shop code already exists
+      const [existingByCode] = await db.select()
+        .from(shopProfiles)
+        .where(eq(shopProfiles.shopCode, validatedData.shopCode))
+        .limit(1);
+      
+      if (existingByCode) {
+        return res.status(400).json({ error: "Shop code already exists" });
+      }
+      
+      const [newShop] = await db.insert(shopProfiles).values(validatedData).returning();
+      req.session.shopProfileId = newShop.id;
+      res.status(201).json(newShop);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
   // Shop Owner Login
   app.post("/api/shops/login", async (req, res) => {
     try {
