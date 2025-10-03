@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Store, MapPin, Phone, Tag, TrendingUp } from "lucide-react";
 import { getCustomerShops, getCustomerCouponByCode } from "@/lib/api"; // Assuming getCustomerCouponByCode is available
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface MyShopsProps {
   customerId: string;
