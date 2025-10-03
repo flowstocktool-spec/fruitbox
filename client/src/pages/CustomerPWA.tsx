@@ -422,8 +422,11 @@ export default function CustomerPWA() {
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
                   <CardHeader>
-                    <CardTitle>Find Shops</CardTitle>
-                    <CardDescription>Search and add coupons for your favorite shops</CardDescription>
+                    <CardTitle className="flex items-center gap-2">
+                      <Store className="h-5 w-5" />
+                      Find Shops & Campaigns
+                    </CardTitle>
+                    <CardDescription>Browse shops, view their offers, and add coupons to start earning</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ShopSearch 
