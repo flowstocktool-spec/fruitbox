@@ -15,6 +15,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**October 3, 2025 - Currency Symbol Selection Feature**
+- Added currencySymbol field to shopProfiles database schema (text, not null, default '$')
+- Created currency selector in ShopSettings component with 10 currency options ($, ₹, €, £, ¥, ₩, ₦, R, A$, C$)
+- Added currency selector to shop registration form in ShopAuthScreen
+- Updated all currency displays throughout the application to use shop's selected symbol:
+  - StoreDashboard: Stats and analytics use shopProfile.currencySymbol
+  - MyShops: Affiliate details display shop's currency
+  - ShopSearch: Campaign and minimum purchase amounts show shop's currency
+  - ShopAuthScreen: "Points per" label dynamically shows selected currency
+- Currency selection integrates seamlessly with existing shop profile update flow
+- Default currency is $ for all new shops unless changed during registration or in settings
+
 **October 3, 2025 - PWA Installation Prompt Added**
 - Created PWAInstallPrompt component with custom install banner
 - Banner displays "For better experience, install the application" with Install Now button
@@ -110,32 +122,39 @@ Preferred communication style: Simple, everyday language.
 
 **Database Schema** (Drizzle ORM with PostgreSQL)
 
-Five main tables with UUID primary keys:
+Six main tables with UUID primary keys:
 
 1. **stores**: Store accounts
    - Credentials (email, password)
    - Basic profile (name)
 
-2. **campaigns**: Referral program configurations
+2. **shopProfiles**: Shop profile and settings
+   - Belongs to store (storeId foreign key)
+   - Shop information (shopName, shopCode, description, category, address, phone)
+   - Reward configuration (pointsPerDollar, discountPercentage)
+   - Currency preference (currencySymbol, default '$')
+   - Visual customization (couponColor, couponTextColor)
+
+3. **campaigns**: Referral program configurations
    - Belongs to store (storeId foreign key)
    - Reward rules (pointsPerDollar, minPurchaseAmount, discountPercentage)
    - Visual customization (couponColor, couponTextColor)
    - Active/inactive status flag
 
-3. **customers**: End users enrolled in campaigns
+4. **customers**: End users enrolled in campaigns
    - Belongs to campaign (campaignId foreign key)
    - Contact info (name, phone)
    - Unique referral code
    - Points tracking (totalPoints, redeemedPoints)
 
-4. **transactions**: Purchase and reward events
+5. **transactions**: Purchase and reward events
    - Links customer to campaign
    - Transaction types (purchase, referral, redemption)
    - Amount and calculated points
    - Status workflow (pending, approved, rejected)
    - Optional bill image URL
 
-5. **sharedCoupons**: Coupon sharing relationships (NEW)
+6. **sharedCoupons**: Coupon sharing relationships
    - Links sharer customer to share token
    - Tracks claimed status and claiming customer
    - Enables viral coupon distribution flow
