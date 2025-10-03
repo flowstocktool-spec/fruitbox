@@ -46,6 +46,9 @@ export async function seedData() {
     campaignId: campaign1.id,
     name: "Sarah Johnson",
     phone: "+1234567890",
+    email: "sarah@example.com",
+    username: "sarah",
+    password: "password123",
     referralCode: "SARAH2024",
     totalPoints: 2750,
     redeemedPoints: 1500,
@@ -55,8 +58,53 @@ export async function seedData() {
     campaignId: campaign1.id,
     name: "Mike Chen",
     phone: "+1234567891",
+    email: "mike@example.com",
+    username: "mike",
+    password: "password123",
     referralCode: "MIKE2024",
     totalPoints: 1200,
+    redeemedPoints: 0,
+  });
+
+  // Create demo shop profiles
+  const shop1 = await storage.createShopProfile({
+    shopName: "Coffee Haven",
+    shopCode: "COFFEE123",
+    description: "Premium coffee shop with artisan roasts",
+    category: "Food & Beverage",
+    address: "123 Main St, Downtown",
+    phone: "+1234567892",
+    pointsPerDollar: 3,
+    discountPercentage: 15,
+    isActive: true,
+  });
+
+  const shop2 = await storage.createShopProfile({
+    shopName: "Fitness Pro Gym",
+    shopCode: "FITNESS456",
+    description: "Modern gym with personal training",
+    category: "Health & Fitness",
+    address: "456 Oak Ave, City Center",
+    phone: "+1234567893",
+    pointsPerDollar: 2,
+    discountPercentage: 10,
+    isActive: true,
+  });
+
+  // Create customer coupons (Sarah is registered at both shops)
+  const customerCoupon1 = await storage.createCustomerCoupon({
+    customerId: customer1.id,
+    shopProfileId: shop1.id,
+    referralCode: "SARAH-COFFEE-2024",
+    totalPoints: 150,
+    redeemedPoints: 0,
+  });
+
+  const customerCoupon2 = await storage.createCustomerCoupon({
+    customerId: customer1.id,
+    shopProfileId: shop2.id,
+    referralCode: "SARAH-FITNESS-2024",
+    totalPoints: 80,
     redeemedPoints: 0,
   });
 
@@ -95,4 +143,6 @@ export async function seedData() {
   console.log(`Store ID: ${store.id}`);
   console.log(`Campaign 1 ID: ${campaign1.id}`);
   console.log(`Customer 1 ID: ${customer1.id}, Code: ${customer1.referralCode}`);
+  console.log(`Shop 1 ID: ${shop1.id}, Shop 2 ID: ${shop2.id}`);
+  console.log(`Demo Login: username=sarah, password=password123`);
 }
