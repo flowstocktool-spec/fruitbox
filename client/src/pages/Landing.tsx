@@ -69,7 +69,7 @@ export default function Landing() {
               </div>
               <CardTitle className="font-heading">Scan to Access PWA</CardTitle>
               <CardDescription>
-                Scan this QR code with your phone to access the app instantly
+                Install on your phone for quick access
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
@@ -99,19 +99,19 @@ export default function Landing() {
             <CardContent className="space-y-2 sm:space-y-3">
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-xs sm:text-sm">Create custom referral campaigns with flexible rules</p>
+                <p className="text-xs sm:text-sm">Create and manage referral campaigns</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-xs sm:text-sm">Approve customer bills with photo verification</p>
+                <p className="text-xs sm:text-sm">Verify purchases and approve rewards</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-xs sm:text-sm">Real-time analytics and conversion tracking</p>
+                <p className="text-xs sm:text-sm">Track performance with real-time analytics</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-xs sm:text-sm">Configure points, rewards, and incentives</p>
+                <p className="text-xs sm:text-sm">Access via mobile-friendly PWA</p>
               </div>
             </CardContent>
           </Card>
@@ -129,19 +129,19 @@ export default function Landing() {
             <CardContent className="space-y-2 sm:space-y-3">
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-xs sm:text-sm">View points dashboard with progress tracking</p>
+                <p className="text-xs sm:text-sm">Track your rewards and progress</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-xs sm:text-sm">Share branded coupons via social media</p>
+                <p className="text-xs sm:text-sm">Share your unique referral coupon</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-xs sm:text-sm">Access unique QR code and referral link</p>
+                <p className="text-xs sm:text-sm">Earn rewards when friends shop</p>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-xs sm:text-sm">Track transaction history and rewards</p>
+                <p className="text-xs sm:text-sm">Use via mobile-friendly PWA</p>
               </div>
             </CardContent>
           </Card>
@@ -154,11 +154,11 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
             <div className="space-y-3">
               <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                <QrCode className="h-8 w-8 text-primary" />
+                <Store className="h-8 w-8 text-primary" />
               </div>
-              <h4 className="font-semibold font-heading">1. Create Campaign</h4>
+              <h4 className="font-semibold font-heading">1. Setup Campaign</h4>
               <p className="text-sm text-muted-foreground">
-                Set up your referral rules, rewards, and customize your coupon design
+                Create your referral campaign with custom rewards and rules
               </p>
             </div>
             <div className="space-y-3">
@@ -167,16 +167,16 @@ export default function Landing() {
               </div>
               <h4 className="font-semibold font-heading">2. Customers Share</h4>
               <p className="text-sm text-muted-foreground">
-                Customers scan QR code, get their unique coupon, and share with friends
+                Customers get unique coupons and share with friends
               </p>
             </div>
             <div className="space-y-3">
               <div className="w-16 h-16 rounded-full bg-chart-3/20 flex items-center justify-center mx-auto">
                 <TrendingUp className="h-8 w-8 text-chart-3" />
               </div>
-              <h4 className="font-semibold font-heading">3. Track & Grow</h4>
+              <h4 className="font-semibold font-heading">3. Approve & Reward</h4>
               <p className="text-sm text-muted-foreground">
-                Approve purchases, award points automatically, and watch your sales grow
+                Verify purchases and automatically reward your customers
               </p>
             </div>
           </div>
