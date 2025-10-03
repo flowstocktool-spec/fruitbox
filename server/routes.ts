@@ -351,7 +351,9 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/customer-coupons", async (req, res) => {
     try {
-      const validatedData = insertCustomerCouponSchema.parse(req.body);
+      const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const dataWithCode = { ...req.body, referralCode };
+      const validatedData = insertCustomerCouponSchema.parse(dataWithCode);
       const [coupon] = await db.insert(customerCoupons).values(validatedData).returning();
       res.status(201).json(coupon);
     } catch (error: any) {
