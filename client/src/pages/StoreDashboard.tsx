@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, LayoutDashboard, Receipt, TrendingUp, Users, Search, Trophy, Star } from "lucide-react";
+import { Plus, LayoutDashboard, Receipt, TrendingUp, Users, Search, Trophy, Star, Store } from "lucide-react";
 import { StatsCard } from "@/components/StatsCard";
 import { CampaignCard } from "@/components/CampaignCard";
 import { BillApprovalCard } from "@/components/BillApprovalCard";
@@ -14,7 +14,8 @@ import { CampaignBuilder } from "@/components/CampaignBuilder";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
-import { getCampaigns, getTransactions, createCampaign, updateTransactionStatus, getCampaignStats } from "@/lib/api";
+import { getCampaigns, getTransactions, createCampaign, updateTransactionStatus, getCampaignStats, getShopProfiles, getShopCustomers } from "@/lib/api";
+import { ShopSettings } from "@/components/ShopSettings";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -24,10 +25,24 @@ export default function StoreDashboard() {
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [selectedCampaignForSettings, setSelectedCampaignForSettings] = useState<any>(null);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [showShopSettings, setShowShopSettings] = useState(false);
   const { toast } = useToast();
 
   // For demo, use the first store ID from seed data
   const storeId = "demo-store-id"; // In production, get from auth context
+
+  const { data: shopProfiles = [] } = useQuery({
+    queryKey: ['/api/shop-profiles'],
+    queryFn: getShopProfiles,
+  });
+
+  const shopProfile = shopProfiles[0]; // For now, use first shop profile
+
+  const { data: shopCustomers = [] } = useQuery({
+    queryKey: ['/api/shop-profiles/customers', shopProfile?.id],
+    queryFn: () => getShopCustomers(shopProfile?.id),
+    enabled: !!shopProfile,
+  });
 
   const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
     queryKey: ['/api/campaigns', storeId],
@@ -177,6 +192,10 @@ export default function StoreDashboard() {
               <LayoutDashboard className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
+            <TabsTrigger value="shop" data-testid="tab-shop">
+              <Store className="h-4 w-4 mr-2" />
+              My Shop
+            </TabsTrigger>
             <TabsTrigger value="campaigns" data-testid="tab-campaigns">
               <TrendingUp className="h-4 w-4 mr-2" />
               Campaigns
@@ -185,7 +204,7 @@ export default function StoreDashboard() {
               <Users className="h-4 w-4 mr-2" />
               Customers
               <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                {allCustomers.length}
+                {shopCustomers.length || 0}
               </span>
             </TabsTrigger>
             <TabsTrigger value="approvals" data-testid="tab-approvals">
@@ -300,6 +319,104 @@ export default function StoreDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="shop" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold font-heading">Shop Settings</h2>
+              {!shopProfile && (
+                <Button onClick={() => setShowShopSettings(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Shop Profile
+                </Button>
+              )}
+            </div>
+
+            {shopProfile ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shop Information</CardTitle>
+                    <CardDescription>Your shop details and settings</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Shop Name</p>
+                      <p className="font-semibold">{shopProfile.shopName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Shop Code</p>
+                      <p className="font-mono font-semibold">{shopProfile.shopCode}</p>
+                    </div>
+                    {shopProfile.description && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Description</p>
+                        <p>{shopProfile.description}</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Points per ₹</p>
+                        <p className="font-bold text-green-600">{shopProfile.pointsPerDollar}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Discount</p>
+                        <p className="font-bold text-blue-600">{shopProfile.discountPercentage}%</p>
+                      </div>
+                    </div>
+                    <Button onClick={() => setShowShopSettings(true)} className="w-full">
+                      Edit Settings
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>My Customers</CardTitle>
+                    <CardDescription>Customers with your shop coupons</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {shopCustomers.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-4">No customers yet</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {shopCustomers.slice(0, 5).map((customer: any) => (
+                          <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{customer.name}</p>
+                              <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-primary">{customer.totalPoints}</p>
+                              <p className="text-xs text-muted-foreground">points</p>
+                            </div>
+                          </div>
+                        ))}
+                        {shopCustomers.length > 5 && (
+                          <p className="text-sm text-center text-muted-foreground">
+                            +{shopCustomers.length - 5} more customers
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Create Your Shop Profile</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Set up your shop information so customers can find you and get coupons
+                  </p>
+                  <Button onClick={() => setShowShopSettings(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Shop Profile
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="campaigns" className="space-y-4">
@@ -524,6 +641,15 @@ export default function StoreDashboard() {
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showShopSettings} onOpenChange={setShowShopSettings}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <ShopSettings 
+            shopProfile={shopProfile}
+            onSuccess={() => setShowShopSettings(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -6,33 +6,39 @@ export interface IStorage {
   getStoreByEmail(email: string): Promise<Store | undefined>;
   createStore(store: InsertStore): Promise<Store>;
   createStoreWithId(store: Store): Promise<Store>;
-  
+
   getCampaign(id: string): Promise<Campaign | undefined>;
   getCampaignsByStoreId(storeId: string): Promise<Campaign[]>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
-  
+
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByReferralCode(code: string): Promise<Customer | undefined>;
   getCustomersByCampaignId(campaignId: string): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomerPoints(id: string, totalPoints: number): Promise<Customer | undefined>;
-  
+
   getCustomerCoupons(customerId: string): Promise<CustomerCoupon[]>;
   getCustomerCouponByCode(code: string): Promise<CustomerCoupon | undefined>;
   createCustomerCoupon(coupon: InsertCustomerCoupon): Promise<CustomerCoupon>;
   updateCustomerCouponPoints(id: string, totalPoints: number, redeemedPoints: number): Promise<CustomerCoupon | undefined>;
-  
+
   getSharedCoupon(id: string): Promise<SharedCoupon | undefined>;
   getSharedCouponByToken(token: string): Promise<SharedCoupon | undefined>;
   getSharedCouponsByCouponId(couponId: string): Promise<SharedCoupon[]>;
   createSharedCoupon(sharedCoupon: InsertSharedCoupon): Promise<SharedCoupon>;
   claimSharedCoupon(id: string, claimedByCustomerId: string): Promise<SharedCoupon | undefined>;
-  
+
   getTransaction(id: string): Promise<Transaction | undefined>;
   getTransactionsByCustomerId(customerId: string): Promise<Transaction[]>;
   getTransactionsByCampaignId(campaignId: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined>;
+
+  createShopProfile(data: any): Promise<any>;
+  getShopProfiles(): Promise<any[]>;
+  getShopProfileByCode(shopCode: string): Promise<any | undefined>;
+  getShopProfile(id: string): Promise<any | undefined>;
+  updateShopProfile(id: string, data: any): Promise<any | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -135,7 +141,7 @@ export class MemStorage implements IStorage {
   async updateCustomerPoints(id: string, totalPoints: number): Promise<Customer | undefined> {
     const customer = this.customers.get(id);
     if (!customer) return undefined;
-    
+
     const updated = { ...customer, totalPoints };
     this.customers.set(id, updated);
     return updated;
@@ -168,7 +174,7 @@ export class MemStorage implements IStorage {
   async updateCustomerCouponPoints(id: string, totalPoints: number, redeemedPoints: number): Promise<CustomerCoupon | undefined> {
     const coupon = this.customerCoupons.get(id);
     if (!coupon) return undefined;
-    
+
     const updated = { ...coupon, totalPoints, redeemedPoints };
     this.customerCoupons.set(id, updated);
     return updated;
@@ -204,7 +210,7 @@ export class MemStorage implements IStorage {
   async claimSharedCoupon(id: string, claimedByCustomerId: string): Promise<SharedCoupon | undefined> {
     const sharedCoupon = this.sharedCoupons.get(id);
     if (!sharedCoupon) return undefined;
-    
+
     const updated = { ...sharedCoupon, claimedByCustomerId, status: "claimed" };
     this.sharedCoupons.set(id, updated);
     return updated;
@@ -239,9 +245,41 @@ export class MemStorage implements IStorage {
   async updateTransactionStatus(id: string, status: string): Promise<Transaction | undefined> {
     const transaction = this.transactions.get(id);
     if (!transaction) return undefined;
-    
+
     const updated = { ...transaction, status };
     this.transactions.set(id, updated);
+    return updated;
+  }
+
+  async createShopProfile(data: any): Promise<any> {
+    const id = randomUUID();
+    const shopProfile = { ...data, id, createdAt: new Date() };
+    this.stores.set(id, shopProfile); // Assuming shop profiles are stored in the same map as stores for now
+    return shopProfile;
+  }
+
+  async getShopProfiles(): Promise<any[]> {
+    return Array.from(this.stores.values()).filter(store => store.type === 'shop'); // Filter for 'shop' type
+  }
+
+  async getShopProfileByCode(shopCode: string): Promise<any | undefined> {
+    return Array.from(this.stores.values()).find(store => store.type === 'shop' && store.shopCode === shopCode);
+  }
+
+  async getShopProfile(id: string): Promise<any | undefined> {
+    const store = this.stores.get(id);
+    if (store && store.type === 'shop') {
+      return store;
+    }
+    return undefined;
+  }
+
+  async updateShopProfile(id: string, data: any): Promise<any | undefined> {
+    const shopProfile = this.stores.get(id);
+    if (!shopProfile || shopProfile.type !== 'shop') return undefined;
+
+    const updated = { ...shopProfile, ...data };
+    this.stores.set(id, updated);
     return updated;
   }
 }

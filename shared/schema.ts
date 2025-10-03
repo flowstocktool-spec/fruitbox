@@ -10,6 +10,20 @@ export const stores = pgTable("stores", {
   password: text("password").notNull(),
 });
 
+export const shopProfiles = pgTable("shop_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shopName: text("shop_name").notNull(),
+  shopCode: text("shop_code").notNull().unique(),
+  description: text("description"),
+  category: text("category"),
+  address: text("address"),
+  phone: text("phone"),
+  pointsPerDollar: integer("points_per_dollar").notNull().default(1),
+  discountPercentage: integer("discount_percentage").notNull().default(10),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const campaigns = pgTable("campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   storeId: varchar("store_id").notNull().references(() => stores.id),
@@ -39,8 +53,7 @@ export const customers = pgTable("customers", {
 export const customerCoupons = pgTable("customer_coupons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
-  shopName: text("shop_name").notNull(),
-  shopId: varchar("shop_id"),
+  shopProfileId: varchar("shop_profile_id").notNull().references(() => shopProfiles.id),
   referralCode: text("referral_code").notNull().unique(),
   totalPoints: integer("total_points").notNull().default(0),
   redeemedPoints: integer("redeemed_points").notNull().default(0),
@@ -73,6 +86,7 @@ export const transactions = pgTable("transactions", {
 });
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
+export const insertShopProfileSchema = createInsertSchema(shopProfiles).omit({ id: true, createdAt: true });
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertCustomerCouponSchema = createInsertSchema(customerCoupons).omit({ id: true, createdAt: true });
@@ -84,6 +98,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;
+export type InsertShopProfile = z.infer<typeof insertShopProfileSchema>;
+export type ShopProfile = typeof shopProfiles.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;

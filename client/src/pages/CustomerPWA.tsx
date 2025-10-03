@@ -12,22 +12,19 @@ import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
-import { getCustomerByCode, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, createCustomerCoupon } from "@/lib/api";
+import { ShopSearch } from "@/components/ShopSearch";
+import { getCustomerByCode, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerPWA() {
   const { code } = useParams<{ code?: string }>();
   const [showRegistration, setShowRegistration] = useState(false);
-  const [showCouponCreation, setShowCouponCreation] = useState(false);
+  const [showShopSearch, setShowShopSearch] = useState(false);
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
     email: ""
-  });
-  const [couponData, setCouponData] = useState({
-    shopName: "",
-    shopId: ""
   });
   const { toast } = useToast();
 
@@ -92,27 +89,6 @@ export default function CustomerPWA() {
     },
   });
 
-  const createCouponMutation = useMutation({
-    mutationFn: (data: any) => createCustomerCoupon(data),
-    onSuccess: () => {
-      setShowCouponCreation(false);
-      setCouponData({ shopName: "", shopId: "" });
-      refetchCoupons();
-      toast({
-        title: "Success!",
-        description: "New coupon created for the shop.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create coupon. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-
   useEffect(() => {
     if (!customerCode || customerError) {
       setShowRegistration(true);
@@ -130,23 +106,6 @@ export default function CustomerPWA() {
       return;
     }
     createCustomerMutation.mutate(registrationData);
-  };
-
-  const handleCouponCreation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!couponData.shopName) {
-      toast({
-        title: "Error",
-        description: "Please enter shop name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    createCouponMutation.mutate({
-      customerId: customer?.id ?? '',
-      shopName: couponData.shopName,
-      shopId: couponData.shopId || null,
-    });
   };
 
   if (customerLoading) {
@@ -273,13 +232,13 @@ export default function CustomerPWA() {
               pointsToNextReward={2000}
             />
 
-            {/* My Created Coupons Section */}
+            {/* My Shop Coupons Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">My Shop Coupons</h3>
-                <Button onClick={() => setShowCouponCreation(true)} size="sm">
+                <Button onClick={() => setShowShopSearch(true)} size="sm">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Shop
+                  Find Shops
                 </Button>
               </div>
 
@@ -288,84 +247,72 @@ export default function CustomerPWA() {
                   <CardContent className="text-center py-6">
                     <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground mb-3">No shop coupons yet</p>
-                    <Button onClick={() => setShowCouponCreation(true)} size="sm">
-                      Create Your First Coupon
+                    <Button onClick={() => setShowShopSearch(true)} size="sm">
+                      Find Shops to Get Coupons
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {coupons.map((coupon) => (
-                    <Card key={coupon.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold">{coupon.shopName}</h4>
-                          <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
-                            My Coupon
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                          <div>
-                            <p className="text-muted-foreground">Points Earned</p>
-                            <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+                  {coupons.map((coupon) => {
+                    const { data: shop } = useQuery({
+                      queryKey: ['/api/shop-profiles', coupon.shopProfileId],
+                      queryFn: () => getShopProfile(coupon.shopProfileId),
+                    });
+                    
+                    return (
+                      <Card key={coupon.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold">{shop?.shopName || 'Loading...'}</h4>
+                            <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
+                              My Coupon
+                            </span>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Redeemed</p>
-                            <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+                          <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                            <div>
+                              <p className="text-muted-foreground">Points Earned</p>
+                              <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Redeemed</p>
+                              <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Remaining</p>
+                              <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Remaining</p>
-                            <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
+                          <div className="text-xs text-muted-foreground">
+                            Referral Code: <span className="font-mono font-semibold">{coupon.referralCode}</span>
                           </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Referral Code: <span className="font-mono font-semibold">{coupon.referralCode}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-
-            {showCouponCreation && (
+            {showShopSearch && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                <Card className="w-full max-w-md">
+                <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
                   <CardHeader>
-                    <CardTitle>Create Shop Coupon</CardTitle>
-                    <CardDescription>Add a new shop to start earning points</CardDescription>
+                    <CardTitle>Find Shops</CardTitle>
+                    <CardDescription>Search and add coupons for your favorite shops</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleCouponCreation} className="space-y-4">
-                      <div>
-                        <Label htmlFor="shopName">Shop Name *</Label>
-                        <Input
-                          id="shopName"
-                          value={couponData.shopName}
-                          onChange={(e) => setCouponData({ ...couponData, shopName: e.target.value })}
-                          placeholder="Enter shop name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="shopId">Shop ID (Optional)</Label>
-                        <Input
-                          id="shopId"
-                          value={couponData.shopId}
-                          onChange={(e) => setCouponData({ ...couponData, shopId: e.target.value })}
-                          placeholder="Enter shop ID if known"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button type="submit" className="flex-1" disabled={createCouponMutation.isPending}>
-                          {createCouponMutation.isPending ? "Creating..." : "Create Coupon"}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => setShowCouponCreation(false)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
+                    <ShopSearch 
+                      customerId={customer.id} 
+                      existingShopIds={coupons.map(c => c.shopProfileId)}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-4" 
+                      onClick={() => setShowShopSearch(false)}
+                    >
+                      Close
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

@@ -146,3 +146,41 @@ export async function claimSharedCoupon(id: string, customerId: string) {
   }
   return res.json();
 }
+
+export async function getShopProfiles() {
+  const res = await fetch("/api/shop-profiles");
+  if (!res.ok) throw new Error("Failed to fetch shop profiles");
+  return res.json();
+}
+
+export async function getShopProfile(id: string) {
+  const res = await fetch(`/api/shop-profiles/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch shop profile");
+  return res.json();
+}
+
+export async function createShopProfile(data: any) {
+  const res = await fetch("/api/shop-profiles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create shop profile");
+  return res.json();
+}
+
+export async function updateShopProfile(id: string, data: any) {
+  const res = await fetch(`/api/shop-profiles/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update shop profile");
+  return res.json();
+}
+
+export async function getShopCustomers(shopProfileId: string) {
+  const res = await fetch(`/api/shop-profiles/${shopProfileId}/customers`);
+  if (!res.ok) throw new Error("Failed to fetch shop customers");
+  return res.json();
+}

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertSharedCouponSchema, insertTransactionSchema } from "@shared/schema";
+import { insertCampaignSchema, insertCustomerSchema, insertCustomerCouponSchema, insertSharedCouponSchema, insertTransactionSchema, insertShopProfileSchema } from "@shared/schema";
 import { z } from "zod";
 
 const upload = multer({
@@ -11,6 +11,77 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Shop Profile routes
+  app.get("/api/shop-profiles", async (req, res) => {
+    try {
+      const shopProfiles = await storage.getShopProfiles();
+      res.json(shopProfiles);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shop profiles" });
+    }
+  });
+
+  app.get("/api/shop-profiles/:id", async (req, res) => {
+    try {
+      const shopProfile = await storage.getShopProfile(req.params.id);
+      if (!shopProfile) {
+        return res.status(404).json({ error: "Shop profile not found" });
+      }
+      res.json(shopProfile);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shop profile" });
+    }
+  });
+
+  app.get("/api/shop-profiles/code/:code", async (req, res) => {
+    try {
+      const shopProfile = await storage.getShopProfileByCode(req.params.code);
+      if (!shopProfile) {
+        return res.status(404).json({ error: "Shop not found" });
+      }
+      res.json(shopProfile);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shop profile" });
+    }
+  });
+
+  app.post("/api/shop-profiles", async (req, res) => {
+    try {
+      const data = insertShopProfileSchema.parse(req.body);
+      const shopProfile = await storage.createShopProfile(data);
+      res.status(201).json(shopProfile);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create shop profile" });
+    }
+  });
+
+  app.patch("/api/shop-profiles/:id", async (req, res) => {
+    try {
+      const shopProfile = await storage.updateShopProfile(req.params.id, req.body);
+      if (!shopProfile) {
+        return res.status(404).json({ error: "Shop profile not found" });
+      }
+      res.json(shopProfile);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update shop profile" });
+    }
+  });
+
+  // Get customers who have coupons for a specific shop
+  app.get("/api/shop-profiles/:id/customers", async (req, res) => {
+    try {
+      const coupons = await storage.db.select().from(customerCoupons).where(eq(customerCoupons.shopProfileId, req.params.id));
+      const customerIds = [...new Set(coupons.map(c => c.customerId))];
+      const customers = await Promise.all(customerIds.map(id => storage.getCustomer(id)));
+      res.json(customers.filter(c => c !== undefined));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shop customers" });
+    }
+  });
+
   // Campaign routes
   app.get("/api/campaigns", async (req, res) => {
     try {
@@ -264,6 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/customer-coupons", async (req, res) => {
     try {
+      const { customerId, shopProfileId } = req.body;
+      
+      // Check if customer already has a coupon for this shop
+      const existingCoupons = await storage.getCustomerCoupons(customerId);
+      const hasCoupon = existingCoupons.some(c => c.shopProfileId === shopProfileId);
+      
+      if (hasCoupon) {
+        return res.status(409).json({ error: "Customer already has a coupon for this shop" });
+      }
+
       // Generate unique referral code for this coupon
       const generateCode = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -283,8 +364,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = insertCustomerCouponSchema.parse({
-        ...req.body,
+        customerId,
+        shopProfileId,
         referralCode,
+        totalPoints: 0,
+        redeemedPoints: 0,
       });
 
       const coupon = await storage.createCustomerCoupon(data);
