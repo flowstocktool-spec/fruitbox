@@ -5,17 +5,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Store, MapPin, Phone, Tag, TrendingUp } from "lucide-react";
-import { getCustomerShops } from "@/lib/api";
+import { getCustomerShops, getCustomerCouponByCode } from "@/lib/api"; // Assuming getCustomerCouponByCode is available
+import { useToast } from "@/components/ui/use-toast";
 
 interface MyShopsProps {
   customerId: string;
 }
 
 export function MyShops({ customerId }: MyShopsProps) {
+  const { toast } = useToast();
   const { data: shops = [], isLoading, isError, error } = useQuery({
     queryKey: ['/api/customers', customerId, 'shops'],
     queryFn: () => getCustomerShops(customerId),
     enabled: !!customerId,
+  });
+
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+  const { data: coupon, isLoading: isLoadingCoupon } = useQuery({
+    queryKey: ['/api/customerCoupons', selectedShopId],
+    queryFn: () => selectedShopId ? getCustomerCouponByCode(selectedShopId) : null,
+    enabled: !!selectedShopId,
   });
 
   if (isLoading) {
@@ -65,20 +74,39 @@ export function MyShops({ customerId }: MyShopsProps) {
       {validShops.map((shop: any) => (
         <Card key={shop.id} className="hover:shadow-md transition-shadow" data-testid={`shop-card-${shop.id}`}>
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-base" data-testid={`shop-name-${shop.id}`}>{shop.shopName}</CardTitle>
-                {shop.description && (
-                  <CardDescription className="mt-1 line-clamp-2">{shop.description}</CardDescription>
-                )}
-                <div className="flex items-center gap-2 mt-2">
-                  {shop.category && (
-                    <Badge variant="secondary" className="text-xs">
-                      {shop.category}
-                    </Badge>
-                  )}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{shop.shopName}</p>
+                    <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
+                  </div>
                 </div>
               </div>
+              {coupon && shop.id === selectedShopId && (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-2">
+                  <p className="text-xs text-muted-foreground mb-1">Your Referral Code for this shop:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono font-bold text-blue-900 dark:text-blue-100">
+                      {coupon.referralCode}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(coupon.referralCode);
+                        toast({
+                          title: "Copied!",
+                          description: "Referral code copied to clipboard",
+                        });
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -93,10 +121,16 @@ export function MyShops({ customerId }: MyShopsProps) {
               </div>
             </div>
 
-            <Dialog>
+            <Dialog onOpenChange={(isOpen) => {
+              if (isOpen) {
+                setSelectedShopId(shop.id);
+              } else {
+                setSelectedShopId(null);
+              }
+            }}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   data-testid={`button-view-profile-${shop.id}`}
                 >
@@ -111,7 +145,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                     {shop.category && `${shop.category} • `}Shop Code: {shop.shopCode}
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4 py-4">
                   {shop.description && (
                     <div>
@@ -130,7 +164,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                         <p className="text-2xl font-bold text-green-600 dark:text-green-400">{shop.pointsPerDollar}</p>
                       </CardContent>
                     </Card>
-                    
+
                     <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-1">

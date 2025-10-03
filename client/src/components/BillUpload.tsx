@@ -80,6 +80,24 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
     
     setLoadingAffiliate(true);
     try {
+      // First try to find as a customer coupon (shop-specific code)
+      const couponResponse = await fetch(`/api/customer-coupons/code/${code}`);
+      if (couponResponse.ok) {
+        const coupon = await couponResponse.json();
+        // Fetch the customer details
+        const customerResponse = await fetch(`/api/customers/${coupon.customerId}`);
+        if (customerResponse.ok) {
+          const customer = await customerResponse.json();
+          setAffiliateDetails(customer);
+          toast({
+            title: "Referral Code Valid!",
+            description: `You'll use ${customer.name}'s referral code and get ${discountPercentage}% welcome discount!`,
+          });
+          return;
+        }
+      }
+      
+      // Fallback to checking main customer referral code
       const response = await fetch(`/api/customers/code/${code}`);
       if (response.ok) {
         const customer = await response.json();

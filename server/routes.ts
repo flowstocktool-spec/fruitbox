@@ -256,43 +256,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If approved, award points
       if (status === "approved" && existingTransaction.status !== 'approved') {
-        // Award points to the purchasing customer
-        const customer = await storage.getCustomer(transaction.customerId);
+        // If referral code was used, award points to the affiliate's shop-specific coupon
+        if (transaction.referralCode) {
+          const affiliateCoupon = await storage.getCustomerCouponByCode(transaction.referralCode);
 
+          if (affiliateCoupon) {
+            // Award affiliate points (e.g., 10% of transaction points)
+            const affiliatePoints = Math.floor(transaction.points * 0.1);
+
+            await storage.updateCustomerCouponPoints(
+              affiliateCoupon.id,
+              affiliateCoupon.totalPoints + affiliatePoints,
+              affiliateCoupon.redeemedPoints
+            );
+
+            // Also update the affiliate customer's total points
+            const affiliate = await storage.getCustomer(affiliateCoupon.customerId);
+            if (affiliate) {
+              await storage.updateCustomerPoints(
+                affiliate.id,
+                affiliate.totalPoints + affiliatePoints
+              );
+            }
+
+            // Create a transaction record for the affiliate earning
+            await storage.createTransaction({
+              customerId: affiliateCoupon.customerId,
+              campaignId: transaction.campaignId,
+              couponId: affiliateCoupon.id,
+              type: 'referral_bonus',
+              amount: transaction.amount,
+              points: affiliatePoints,
+              status: 'approved',
+              shopName: transaction.shopName,
+              referralCode: null,
+              billImageUrl: null,
+            });
+          }
+        }
+
+        // Award points to the purchasing customer's coupon if they have one
+        if (transaction.couponId) {
+          const customerCoupon = await storage.getCustomerCoupons(transaction.customerId)
+            .then(coupons => coupons.find(c => c.id === transaction.couponId));
+          
+          if (customerCoupon) {
+            await storage.updateCustomerCouponPoints(
+              customerCoupon.id,
+              customerCoupon.totalPoints + transaction.points,
+              customerCoupon.redeemedPoints
+            );
+          }
+        }
+
+        // Also update purchasing customer's main account points
+        const customer = await storage.getCustomer(transaction.customerId);
         if (customer) {
           await storage.updateCustomerPoints(
             customer.id,
             customer.totalPoints + transaction.points
           );
-        }
-
-        // If referral code was used, award points to the affiliate
-        if (transaction.referralCode) {
-          const affiliate = await storage.getCustomerByReferralCode(transaction.referralCode);
-
-          if (affiliate) {
-            // Award affiliate points (e.g., 10% of transaction points)
-            const affiliatePoints = Math.floor(transaction.points * 0.1);
-
-            await storage.updateCustomerPoints(
-              affiliate.id,
-              affiliate.totalPoints + affiliatePoints
-            );
-
-            // Create a transaction record for the affiliate earning
-            await storage.createTransaction({
-              customerId: affiliate.id,
-              campaignId: transaction.campaignId,
-              couponId: transaction.couponId,
-              type: 'referral_bonus',
-              amount: transaction.amount, // Or perhaps a different amount based on shop rules
-              points: affiliatePoints,
-              status: 'approved',
-              shopName: transaction.shopName, // Assuming shopName is available on transaction
-              referralCode: null, // No referral code for the bonus transaction itself
-              billImageUrl: null, // No bill image for bonus
-            });
-          }
         }
       }
 
@@ -360,6 +383,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(shops.filter(shop => shop !== undefined));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch customer shops" });
+    }
+  });
+
+  app.get("/api/customer-coupons/code/:code", async (req, res) => {
+    try {
+      const coupon = await storage.getCustomerCouponByCode(req.params.code);
+      if (!coupon) {
+        return res.status(404).json({ error: "Coupon not found" });
+      }
+      res.json(coupon);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer coupon" });
     }
   });
 
