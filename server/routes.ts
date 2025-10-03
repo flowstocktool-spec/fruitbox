@@ -122,6 +122,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
+  app.post("/api/customers/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const customer = await storage.getCustomerByUsername(username);
+      
+      if (!customer || (customer as any).password !== password) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
   app.get("/api/customers/:id", async (req, res) => {
     try {
       const customer = await storage.getCustomer(req.params.id);

@@ -44,6 +44,8 @@ export const customers = pgTable("customers", {
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   email: text("email"),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   referralCode: text("referral_code").notNull().unique(),
   totalPoints: integer("total_points").notNull().default(0),
   redeemedPoints: integer("redeemed_points").notNull().default(0),

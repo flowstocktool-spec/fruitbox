@@ -13,6 +13,7 @@ export interface IStorage {
 
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByReferralCode(code: string): Promise<Customer | undefined>;
+  getCustomerByUsername(username: string): Promise<Customer | undefined>;
   getCustomersByCampaignId(campaignId: string): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomerPoints(id: string, totalPoints: number): Promise<Customer | undefined>;
@@ -113,6 +114,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.customers.values()).find(c => c.referralCode === code);
   }
 
+  async getCustomerByUsername(username: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(c => (c as any).username === username);
+  }
+
   async getCustomersByCampaignId(campaignId: string): Promise<Customer[]> {
     return Array.from(this.customers.values()).filter(c => c.campaignId === campaignId);
   }
@@ -125,6 +130,8 @@ export class MemStorage implements IStorage {
       name: insertCustomer.name,
       phone: insertCustomer.phone,
       email: insertCustomer.email ?? null,
+      username: (insertCustomer as any).username,
+      password: (insertCustomer as any).password,
       referralCode: insertCustomer.referralCode,
       totalPoints: insertCustomer.totalPoints ?? 0,
       redeemedPoints: insertCustomer.redeemedPoints ?? 0,

@@ -7,37 +7,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, History, User, Receipt, UserPlus, Plus, Store, Share2 } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Plus, Store, Share2, LogOut } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { ShopSearch } from "@/components/ShopSearch";
-import { getCustomerByCode, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile, getCustomerByDeviceId, updateCustomerDevice } from "@/lib/api";
+import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile, loginCustomer } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { getDeviceId, getDeviceFingerprint } from "@/lib/deviceAuth";
 
 export default function CustomerPWA() {
-  const { code } = useParams<{ code?: string }>();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [customer, setCustomer] = useState<any>(null);
+  const [showLogin, setShowLogin] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showShopSearch, setShowShopSearch] = useState(false);
+  
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: ""
+  });
+
   const [registrationData, setRegistrationData] = useState({
     name: "",
     phone: "",
-    email: ""
+    email: "",
+    username: "",
+    password: ""
   });
+  
   const { toast } = useToast();
 
-  // Get customer using device-based authentication
-  const deviceId = getDeviceId();
-  
-  // Try to get customer by device ID first
-  const { data: customer, isLoading: customerLoading, isError: customerError } = useQuery({
-    queryKey: ['/api/customers/device', deviceId],
-    queryFn: () => getCustomerByDeviceId(deviceId),
-    retry: false,
-  });
+  // Check if user is already logged in
+  useEffect(() => {
+    const customerId = localStorage.getItem('customerId');
+    if (customerId) {
+      // Auto-login if we have a stored customer ID
+      fetch(`/api/customers/${customerId}`)
+        .then(res => res.json())
+        .then(data => {
+          setCustomer(data);
+          setIsLoggedIn(true);
+        })
+        .catch(() => {
+          localStorage.removeItem('customerId');
+        });
+    }
+  }, []);
 
   // Customer coupons query
   const { data: coupons = [], refetch: refetchCoupons } = useQuery({
@@ -46,7 +63,6 @@ export default function CustomerPWA() {
     enabled: !!customer,
   });
 
-
   // Transactions query
   const { data: transactions = [] } = useQuery({
     queryKey: ['/api/transactions', customer?.id],
@@ -54,48 +70,73 @@ export default function CustomerPWA() {
     enabled: !!customer,
   });
 
+  const loginMutation = useMutation({
+    mutationFn: ({ username, password }: { username: string; password: string }) => 
+      loginCustomer(username, password),
+    onSuccess: (data) => {
+      setCustomer(data);
+      setIsLoggedIn(true);
+      localStorage.setItem('customerId', data.id);
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
       const newCode = await generateReferralCode();
-      const deviceId = getDeviceId();
-      const deviceFingerprint = getDeviceFingerprint();
-      
       return createCustomer({
         ...data,
         campaignId: null,
         referralCode: newCode,
         totalPoints: 0,
         redeemedPoints: 0,
-        deviceId,
-        deviceFingerprint,
       });
     },
     onSuccess: (newCustomer) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers/device'] });
+      setCustomer(newCustomer);
+      setIsLoggedIn(true);
+      localStorage.setItem('customerId', newCustomer.id);
       setShowRegistration(false);
       toast({
         title: "Welcome!",
-        description: "Your account has been verified with this device.",
+        description: "Your account has been created successfully.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: "Failed to create account. Username might already exist.",
         variant: "destructive",
       });
     },
   });
 
-  useEffect(() => {
-    if (customerError) {
-      setShowRegistration(true);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginData.username || !loginData.password) {
+      toast({
+        title: "Error",
+        description: "Please enter username and password.",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [customerError]);
+    loginMutation.mutate(loginData);
+  };
 
   const handleRegistration = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registrationData.name || !registrationData.phone) {
+    if (!registrationData.name || !registrationData.phone || !registrationData.username || !registrationData.password) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -106,79 +147,160 @@ export default function CustomerPWA() {
     createCustomerMutation.mutate(registrationData);
   };
 
-  if (customerLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    localStorage.removeItem('customerId');
+    setCustomer(null);
+    setIsLoggedIn(false);
+    setShowLogin(true);
+    toast({
+      title: "Logged out",
+      description: "You've been successfully logged out.",
+    });
+  };
 
-  if (showRegistration || (customerError && !customer)) {
+  if (!isLoggedIn) {
+    if (showRegistration) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                <UserPlus className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
+              <CardDescription className="text-center">
+                Join the referral program and start earning points!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleRegistration} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    value={registrationData.name}
+                    onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={registrationData.phone}
+                    onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={registrationData.email}
+                    onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
+                    placeholder="Enter your email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="username">Username *</Label>
+                  <Input
+                    id="username"
+                    value={registrationData.username}
+                    onChange={(e) => setRegistrationData({ ...registrationData, username: e.target.value })}
+                    placeholder="Choose a username"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={registrationData.password}
+                    onChange={(e) => setRegistrationData({ ...registrationData, password: e.target.value })}
+                    placeholder="Choose a password"
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={createCustomerMutation.isPending}
+                >
+                  {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+                </Button>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => setShowRegistration(false)}
+                >
+                  Back to Login
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
             <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <UserPlus className="h-6 w-6 text-primary" />
+              <User className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
+            <CardTitle className="font-heading text-center">Welcome Back</CardTitle>
             <CardDescription className="text-center">
-              Join the referral program and start earning points! Your account will be verified using this device.
+              Login to access your referral rewards
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleRegistration} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="login-username">Username</Label>
                 <Input
-                  id="name"
-                  value={registrationData.name}
-                  onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
-                  placeholder="Enter your full name"
+                  id="login-username"
+                  value={loginData.username}
+                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                  placeholder="Enter your username"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="login-password">Password</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={registrationData.phone}
-                  onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
-                  placeholder="Enter your phone number"
+                  id="login-password"
+                  type="password"
+                  value={loginData.password}
+                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                  placeholder="Enter your password"
                   required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email (Optional)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={registrationData.email}
-                  onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
-                  placeholder="Enter your email"
                 />
               </div>
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={createCustomerMutation.isPending}
+                disabled={loginMutation.isPending}
               >
-                {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+                {loginMutation.isPending ? "Logging in..." : "Login"}
+              </Button>
+              <Button 
+                type="button"
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setShowRegistration(true)}
+              >
+                Create New Account
               </Button>
             </form>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  // Safety check - should not reach here without customer
-  if (!customer) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Please create an account to continue.</p>
       </div>
     );
   }
@@ -197,7 +319,12 @@ export default function CustomerPWA() {
               </h1>
               <p className="text-sm text-muted-foreground">Referral Rewards</p>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -230,7 +357,6 @@ export default function CustomerPWA() {
               pointsToNextReward={2000}
             />
 
-            {/* My Shop Coupons Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">My Shop Coupons</h3>
@@ -456,7 +582,6 @@ export default function CustomerPWA() {
           </TabsContent>
         </Tabs>
       </main>
-
     </div>
   );
 }

@@ -187,6 +187,19 @@ export async function getShopCustomers(shopProfileId: string) {
   return response.json();
 }
 
+export async function loginCustomer(username: string, password: string): Promise<Customer> {
+  const res = await fetch("/api/customers/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Login failed");
+  }
+  return res.json();
+}
+
 export async function getCustomerByDeviceId(deviceId: string) {
   const response = await fetch(`/api/customers/device/${deviceId}`);
   if (!response.ok) {
