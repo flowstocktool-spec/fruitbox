@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Gift, History, User, Receipt, UserPlus, Share2, LogOut, Store } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
@@ -13,7 +14,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { MyShops } from "@/components/MyShops";
 import { ShopSearch } from "@/components/ShopSearch";
-import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getCustomer } from "@/lib/api";
+import { CouponShareSheet } from "@/components/CouponShareSheet";
+import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getCustomer, getCustomerShops, createSharedCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -23,6 +25,10 @@ export default function CustomerPWA() {
   const [customer, setCustomer] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [selectedCouponForShare, setSelectedCouponForShare] = useState<any>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [isCreatingShareToken, setIsCreatingShareToken] = useState(false);
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -84,6 +90,13 @@ export default function CustomerPWA() {
   const { data: customerCoupons = [] } = useQuery({
     queryKey: ['/api/customer-coupons', customer?.id],
     queryFn: () => getCustomerCoupons(customer?.id ?? ''),
+    enabled: !!customer,
+  });
+
+  // Customer shops query
+  const { data: customerShops = [] } = useQuery({
+    queryKey: ['/api/customers', customer?.id, 'shops'],
+    queryFn: () => getCustomerShops(customer?.id ?? ''),
     enabled: !!customer,
   });
 
@@ -450,92 +463,116 @@ export default function CustomerPWA() {
           <TabsContent value="share" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading">Share Referral Link</CardTitle>
-                <CardDescription>Invite friends to join and earn rewards</CardDescription>
+                <CardTitle className="font-heading">Share Your Coupons</CardTitle>
+                <CardDescription>Share your shop coupons with friends and earn rewards</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Share</h3>
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How Coupon Sharing Works</h3>
                   <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Share your referral code with friends and family</li>
-                    <li>They install the app and create an account</li>
-                    <li>They enter your referral code when uploading their first bill</li>
-                    <li>On approval, they get a discount and you earn points!</li>
+                    <li>Click the Share button on any of your shop coupons below</li>
+                    <li>Share the unique link or QR code with friends</li>
+                    <li>They claim the coupon and shop at that store with a discount</li>
+                    <li>You earn points when they make purchases!</li>
                   </ol>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pwa-url">PWA Link</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="pwa-url"
-                      value={window.location.origin + '/customer'}
-                      readOnly
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.origin + '/customer');
-                        toast({
-                          title: "Copied!",
-                          description: "PWA link copied to clipboard",
-                        });
-                      }}
-                    >
-                      Copy
-                    </Button>
+                {customerShops.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-muted-foreground">No shop coupons yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Register at shops in the Shops tab to get coupons you can share
+                    </p>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="referral-code">Your Referral Code</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="referral-code"
-                      value={customer.referralCode || 'N/A'}
-                      readOnly
-                      className="flex-1 font-mono text-lg"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(customer.referralCode || '');
-                        toast({
-                          title: "Copied!",
-                          description: "Referral code copied to clipboard",
-                        });
-                      }}
-                    >
-                      Copy
-                    </Button>
+                ) : (
+                  <div className="space-y-3">
+                    {customerShops.map((shop: any) => {
+                      const shopCoupon = customerCoupons.find((c: any) => c.shopProfileId === shop.id);
+                      
+                      return (
+                        <Card key={shop.id} className="border-primary/20" data-testid={`share-coupon-${shop.id}`}>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Store className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{shop.shopName}</p>
+                                  <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
+                                </div>
+                              </div>
+                              <Badge variant="secondary">{shop.discountPercentage}% Off</Badge>
+                            </div>
+                            
+                            {shopCoupon && (
+                              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-300 dark:border-green-700 rounded-lg p-3 mb-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Your Referral Code</p>
+                                    <code className="text-sm font-mono font-bold text-green-700 dark:text-green-300">
+                                      {shopCoupon.referralCode}
+                                    </code>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(shopCoupon.referralCode);
+                                      toast({
+                                        title: "Copied!",
+                                        description: "Referral code copied to clipboard",
+                                      });
+                                    }}
+                                  >
+                                    Copy
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <Button
+                              className="w-full"
+                              onClick={async () => {
+                                if (!shopCoupon) {
+                                  toast({
+                                    title: "Error",
+                                    description: "No coupon found for this shop",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                
+                                setSelectedCouponForShare({ shop, coupon: shopCoupon });
+                                setShareSheetOpen(true);
+                                setIsCreatingShareToken(true);
+                                
+                                try {
+                                  const sharedCoupon = await createSharedCoupon({
+                                    couponId: shopCoupon.id,
+                                    sharedByCustomerId: customer.id,
+                                  });
+                                  setShareToken(sharedCoupon.shareToken);
+                                } catch (error) {
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to create share link",
+                                    variant: "destructive",
+                                  });
+                                  setShareSheetOpen(false);
+                                } finally {
+                                  setIsCreatingShareToken(false);
+                                }
+                              }}
+                              data-testid={`button-share-${shop.id}`}
+                            >
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Share this Coupon
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Share this code with your friends. They should enter it when uploading their first bill.
-                  </p>
-                </div>
-
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const message = `Join me on ReferralHub! Install the app here: ${window.location.origin}/customer and use my referral code: ${customer.referralCode}`;
-                    if (navigator.share) {
-                      navigator.share({
-                        title: 'Join ReferralHub',
-                        text: message,
-                      });
-                    } else {
-                      navigator.clipboard.writeText(message);
-                      toast({
-                        title: "Copied!",
-                        description: "Message copied to clipboard. You can now paste it anywhere to share.",
-                      });
-                    }
-                  }}
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share via Apps
-                </Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -561,6 +598,20 @@ export default function CustomerPWA() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <CouponShareSheet
+        open={shareSheetOpen}
+        onOpenChange={(open) => {
+          setShareSheetOpen(open);
+          if (!open) {
+            setShareToken(null);
+            setSelectedCouponForShare(null);
+          }
+        }}
+        shareToken={shareToken}
+        shopName={selectedCouponForShare?.shop?.shopName || ''}
+        loading={isCreatingShareToken}
+      />
     </div>
   );
 }
