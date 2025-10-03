@@ -21,11 +21,16 @@ export function MyShops({ customerId }: MyShopsProps) {
   });
 
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
-  const { data: coupon, isLoading: isLoadingCoupon } = useQuery({
-    queryKey: ['/api/customerCoupons', selectedShopId],
-    queryFn: () => selectedShopId ? getCustomerCouponByCode(selectedShopId) : null,
-    enabled: !!selectedShopId,
+  const { data: customerCoupons = [] } = useQuery({
+    queryKey: ['/api/customer-coupons', customerId],
+    queryFn: () => getCustomerCoupons(customerId),
+    enabled: !!customerId,
   });
+
+  // Find the coupon for the selected shop
+  const coupon = selectedShopId 
+    ? customerCoupons.find((c: any) => c.shopProfileId === selectedShopId)
+    : null;
 
   if (isLoading) {
     return (

@@ -108,6 +108,12 @@ export async function getCustomerCoupons(customerId: string) {
   return res.json();
 }
 
+export async function getCustomerCouponByCode(code: string) {
+  const res = await fetch(`/api/customer-coupons/code/${code}`);
+  if (!res.ok) throw new Error("Failed to fetch customer coupon");
+  return res.json();
+}
+
 export async function createCustomerCoupon(data: any) {
   const res = await fetch("/api/customer-coupons", {
     method: "POST",
