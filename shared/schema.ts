@@ -24,7 +24,7 @@ export const shopProfiles = pgTable("shop_profiles", {
 
 export const campaigns = pgTable("campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  storeId: varchar("store_id").notNull().references(() => stores.id),
+  storeId: varchar("store_id").notNull().references(() => shopProfiles.id),
   name: text("name").notNull(),
   description: text("description"),
   pointsPerDollar: integer("points_per_dollar").notNull().default(1),
