@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -75,7 +74,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
           filteredShops.map((shop) => {
             const hasCoupon = existingShopIds.includes(shop.id);
             const isExpanded = expandedShopId === shop.id;
-            
+
             return (
               <ShopCard 
                 key={shop.id} 
