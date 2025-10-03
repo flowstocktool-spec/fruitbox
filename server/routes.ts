@@ -39,6 +39,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!shopProfile) {
         return res.status(404).json({ error: "Shop not found" });
       }
+
+
+  // Shop owner authentication
+  app.post("/api/shop-owners/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const shopProfile = await storage.getShopByUsername(username);
+      
+      if (!shopProfile || (shopProfile as any).password !== password) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+
+      res.json(shopProfile);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
       res.json(shopProfile);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch shop profile" });

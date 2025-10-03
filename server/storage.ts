@@ -39,6 +39,7 @@ export interface IStorage {
   getShopProfiles(): Promise<any[]>;
   getShopProfileByCode(shopCode: string): Promise<any | undefined>;
   getShopProfile(id: string): Promise<any | undefined>;
+  getShopByUsername(username: string): Promise<any | undefined>;
   updateShopProfile(id: string, data: any): Promise<any | undefined>;
   getCustomersByShopProfileId(shopProfileId: string): Promise<Customer[]>;
 }
@@ -166,9 +167,9 @@ export class MemStorage implements IStorage {
     const customer = this.customers.get(id);
     if (!customer) return undefined;
 
-    const updated = { 
-      ...customer, 
-      deviceId, 
+    const updated = {
+      ...customer,
+      deviceId,
       deviceFingerprint,
       lastDeviceVerifiedAt: new Date()
     } as any;
@@ -304,6 +305,10 @@ export class MemStorage implements IStorage {
       return store;
     }
     return undefined;
+  }
+
+  async getShopByUsername(username: string): Promise<any | undefined> {
+    return Array.from(this.stores.values()).find(store => (store as any).type === 'shop' && (store as any).username === username);
   }
 
   async updateShopProfile(id: string, data: any): Promise<any | undefined> {

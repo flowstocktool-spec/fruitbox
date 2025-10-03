@@ -11,17 +11,14 @@ export const stores = pgTable("stores", {
 });
 
 export const shopProfiles = pgTable("shop_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
   shopName: text("shop_name").notNull(),
   shopCode: text("shop_code").notNull().unique(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   description: text("description"),
-  category: text("category"),
-  address: text("address"),
-  phone: text("phone"),
-  pointsPerDollar: integer("points_per_dollar").notNull().default(1),
-  discountPercentage: integer("discount_percentage").notNull().default(10),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  logo: text("logo"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const campaigns = pgTable("campaigns", {

@@ -70,6 +70,8 @@ export async function seedData() {
   const shop1 = await storage.createShopProfile({
     shopName: "Coffee Haven",
     shopCode: "COFFEE123",
+    username: "coffeehaven",
+    password: "password123",
     description: "Premium coffee shop with artisan roasts",
     category: "Food & Beverage",
     address: "123 Main St, Downtown",
@@ -82,6 +84,8 @@ export async function seedData() {
   const shop2 = await storage.createShopProfile({
     shopName: "Fitness Pro Gym",
     shopCode: "FITNESS456",
+    username: "bookparadise",
+    password: "password123",
     description: "Modern gym with personal training",
     category: "Health & Fitness",
     address: "456 Oak Ave, City Center",
@@ -140,9 +144,10 @@ export async function seedData() {
   });
 
   console.log("✅ Seed data created successfully");
-  console.log(`Store ID: ${store.id}`);
-  console.log(`Campaign 1 ID: ${campaign1.id}`);
+  console.log("Store ID:", store.id);
+  console.log("Campaign 1 ID:", campaign1.id);
   console.log(`Customer 1 ID: ${customer1.id}, Code: ${customer1.referralCode}`);
   console.log(`Shop 1 ID: ${shop1.id}, Shop 2 ID: ${shop2.id}`);
-  console.log(`Demo Login: username=sarah, password=password123`);
+  console.log("Customer Login: username=sarah, password=password123");
+  console.log("Shop Owner Login: username=coffeehaven, password=password123");
 }
