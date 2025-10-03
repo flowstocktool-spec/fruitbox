@@ -18,6 +18,7 @@ export const shopProfiles = pgTable("shop_profiles", {
   password: text("password").notNull(),
   description: text("description"),
   logo: text("logo"),
+  currencySymbol: text("currency_symbol").notNull().default("$"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
