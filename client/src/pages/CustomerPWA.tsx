@@ -408,15 +408,44 @@ export default function CustomerPWA() {
             />
 
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">How to Upload a Bill</h3>
-                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                  <Gift className="h-4 w-4" />
+                  💡 Understanding Your Points
+                </h3>
+                <div className="text-sm text-purple-800 dark:text-purple-200 space-y-2">
+                  <div className="flex justify-between items-center bg-white dark:bg-purple-900/30 rounded p-2">
+                    <span className="font-medium">Total Earned:</span>
+                    <span className="font-bold text-green-600 dark:text-green-400">{totalPoints.toLocaleString()} pts</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white dark:bg-purple-900/30 rounded p-2">
+                    <span className="font-medium">Already Used:</span>
+                    <span className="font-bold text-red-600 dark:text-red-400">-{totalRedeemed.toLocaleString()} pts</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded p-2 border-2 border-green-300 dark:border-green-700">
+                    <span className="font-bold">Available to Use:</span>
+                    <span className="font-bold text-lg text-green-700 dark:text-green-300">{(totalPoints - totalRedeemed).toLocaleString()} pts</span>
+                  </div>
+                  <p className="text-xs mt-2 italic">
+                    ℹ️ Available points = Total Earned - Already Used. You can redeem available points for discounts on your next purchase!
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Upload a Bill</h3>
+                <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
                   <li>Enter the referral code you received from a friend</li>
-                  <li>Take a photo or select your purchase bill</li>
-                  <li>Enter the purchase amount</li>
+                  <li>Take a photo or select your purchase bill (clear, original photo only)</li>
+                  <li>Enter the purchase amount (must match your bill)</li>
                   <li>Submit for approval</li>
                   <li>On approval, you get a welcome discount and your friend earns points!</li>
                 </ol>
+                <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                    ⚠️ <strong>Important:</strong> Upload only original, clear bills from the shop. Duplicate or fake bills will be rejected and may result in account suspension.
+                  </p>
+                </div>
               </div>
 
               <BillUpload

@@ -513,14 +513,215 @@ Customize your shop profile and rewards structure.
 
 ---
 
+---
+
+## Points Redemption Mechanism
+
+### How Points Work
+
+**Earning Points:**
+- Customers earn points when they make purchases at affiliated shops
+- Points are calculated based on the shop's "Points per Currency Unit" rate
+- Example: If rate is 5 points per $1, a $20 purchase = 100 points
+
+**Point Types:**
+1. **Total Points**: All points ever earned
+2. **Redeemed Points**: Points already used for rewards
+3. **Available Points**: Total Points - Redeemed Points (what you can use)
+
+### Redemption Process
+
+#### For Customers
+
+1. **Check Available Points**
+   - Go to Upload tab
+   - View your "Available Points" in the dashboard
+   - Formula: Available = Total Earned - Redeemed
+
+2. **Request Redemption**
+   - When uploading a bill, you can request to use points
+   - Enter the amount of points you want to redeem
+   - Points will be converted to discount (based on shop's conversion rate)
+
+3. **Wait for Approval**
+   - Shop owner must approve the redemption
+   - Points are deducted only after approval
+   - You'll see the transaction in your history
+
+4. **Track Your Balance**
+   - History tab shows all redemptions
+   - Red "Points Redeemed" entries show deductions
+   - Balance updates immediately after approval
+
+#### For Shop Owners
+
+1. **Review Redemption Requests**
+   - Redemption requests appear in "Pending Approvals" tab
+   - Shows customer name, points requested, and discount amount
+   - View customer's total points and redemption history
+
+2. **Verify Legitimacy**
+   - Check if customer has sufficient available points
+   - Verify the purchase is genuine
+   - Ensure discount amount matches points requested
+
+3. **Approve or Reject**
+   - **Approve**: Points are deducted, discount applied
+   - **Reject**: No points deducted, customer keeps points
+
+4. **Points Calculation**
+   - Set your conversion rate in Settings
+   - Example: 100 points = $10 discount (10 points per $1)
+   - Clearly communicate this to customers
+
+---
+
+## Fraud Detection Guide for Shop Owners
+
+### Common Fraud Indicators
+
+#### 1. Bill-Related Red Flags
+
+**Suspicious Bill Images:**
+- ❌ Blurry or unreadable images
+- ❌ Bills from different stores/competitors
+- ❌ Photocopied or screenshot bills (not original)
+- ❌ Edited or tampered bills (altered amounts)
+- ❌ Same bill submitted multiple times
+- ❌ Bills with mismatched dates (very old bills)
+- ❌ Bills without clear store name/logo
+
+**What to Look For:**
+- ✅ Clear, original bill images
+- ✅ Your store name visible on bill
+- ✅ Date matches submission time (recent)
+- ✅ Amount matches what customer entered
+- ✅ Receipt format consistent with your store's bills
+
+#### 2. Pattern-Based Fraud
+
+**Unusual Activity Patterns:**
+- Multiple submissions within short time
+- Same customer submitting identical amounts repeatedly
+- Referral code used by same person multiple times
+- Unusually high purchase amounts
+- Customer never redeems points (just accumulates)
+
+**Suspicious Referral Behavior:**
+- Creating multiple fake accounts
+- Self-referral (using own codes)
+- Referral chain with same device/location
+- New accounts immediately making large purchases
+
+#### 3. Customer Behavior Red Flags
+
+**Warning Signs:**
+- Customer never visits store in person
+- Contact information is invalid
+- Username patterns suggest bot accounts (random characters)
+- Multiple accounts with similar names
+- Account created very recently with large transactions
+
+### How to Prevent Fraud
+
+#### Best Practices
+
+1. **Verify Bills Thoroughly**
+   - Always view the bill image before approval
+   - Check date, amount, and store name
+   - Keep records of approved bills
+   - Reject bills without clear images
+
+2. **Set Minimum Purchase Requirements**
+   - Configure minimum purchase in campaign settings
+   - Prevents spam small transactions
+   - Example: $10 minimum purchase
+
+3. **Monitor Customer Patterns**
+   - Review customer history before approval
+   - Check if same customer submits too frequently
+   - Look for unusual spending patterns
+
+4. **Require In-Person Verification (Optional)**
+   - For large point redemptions, ask customer to visit store
+   - Verify identity with photo ID
+   - Mark trusted customers for easier future approvals
+
+5. **Set Redemption Limits**
+   - Limit maximum points redeemable per transaction
+   - Set daily/weekly redemption caps
+   - Require approval for redemptions above threshold
+
+6. **Regular Audits**
+   - Review approved transactions weekly
+   - Check for patterns or anomalies
+   - Adjust policies based on findings
+
+### Handling Suspected Fraud
+
+#### Investigation Steps
+
+1. **Don't Approve Immediately**
+   - If suspicious, mark for review
+   - Check customer's full transaction history
+   - Look for patterns across multiple submissions
+
+2. **Contact Customer**
+   - Use phone number or email to verify
+   - Ask for additional proof if needed
+   - Genuine customers will cooperate
+
+3. **Document Evidence**
+   - Save screenshots of suspicious bills
+   - Note patterns and behaviors
+   - Keep records for future reference
+
+4. **Take Action**
+   - **Reject** clearly fraudulent transactions
+   - **Suspend** repeat offenders' accounts
+   - **Report** serious cases to platform
+
+#### When to Reject
+
+**Always Reject:**
+- Bills from other stores
+- Duplicate submissions
+- Clearly edited/fake bills
+- Amounts don't match bill image
+- Customer refuses verification
+
+**Consider Rejecting:**
+- Very blurry images
+- Suspicious patterns
+- New customer with large amount
+- Customer has history of rejected bills
+
+### Quick Fraud Check Checklist
+
+Before approving any bill, ask yourself:
+
+- [ ] Is the bill image clear and readable?
+- [ ] Does it show my store's name/logo?
+- [ ] Is the date recent and reasonable?
+- [ ] Does the amount match the bill image?
+- [ ] Have I seen this bill before?
+- [ ] Is the customer's behavior normal?
+- [ ] Are the points/discount reasonable?
+- [ ] Does the referral code make sense?
+
+**If you answer "No" to any question, investigate further before approving.**
+
+---
+
 ## Support
 
 For additional help:
 - Contact your shop owner directly
 - Check the FAQ section
 - Report technical issues through the app
+- Report suspected fraud to shop owner immediately
 
 ---
 
 **Last Updated**: January 2025
-**Version**: 1.0
+**Version**: 1.1

@@ -19,6 +19,10 @@ interface BillApprovalCardProps {
 export function BillApprovalCard({ transaction, customerName, onApprove, onReject, onView }: BillApprovalCardProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fraud detection indicators
+  const isHighAmount = transaction.amount > 1000;
+  const isVeryRecent = new Date().getTime() - new Date(transaction.createdAt).getTime() < 60000; // Less than 1 minute
 
   const approveMutation = useMutation({
     mutationFn: () => approveTransaction(transaction.id),
@@ -82,9 +86,20 @@ export function BillApprovalCard({ transaction, customerName, onApprove, onRejec
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
+          {/* Fraud Warning Indicators */}
+          {(isHighAmount || !transaction.billImageUrl) && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 mb-3">
+              <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100 mb-1">⚠️ Review Carefully</p>
+              <ul className="text-xs text-yellow-800 dark:text-yellow-200 space-y-1">
+                {isHighAmount && <li>• High purchase amount - verify bill authenticity</li>}
+                {!transaction.billImageUrl && <li>• No bill image provided - request proof</li>}
+              </ul>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Purchase Amount</span>
-            <span className="font-semibold" data-testid={`text-amount-${transaction.id}`}>
+            <span className={`font-semibold ${isHighAmount ? 'text-yellow-600' : ''}`} data-testid={`text-amount-${transaction.id}`}>
               ${transaction.amount}
             </span>
           </div>
@@ -94,14 +109,31 @@ export function BillApprovalCard({ transaction, customerName, onApprove, onRejec
               {transaction.points} pts
             </span>
           </div>
+          
+          {/* Fraud Prevention Checklist */}
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">✓ Verification Checklist:</p>
+            <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+              <li>□ Bill image is clear and readable</li>
+              <li>□ Shows your store name/logo</li>
+              <li>□ Amount matches the bill image</li>
+              <li>□ Date is recent and reasonable</li>
+              <li>□ Not a duplicate submission</li>
+            </ul>
+          </div>
+          
           {transaction.billImageUrl && (
             <div className="mt-3">
+              <p className="text-xs text-muted-foreground mb-1">Bill Image:</p>
               <img
                 src={transaction.billImageUrl}
                 alt="Bill"
                 className="w-full h-32 object-cover rounded-md border"
                 data-testid={`img-bill-${transaction.id}`}
               />
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                👁️ Click "View" to see full-size image for verification
+              </p>
             </div>
           )}
         </div>
