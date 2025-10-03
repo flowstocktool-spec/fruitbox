@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Palette } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getShopProfile } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const campaignSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -29,6 +31,9 @@ interface CampaignBuilderProps {
 }
 
 export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBuilderProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
@@ -48,9 +53,39 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
     enabled: !!storeId,
   });
 
+  const createCampaignMutation = useMutation({
+    mutationFn: async (data: CampaignFormData) => {
+      return await apiRequest("/api/campaigns", {
+        method: "POST",
+        body: JSON.stringify({
+          ...data,
+          description: data.description || null,
+          storeId,
+          couponTextColor: "#ffffff",
+          isActive: true,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      form.reset();
+      toast({
+        title: "Campaign created",
+        description: "Your campaign has been created successfully",
+      });
+      onSubmit?.({} as CampaignFormData);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (data: CampaignFormData) => {
-    console.log("Campaign created:", data);
-    onSubmit?.(data);
+    createCampaignMutation.mutate(data);
   };
 
   return (
@@ -183,8 +218,13 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
               )}
             />
 
-            <Button type="submit" className="w-full" data-testid="button-create-campaign">
-              Create Campaign
+            <Button 
+              type="submit" 
+              className="w-full" 
+              data-testid="button-create-campaign"
+              disabled={createCampaignMutation.isPending}
+            >
+              {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
             </Button>
           </form>
         </Form>

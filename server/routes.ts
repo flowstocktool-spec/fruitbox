@@ -565,6 +565,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.post("/api/campaigns", async (req, res) => {
+    try {
+      const validatedData = insertCampaignSchema.parse(req.body);
+      
+      const [campaign] = await db.insert(campaigns)
+        .values(validatedData)
+        .returning();
+      
+      res.status(201).json(campaign);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/customers/campaign/:campaignId", async (req, res) => {
     try {
       const customersData = await db.select()
