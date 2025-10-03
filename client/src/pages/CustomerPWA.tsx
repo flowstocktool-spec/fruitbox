@@ -13,9 +13,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { MyShops } from "@/components/MyShops";
 import { ShopSearch } from "@/components/ShopSearch";
-import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons } from "@/lib/api";
+import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getCustomer } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function CustomerPWA() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -37,6 +38,7 @@ export default function CustomerPWA() {
   });
 
   const { toast } = useToast();
+  const setLocation = useLocation()[1];
 
   // Check if user is already logged in
   useEffect(() => {
@@ -54,6 +56,22 @@ export default function CustomerPWA() {
         });
     }
   }, []);
+
+  // Customer query
+  const customerId = customer?.id;
+  const { data: customerData, isLoading: isLoadingCustomer, error: customerError } = useQuery({
+    queryKey: ['/api/customers', customerId],
+    queryFn: () => getCustomer(customerId ?? ''),
+    enabled: !!customerId,
+  });
+
+  // If customer not found, redirect to login
+  if (customerError && !isLoadingCustomer) {
+    localStorage.removeItem('customerId');
+    localStorage.removeItem('customerCode');
+    setLocation('/');
+    return null;
+  }
 
   // Transactions query
   const { data: transactions = [] } = useQuery({
@@ -411,8 +429,8 @@ export default function CustomerPWA() {
                 <CardDescription>Search for shops and become an affiliate</CardDescription>
               </CardHeader>
               <CardContent>
-                <ShopSearch 
-                  customerId={customer.id} 
+                <ShopSearch
+                  customerId={customer.id}
                   existingShopIds={customerCoupons.map((c: any) => c.shopProfileId)}
                 />
               </CardContent>

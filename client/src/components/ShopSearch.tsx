@@ -26,6 +26,15 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
 
   const createCouponMutation = useMutation({
     mutationFn: async (shopProfileId: string) => {
+      if (!customerId) {
+        throw new Error("Customer ID is missing. Please log in again.");
+      }
+      if (!shopProfileId) {
+        throw new Error("Shop ID is missing.");
+      }
+
+      console.log("Registering coupon:", { customerId, shopProfileId });
+
       const response = await fetch("/api/customer-coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,6 +45,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       });
       if (!response.ok) {
         const error = await response.json();
+        console.error("Registration error response:", error);
         throw new Error(error.error || "Failed to register as affiliate");
       }
       return response.json();
