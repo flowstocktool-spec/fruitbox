@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,12 +52,13 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       form.reset();
       setSelectedFile(null);
       setPreviewUrl(null);
+      setAffiliateCode("");
+      setAffiliateDetails(null);
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
       toast({
         title: "Bill uploaded successfully!",
-        description: referralCode
-          ? `Your bill is submitted using referral code ${referralCode}. Pending approval.`
+        description: affiliateCode
+          ? `Your bill is submitted with referral code ${affiliateCode}. You'll get ${discountPercentage}% welcome discount on approval!`
           : "Your bill is pending approval.",
       });
       onSuccess?.();
@@ -83,14 +85,14 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
         const customer = await response.json();
         setAffiliateDetails(customer);
         toast({
-          title: "Affiliate Found!",
-          description: `You'll be using ${customer.name}'s referral code.`,
+          title: "Referral Code Valid!",
+          description: `You'll use ${customer.name}'s referral code and get ${discountPercentage}% welcome discount!`,
         });
       } else {
         setAffiliateDetails(null);
         toast({
           title: "Invalid Code",
-          description: "The coupon code you entered is not valid.",
+          description: "The referral code you entered is not valid.",
           variant: "destructive",
         });
       }
@@ -98,7 +100,7 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       setAffiliateDetails(null);
       toast({
         title: "Error",
-        description: "Failed to verify coupon code.",
+        description: "Failed to verify referral code.",
         variant: "destructive",
       });
     } finally {
@@ -132,7 +134,7 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       points: Math.floor(data.amount * pointsPerDollar),
       status: 'pending',
       type: 'purchase',
-      referralCode: affiliateCode || referralCode,
+      referralCode: affiliateCode || null,
       shopName: shopName,
     });
   };
@@ -141,14 +143,14 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
     <Card data-testid="card-bill-upload">
       <CardHeader>
         <CardTitle className="font-heading">Upload Purchase Bill</CardTitle>
-        <CardDescription>Submit your bill for points approval</CardDescription>
+        <CardDescription>Submit your bill with a referral code for discount</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {!referralCode && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Affiliate Coupon Code (Optional)</label>
+                <label className="text-sm font-medium">Referral Code from Friend (Required for Discount)</label>
                 <div className="flex gap-2">
                   <Input
                     type="text"
@@ -173,7 +175,7 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
                       ✓ Using <strong>{affiliateDetails.name}</strong>'s referral code
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      They will earn points when your purchase is approved!
+                      You'll get {discountPercentage}% welcome discount! They'll earn points when your purchase is approved.
                     </p>
                   </div>
                 )}
@@ -261,21 +263,26 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
 
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="text-sm text-muted-foreground">
-                <strong>Points to earn:</strong> {Math.floor((form.watch('amount') || 0) * pointsPerDollar)} points
+                <strong>Original Amount:</strong> ${(form.watch('amount') || 0).toFixed(2)}
               </p>
-              {discountPercentage > 0 && form.watch('amount') > 0 && (
-                <p className="text-sm font-medium text-green-600">
-                  <strong>Discount ({discountPercentage}%):</strong> ${((form.watch('amount') || 0) * discountPercentage / 100).toFixed(2)}
+              {affiliateDetails && discountPercentage > 0 && form.watch('amount') > 0 && (
+                <>
+                  <p className="text-sm font-medium text-green-600">
+                    <strong>Welcome Discount ({discountPercentage}%):</strong> -${((form.watch('amount') || 0) * discountPercentage / 100).toFixed(2)}
+                  </p>
+                  <p className="text-sm font-semibold text-primary">
+                    <strong>You Pay:</strong> ${((form.watch('amount') || 0) * (1 - discountPercentage / 100)).toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Referrer ({affiliateDetails.name}) earns:</strong> {Math.floor((form.watch('amount') || 0) * pointsPerDollar * 0.1)} points
+                  </p>
+                </>
+              )}
+              {!affiliateDetails && (
+                <p className="text-sm text-orange-600">
+                  Enter a valid referral code to get {discountPercentage}% welcome discount!
                 </p>
               )}
-              {discountPercentage > 0 && form.watch('amount') > 0 && (
-                <p className="text-sm font-semibold text-primary">
-                  <strong>Final Amount:</strong> ${((form.watch('amount') || 0) * (1 - discountPercentage / 100)).toFixed(2)}
-                </p>
-              )}
-              <p className="text-sm text-muted-foreground">
-                <strong>Minimum purchase:</strong> ${minPurchaseAmount}
-              </p>
             </div>
 
             <Button

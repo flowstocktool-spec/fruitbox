@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -7,13 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, History, User, Receipt, UserPlus, Plus, Store, Share2, LogOut } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Share2, LogOut } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
-import { ShopSearch } from "@/components/ShopSearch";
-import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile, loginCustomer } from "@/lib/api";
+import { getTransactions, createCustomer, generateReferralCode } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,8 +20,7 @@ export default function CustomerPWA() {
   const [customer, setCustomer] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
-  const [showShopSearch, setShowShopSearch] = useState(false);
-  
+
   const [loginData, setLoginData] = useState({
     username: "",
     password: ""
@@ -37,45 +34,6 @@ export default function CustomerPWA() {
     password: ""
   });
 
-
-function CouponCard({ coupon }: { coupon: any }) {
-  const { data: shop } = useQuery({
-    queryKey: ['/api/shop-profiles', coupon.shopProfileId],
-    queryFn: () => getShopProfile(coupon.shopProfileId),
-  });
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-semibold">{shop?.shopName || 'Loading...'}</h4>
-          <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
-            My Coupon
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-          <div>
-            <p className="text-muted-foreground">Points Earned</p>
-            <p className="font-bold text-green-600">{coupon.totalPoints}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Redeemed</p>
-            <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Remaining</p>
-            <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Referral Code: <span className="font-mono font-semibold">{coupon.referralCode}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-  
   const { toast } = useToast();
 
   // Check if user is already logged in
@@ -95,13 +53,6 @@ function CouponCard({ coupon }: { coupon: any }) {
     }
   }, []);
 
-  // Customer coupons query
-  const { data: coupons = [], refetch: refetchCoupons } = useQuery({
-    queryKey: ['/api/customer-coupons', customer?.id],
-    queryFn: () => getCustomerCoupons(customer?.id ?? ''),
-    enabled: !!customer,
-  });
-
   // Transactions query
   const { data: transactions = [] } = useQuery({
     queryKey: ['/api/transactions', customer?.id],
@@ -110,8 +61,18 @@ function CouponCard({ coupon }: { coupon: any }) {
   });
 
   const loginMutation = useMutation({
-    mutationFn: ({ username, password }: { username: string; password: string }) => 
-      loginCustomer(username, password),
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const response = await fetch('/api/customers/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Login failed');
+      }
+      return response.json();
+    },
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
@@ -344,8 +305,8 @@ function CouponCard({ coupon }: { coupon: any }) {
     );
   }
 
-  const totalPoints = coupons.reduce((sum, coupon) => sum + coupon.totalPoints, 0);
-  const totalRedeemed = coupons.reduce((sum, coupon) => sum + coupon.redeemedPoints, 0);
+  const totalPoints = customer.totalPoints || 0;
+  const totalRedeemed = customer.redeemedPoints || 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -369,12 +330,8 @@ function CouponCard({ coupon }: { coupon: any }) {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
-        <Tabs defaultValue="coupons" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="coupons">
-              <Gift className="h-4 w-4 mr-1" />
-              Coupons
-            </TabsTrigger>
+        <Tabs defaultValue="upload" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload">
               <Receipt className="h-4 w-4 mr-1" />
               Upload
@@ -389,7 +346,7 @@ function CouponCard({ coupon }: { coupon: any }) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="coupons" className="space-y-6">
+          <TabsContent value="upload" className="space-y-4">
             <PointsDashboard
               totalPoints={totalPoints}
               redeemedPoints={totalRedeemed}
@@ -397,74 +354,15 @@ function CouponCard({ coupon }: { coupon: any }) {
             />
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">My Shop Coupons</h3>
-                <Button onClick={() => setShowShopSearch(true)} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Find Shops
-                </Button>
-              </div>
-
-              {coupons.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-6">
-                    <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground mb-3">No shop coupons yet</p>
-                    <Button onClick={() => setShowShopSearch(true)} size="sm">
-                      Find Shops to Get Coupons
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {coupons.map((coupon) => (
-                    <CouponCard key={coupon.id} coupon={coupon} />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {showShopSearch && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Store className="h-5 w-5" />
-                      Find Shops & Campaigns
-                    </CardTitle>
-                    <CardDescription>Browse shops, view their offers, and add coupons to start earning</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ShopSearch 
-                      customerId={customer.id} 
-                      existingShopIds={coupons.map(c => c.shopProfileId)}
-                    />
-                    <Button 
-                      variant="outline" 
-                      className="w-full mt-4" 
-                      onClick={() => setShowShopSearch(false)}
-                    >
-                      Close
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="upload" className="space-y-4">
-            <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-2">How to Upload a Bill</h3>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Enter the referral code you received from a friend</li>
                   <li>Take a photo or select your purchase bill</li>
                   <li>Enter the purchase amount</li>
-                  <li>(Optional) Enter an affiliate's coupon code to give them credit</li>
                   <li>Submit for approval</li>
+                  <li>On approval, you get a welcome discount and your friend earns points!</li>
                 </ol>
-                <p className="text-xs text-blue-600 mt-2">
-                  💡 If someone referred you, use their code to help them earn points!
-                </p>
               </div>
 
               <BillUpload
@@ -487,10 +385,10 @@ function CouponCard({ coupon }: { coupon: any }) {
                 <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Share</h3>
                   <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Share the PWA link below with your friends</li>
-                    <li>Ask them to install the app and create an account</li>
-                    <li>They should enter your referral code when uploading their first bill</li>
-                    <li>Both of you earn rewards when they make a purchase!</li>
+                    <li>Share your referral code with friends and family</li>
+                    <li>They install the app and create an account</li>
+                    <li>They enter your referral code when uploading their first bill</li>
+                    <li>On approval, they get a discount and you earn points!</li>
                   </ol>
                 </div>
 
@@ -541,7 +439,7 @@ function CouponCard({ coupon }: { coupon: any }) {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Share this code with your friends. They can enter it in the Upload section when submitting their first bill.
+                    Share this code with your friends. They should enter it when uploading their first bill.
                   </p>
                 </div>
 
