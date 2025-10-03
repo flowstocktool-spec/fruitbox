@@ -253,13 +253,13 @@ export class MemStorage implements IStorage {
 
   async createShopProfile(data: any): Promise<any> {
     const id = randomUUID();
-    const shopProfile = { ...data, id, createdAt: new Date() };
-    this.stores.set(id, shopProfile); // Assuming shop profiles are stored in the same map as stores for now
+    const shopProfile = { ...data, id, type: 'shop', createdAt: new Date() };
+    this.stores.set(id, shopProfile);
     return shopProfile;
   }
 
   async getShopProfiles(): Promise<any[]> {
-    return Array.from(this.stores.values()).filter(store => store.type === 'shop'); // Filter for 'shop' type
+    return Array.from(this.stores.values()).filter(store => store.type === 'shop');
   }
 
   async getShopProfileByCode(shopCode: string): Promise<any | undefined> {
