@@ -12,6 +12,7 @@ import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { MyShops } from "@/components/MyShops";
+import { ShopSearch } from "@/components/ShopSearch";
 import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +59,13 @@ export default function CustomerPWA() {
   const { data: transactions = [] } = useQuery({
     queryKey: ['/api/transactions', customer?.id],
     queryFn: () => getTransactions(customer?.id ?? '', undefined),
+    enabled: !!customer,
+  });
+
+  // Customer coupons query
+  const { data: customerCoupons = [] } = useQuery({
+    queryKey: ['/api/customer-coupons', customer?.id],
+    queryFn: () => getCustomerCoupons(customer?.id ?? ''),
     enabled: !!customer,
   });
 
@@ -381,10 +389,39 @@ export default function CustomerPWA() {
           </TabsContent>
 
           <TabsContent value="shops" className="space-y-4">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                Become a Shop Affiliate
+              </h3>
+              <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                Register as an affiliate for any shop to get your unique referral code!
+              </p>
+              <ul className="text-xs text-green-700 dark:text-green-300 space-y-1 list-disc list-inside">
+                <li>Each shop gives you a unique referral code</li>
+                <li>Share your code with friends and family</li>
+                <li>Earn {customer.totalPoints > 0 ? '10%' : 'bonus'} points when they make purchases</li>
+                <li>Track all your affiliate shops in one place</li>
+              </ul>
+            </div>
+
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading">My Shops</CardTitle>
-                <CardDescription>Shops where you have coupons</CardDescription>
+                <CardTitle className="font-heading">Find & Register</CardTitle>
+                <CardDescription>Search for shops and become an affiliate</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ShopSearch 
+                  customerId={customer.id} 
+                  existingShopIds={customerCoupons.map((c: any) => c.shopProfileId)}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">My Affiliate Shops</CardTitle>
+                <CardDescription>Shops where you're registered as an affiliate</CardDescription>
               </CardHeader>
               <CardContent>
                 <MyShops customerId={customer.id} />

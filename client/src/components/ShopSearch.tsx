@@ -36,22 +36,24 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create customer coupon");
+        throw new Error(error.error || "Failed to register as affiliate");
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newCoupon) => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'shops'] });
       toast({
-        title: "Success!",
-        description: "Coupon added! You can now shop and earn points.",
+        title: "Registered as Affiliate!",
+        description: `Your unique referral code: ${newCoupon.referralCode}. Share it to earn rewards!`,
+        duration: 5000,
       });
     },
     onError: (error: any) => {
-      console.error("Coupon creation error:", error);
+      console.error("Registration error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to add coupon",
+        title: "Registration Failed",
+        description: error.message || "Failed to register as affiliate",
         variant: "destructive",
       });
     },
@@ -94,7 +96,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
                 hasCoupon={hasCoupon}
                 isExpanded={isExpanded}
                 onToggleExpand={() => setExpandedShopId(isExpanded ? null : shop.id)}
-                onAddCoupon={() => createCouponMutation.mutate(shop.id)}
+                onRegister={() => createCouponMutation.mutate(shop.id)}
                 isPending={createCouponMutation.isPending}
               />
             );
@@ -110,14 +112,14 @@ function ShopCard({
   hasCoupon, 
   isExpanded, 
   onToggleExpand, 
-  onAddCoupon,
+  onRegister,
   isPending 
 }: { 
   shop: any; 
   hasCoupon: boolean; 
   isExpanded: boolean;
   onToggleExpand: () => void;
-  onAddCoupon: () => void;
+  onRegister: () => void;
   isPending: boolean;
 }) {
   const { data: campaigns = [] } = useQuery({
@@ -168,15 +170,16 @@ function ShopCard({
           {hasCoupon ? (
             <Button variant="outline" disabled>
               <Check className="h-4 w-4 mr-2" />
-              Added
+              Registered
             </Button>
           ) : (
             <Button 
-              onClick={onAddCoupon}
+              onClick={onRegister}
               disabled={isPending}
+              className="bg-green-600 hover:bg-green-700"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Coupon
+              Register as Affiliate
             </Button>
           )}
         </div>

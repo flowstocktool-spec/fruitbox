@@ -76,44 +76,52 @@ export function MyShops({ customerId }: MyShopsProps) {
 
   return (
     <div className="space-y-3">
-      {validShops.map((shop: any) => (
-        <Card key={shop.id} className="hover:shadow-md transition-shadow" data-testid={`shop-card-${shop.id}`}>
-          <CardHeader>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{shop.shopName}</p>
-                    <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
-                  </div>
-                </div>
-              </div>
-              {coupon && shop.id === selectedShopId && (
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-2">
-                  <p className="text-xs text-muted-foreground mb-1">Your Referral Code for this shop:</p>
+      {validShops.map((shop: any) => {
+        const shopCoupon = customerCoupons.find((c: any) => c.shopProfileId === shop.id);
+        
+        return (
+          <Card key={shop.id} className="hover:shadow-md transition-shadow" data-testid={`shop-card-${shop.id}`}>
+            <CardHeader>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <code className="text-sm font-mono font-bold text-blue-900 dark:text-blue-100">
-                      {coupon.referralCode}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        navigator.clipboard.writeText(coupon.referralCode);
-                        toast({
-                          title: "Copied!",
-                          description: "Referral code copied to clipboard",
-                        });
-                      }}
-                    >
-                      Copy
-                    </Button>
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{shop.shopName}</p>
+                      <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
+                    </div>
                   </div>
+                  <Badge variant="secondary">Affiliate</Badge>
                 </div>
-              )}
-            </div>
-          </CardHeader>
+                
+                {shopCoupon && (
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Your Affiliate Code:</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <code className="text-lg font-mono font-bold text-green-900 dark:text-green-100 tracking-wider">
+                        {shopCoupon.referralCode}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(shopCoupon.referralCode);
+                          toast({
+                            title: "Copied!",
+                            description: "Referral code copied to clipboard",
+                          });
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Share this code to earn {shop.pointsPerDollar} points per ₹1 spent by referrals
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-4 text-sm">
               <div>
@@ -212,7 +220,8 @@ export function MyShops({ customerId }: MyShopsProps) {
             </Dialog>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }
