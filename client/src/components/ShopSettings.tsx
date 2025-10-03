@@ -42,6 +42,10 @@ export function ShopSettings({ shopProfile, onSuccess, onUpdate }: ShopSettingsP
     },
     onSuccess: (updatedProfile) => {
       queryClient.invalidateQueries({ queryKey: ['/api/shop-profiles'] });
+      if (isEdit && shopProfile?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/shop-profiles/${shopProfile.id}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/shops/me'] });
+      }
       toast({
         title: "Success!",
         description: isEdit ? "Shop settings updated" : "Shop profile created",

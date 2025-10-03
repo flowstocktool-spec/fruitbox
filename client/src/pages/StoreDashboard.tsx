@@ -16,6 +16,7 @@ import {
   getCampaigns,
   getTransactions,
   getShopProfile,
+  getCurrentShop
 } from "@/lib/api";
 
 export default function StoreDashboard() {
@@ -61,7 +62,7 @@ export default function StoreDashboard() {
     queryFn: async () => {
       const allTransactions = await getTransactions();
       return allTransactions.filter(
-        (t: any) => t.status === "pending" && 
+        (t: any) => t.status === "pending" &&
         campaigns.some((c: any) => c.id === t.campaignId)
       );
     },
@@ -179,7 +180,10 @@ export default function StoreDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <ShopSettings shopProfile={shopProfile} onUpdate={setShopProfile} />
+            <ShopSettings shopProfile={shopProfile} onUpdate={(profile) => {
+              setShopProfile(profile);
+              queryClient.invalidateQueries({ queryKey: ['/api/shops/me'] });
+            }} />
           </TabsContent>
         </Tabs>
       </main>
