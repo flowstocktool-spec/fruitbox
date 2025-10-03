@@ -351,6 +351,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get shops where customer has coupons
+  app.get("/api/customers/:customerId/shops", async (req, res) => {
+    try {
+      const coupons = await storage.getCustomerCoupons(req.params.customerId);
+      const shopIds = [...new Set(coupons.map((c: any) => c.shopProfileId).filter(Boolean))];
+      const shops = await Promise.all(shopIds.map(id => storage.getShopProfile(id)));
+      res.json(shops.filter(shop => shop !== undefined));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer shops" });
+    }
+  });
+
   app.post("/api/customer-coupons", async (req, res) => {
     try {
       const { customerId, shopProfileId } = req.body;

@@ -153,6 +153,12 @@ export async function getShopProfiles() {
   return res.json();
 }
 
+export async function getCustomerShops(customerId: string) {
+  const res = await fetch(`/api/customers/${customerId}/shops`);
+  if (!res.ok) throw new Error("Failed to fetch customer shops");
+  return res.json();
+}
+
 export async function getShopProfile(id: string) {
   const res = await fetch(`/api/shop-profiles/${id}`);
   if (!res.ok) throw new Error("Failed to fetch shop profile");

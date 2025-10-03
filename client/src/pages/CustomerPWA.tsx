@@ -6,11 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, History, User, Receipt, UserPlus, Share2, LogOut } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Share2, LogOut, Store } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
+import { MyShops } from "@/components/MyShops";
 import { getTransactions, createCustomer, generateReferralCode } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -331,16 +332,20 @@ export default function CustomerPWA() {
 
       <main className="max-w-md mx-auto px-4 py-6">
         <Tabs defaultValue="upload" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="upload" data-testid="tab-upload">
               <Receipt className="h-4 w-4 mr-1" />
               Upload
             </TabsTrigger>
-            <TabsTrigger value="share">
+            <TabsTrigger value="shops" data-testid="tab-shops">
+              <Store className="h-4 w-4 mr-1" />
+              Shops
+            </TabsTrigger>
+            <TabsTrigger value="share" data-testid="tab-share">
               <User className="h-4 w-4 mr-1" />
               Share
             </TabsTrigger>
-            <TabsTrigger value="history">
+            <TabsTrigger value="history" data-testid="tab-history">
               <History className="h-4 w-4 mr-1" />
               History
             </TabsTrigger>
@@ -373,6 +378,18 @@ export default function CustomerPWA() {
                 discountPercentage={10}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="shops" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">My Shops</CardTitle>
+                <CardDescription>Shops where you have coupons</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MyShops customerId={customer.id} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="share" className="space-y-4">
