@@ -9,8 +9,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// Use Neon's connection pooler for better performance
+const pooledUrl = process.env.DATABASE_URL.replace('.us-east-2', '-pooler.us-east-2');
+
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: pooledUrl,
   ssl: {
     rejectUnauthorized: false
   }

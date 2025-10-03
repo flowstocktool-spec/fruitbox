@@ -12,7 +12,7 @@ import { Palette } from "lucide-react";
 const campaignSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().optional(),
-  pointsPerUnit: z.number().min(1, "Must be at least 1 point per currency unit"),
+  pointsPerDollar: z.number().min(1, "Must be at least 1 point per dollar"),
   minPurchaseAmount: z.number().min(0, "Cannot be negative"),
   discountPercentage: z.number().min(1).max(100, "Must be between 1-100%"),
   couponColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color"),
@@ -31,7 +31,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
     defaultValues: {
       name: "",
       description: "",
-      pointsPerUnit: 1,
+      pointsPerDollar: 1,
       minPurchaseAmount: 0,
       discountPercentage: 10,
       couponColor: "#7c3aed",
@@ -88,16 +88,16 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="pointsPerUnit"
+                name="pointsPerDollar"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Points per Currency Unit</FormLabel>
+                    <FormLabel>Points per $1</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
-                        data-testid="input-points-per-unit"
+                        data-testid="input-points-per-dollar"
                       />
                     </FormControl>
                     <FormDescription>Reward points rate</FormDescription>
@@ -111,7 +111,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
                 name="minPurchaseAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Min. Purchase</FormLabel>
+                    <FormLabel>Min. Purchase ($)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

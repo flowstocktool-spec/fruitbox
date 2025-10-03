@@ -169,8 +169,8 @@ function ShopCard({
         <div className="flex items-center justify-between">
           <div className="flex gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Points/{shop.currencySymbol || '₹'}</p>
-              <p className="font-bold text-green-600">{shop.pointsPerUnit}</p>
+              <p className="text-muted-foreground">Points/₹</p>
+              <p className="font-bold text-green-600">{shop.pointsPerDollar}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Discount</p>

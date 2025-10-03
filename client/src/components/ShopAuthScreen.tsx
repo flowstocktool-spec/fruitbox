@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,8 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
     category: "",
     address: "",
     phone: "",
+    pointsPerDollar: 1,
+    discountPercentage: 10,
   });
   const { toast } = useToast();
 
@@ -230,7 +233,29 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
                   />
                 </div>
 
-                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="pointsPerDollar">Points per ₹1</Label>
+                    <Input
+                      id="pointsPerDollar"
+                      type="number"
+                      min="1"
+                      value={registerData.pointsPerDollar}
+                      onChange={(e) => setRegisterData({ ...registerData, pointsPerDollar: parseInt(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discountPercentage">Discount %</Label>
+                    <Input
+                      id="discountPercentage"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={registerData.discountPercentage}
+                      onChange={(e) => setRegisterData({ ...registerData, discountPercentage: parseInt(e.target.value) })}
+                    />
+                  </div>
+                </div>
 
                 <Button
                   type="submit"

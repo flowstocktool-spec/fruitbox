@@ -2,7 +2,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
-import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { db } from "./db";
 import { stores, shopProfiles, campaigns, customers, transactions, customerCoupons, sharedCoupons } from "@shared/schema";
@@ -25,12 +24,6 @@ declare module 'express-session' {
 }
 
 export function registerRoutes(app: Express): Server {
-  // Warn about SESSION_SECRET in production
-  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-    console.warn('⚠️  WARNING: SESSION_SECRET environment variable is not set! Using a default value is INSECURE for production.');
-    console.warn('   Please set SESSION_SECRET in your deployment secrets/environment variables.');
-  }
-
   // Session middleware
   app.use(
     session({
@@ -62,12 +55,7 @@ export function registerRoutes(app: Express): Server {
         .where(eq(customers.username, username))
         .limit(1);
 
-      if (!customer) {
-        return res.status(401).json({ error: "Invalid username or password" });
-      }
-
-      const isValidPassword = await bcrypt.compare(password, customer.password);
-      if (!isValidPassword) {
+      if (!customer || customer.password !== password) {
         return res.status(401).json({ error: "Invalid username or password" });
       }
 
@@ -115,12 +103,12 @@ export function registerRoutes(app: Express): Server {
   // Shop Owner Registration
   app.post("/api/shops/register", async (req, res) => {
     try {
-      const { shopName, shopCode, username, password, description, logo } = req.body;
+      const validatedData = insertShopProfileSchema.parse(req.body);
       
       // Check if username already exists
       const [existingByUsername] = await db.select()
         .from(shopProfiles)
-        .where(eq(shopProfiles.username, username))
+        .where(eq(shopProfiles.username, validatedData.username))
         .limit(1);
       
       if (existingByUsername) {
@@ -130,24 +118,14 @@ export function registerRoutes(app: Express): Server {
       // Check if shop code already exists
       const [existingByCode] = await db.select()
         .from(shopProfiles)
-        .where(eq(shopProfiles.shopCode, shopCode))
+        .where(eq(shopProfiles.shopCode, validatedData.shopCode))
         .limit(1);
       
       if (existingByCode) {
         return res.status(400).json({ error: "Shop code already exists" });
       }
       
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      const [newShop] = await db.insert(shopProfiles).values({
-        shopName,
-        shopCode,
-        username,
-        password: hashedPassword,
-        description,
-        logo,
-      }).returning();
+      const [newShop] = await db.insert(shopProfiles).values(validatedData).returning();
       req.session.shopProfileId = newShop.id;
       res.status(201).json(newShop);
     } catch (error: any) {
@@ -165,12 +143,7 @@ export function registerRoutes(app: Express): Server {
         .where(eq(shopProfiles.username, username))
         .limit(1);
 
-      if (!shop) {
-        return res.status(401).json({ error: "Invalid username or password" });
-      }
-
-      const isValidPassword = await bcrypt.compare(password, shop.password);
-      if (!isValidPassword) {
+      if (!shop || shop.password !== password) {
         return res.status(401).json({ error: "Invalid username or password" });
       }
 
@@ -317,14 +290,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/customers", async (req, res) => {
     try {
       const validatedData = insertCustomerSchema.parse(req.body);
-      
-      // Hash password
-      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-      
-      const [customer] = await db.insert(customers).values({
-        ...validatedData,
-        password: hashedPassword,
-      }).returning();
+      const [customer] = await db.insert(customers).values(validatedData).returning();
       req.session.customerId = customer.id;
       res.status(201).json(customer);
     } catch (error: any) {

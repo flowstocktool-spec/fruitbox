@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ interface ShopSettingsProps {
 export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
   const isEdit = !!shopProfile;
   const { toast } = useToast();
-
+  
   const [formData, setFormData] = useState({
     shopName: shopProfile?.shopName || "",
     shopCode: shopProfile?.shopCode || "",
@@ -25,9 +26,7 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
     category: shopProfile?.category || "",
     address: shopProfile?.address || "",
     phone: shopProfile?.phone || "",
-    currency: shopProfile?.currency || "INR",
-    currencySymbol: shopProfile?.currencySymbol || "₹",
-    pointsPerUnit: shopProfile?.pointsPerUnit || 1,
+    pointsPerDollar: shopProfile?.pointsPerDollar || 1,
     discountPercentage: shopProfile?.discountPercentage || 10,
   });
 
@@ -134,46 +133,22 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
           <CardDescription>Configure how customers earn points</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="currency">Currency</Label>
+              <Label htmlFor="pointsPerDollar">Points per ₹1</Label>
               <Input
-                id="currency"
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                placeholder="INR, USD, EUR, etc."
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="currencySymbol">Currency Symbol</Label>
-              <Input
-                id="currencySymbol"
-                value={formData.currencySymbol}
-                onChange={(e) => setFormData({ ...formData, currencySymbol: e.target.value })}
-                placeholder="₹, $, €, etc."
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pointsPerUnit">Points per Currency Unit</Label>
-              <Input
-                id="pointsPerUnit"
+                id="pointsPerDollar"
                 type="number"
                 min="1"
-                value={formData.pointsPerUnit}
-                onChange={(e) => setFormData({ ...formData, pointsPerUnit: parseInt(e.target.value) })}
-                required
+                value={formData.pointsPerDollar}
+                onChange={(e) => setFormData({ ...formData, pointsPerDollar: parseInt(e.target.value) })}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Points customers earn for every unit of currency spent
+                Points customers earn for every ₹1 spent
               </p>
             </div>
             <div>
-              <Label htmlFor="discountPercentage">Referral Discount (%)</Label>
+              <Label htmlFor="discountPercentage">Discount %</Label>
               <Input
                 id="discountPercentage"
                 type="number"
@@ -181,7 +156,6 @@ export function ShopSettings({ shopProfile, onSuccess }: ShopSettingsProps) {
                 max="100"
                 value={formData.discountPercentage}
                 onChange={(e) => setFormData({ ...formData, discountPercentage: parseInt(e.target.value) })}
-                required
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Discount customers get when using referral codes
