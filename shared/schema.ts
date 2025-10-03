@@ -47,6 +47,9 @@ export const customers = pgTable("customers", {
   referralCode: text("referral_code").notNull().unique(),
   totalPoints: integer("total_points").notNull().default(0),
   redeemedPoints: integer("redeemed_points").notNull().default(0),
+  deviceId: text("device_id"),
+  deviceFingerprint: text("device_fingerprint"),
+  lastDeviceVerifiedAt: timestamp("last_device_verified_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

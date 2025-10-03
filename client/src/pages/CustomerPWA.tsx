@@ -13,9 +13,10 @@ import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { ShopSearch } from "@/components/ShopSearch";
-import { getCustomerByCode, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile } from "@/lib/api";
+import { getCustomerByCode, getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getShopProfile, getCustomerByDeviceId, updateCustomerDevice } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getDeviceId, getDeviceFingerprint } from "@/lib/deviceAuth";
 
 export default function CustomerPWA() {
   const { code } = useParams<{ code?: string }>();
@@ -28,20 +29,13 @@ export default function CustomerPWA() {
   });
   const { toast } = useToast();
 
-  // Get customer code from URL or localStorage
-  const getCustomerCode = () => {
-    if (code) return code;
-    const storedCode = localStorage.getItem('customerCode');
-    return storedCode;
-  };
-
-  const customerCode = getCustomerCode();
-
-  // Customer query
+  // Get customer using device-based authentication
+  const deviceId = getDeviceId();
+  
+  // Try to get customer by device ID first
   const { data: customer, isLoading: customerLoading, isError: customerError } = useQuery({
-    queryKey: ['/api/customers/code', customerCode],
-    queryFn: () => getCustomerByCode(customerCode!),
-    enabled: !!customerCode,
+    queryKey: ['/api/customers/device', deviceId],
+    queryFn: () => getCustomerByDeviceId(deviceId),
     retry: false,
   });
 
@@ -63,21 +57,25 @@ export default function CustomerPWA() {
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
       const newCode = await generateReferralCode();
+      const deviceId = getDeviceId();
+      const deviceFingerprint = getDeviceFingerprint();
+      
       return createCustomer({
         ...data,
-        campaignId: null, // PWA customers don't belong to specific campaigns initially
+        campaignId: null,
         referralCode: newCode,
         totalPoints: 0,
         redeemedPoints: 0,
+        deviceId,
+        deviceFingerprint,
       });
     },
     onSuccess: (newCustomer) => {
-      localStorage.setItem('customerCode', newCustomer.referralCode);
-      queryClient.invalidateQueries({ queryKey: ['/api/customers/code'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/device'] });
       setShowRegistration(false);
       toast({
         title: "Welcome!",
-        description: "Your account has been created successfully.",
+        description: "Your account has been verified with this device.",
       });
     },
     onError: () => {
@@ -90,10 +88,10 @@ export default function CustomerPWA() {
   });
 
   useEffect(() => {
-    if (!customerCode || customerError) {
+    if (customerError) {
       setShowRegistration(true);
     }
-  }, [customerError, customerCode]);
+  }, [customerError]);
 
   const handleRegistration = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +124,7 @@ export default function CustomerPWA() {
             </div>
             <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
             <CardDescription className="text-center">
-              Join the referral program and start earning points!
+              Join the referral program and start earning points! Your account will be verified using this device.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -48,7 +48,7 @@ export async function getTransactions(customerId?: string, campaignId?: string):
   const params = new URLSearchParams();
   if (customerId) params.append("customerId", customerId);
   if (campaignId) params.append("campaignId", campaignId);
-  
+
   const res = await fetch(`/api/transactions?${params}`);
   if (!res.ok) throw new Error("Failed to fetch transactions");
   return res.json();
@@ -61,7 +61,7 @@ export async function createTransaction(data: any, billFile?: File): Promise<Tra
     Object.keys(data).forEach(key => {
       formData.append(key, data[key]);
     });
-    
+
     const res = await fetch("/api/transactions", {
       method: "POST",
       body: formData,
@@ -69,7 +69,7 @@ export async function createTransaction(data: any, billFile?: File): Promise<Tra
     if (!res.ok) throw new Error("Failed to create transaction");
     return res.json();
   }
-  
+
   const res = await fetch("/api/transactions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -180,7 +180,29 @@ export async function updateShopProfile(id: string, data: any) {
 }
 
 export async function getShopCustomers(shopProfileId: string) {
-  const res = await fetch(`/api/shop-profiles/${shopProfileId}/customers`);
-  if (!res.ok) throw new Error("Failed to fetch shop customers");
-  return res.json();
+  const response = await fetch(`/api/shop-profiles/${shopProfileId}/customers`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch shop customers');
+  }
+  return response.json();
+}
+
+export async function getCustomerByDeviceId(deviceId: string) {
+  const response = await fetch(`/api/customers/device/${deviceId}`);
+  if (!response.ok) {
+    throw new Error('Customer not found for this device');
+  }
+  return response.json();
+}
+
+export async function updateCustomerDevice(customerId: string, deviceId: string, deviceFingerprint: string) {
+  const response = await fetch(`/api/customers/${customerId}/device`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, deviceFingerprint }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update device verification');
+  }
+  return response.json();
 }

@@ -403,6 +403,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ code });
   });
 
+  // Device verification endpoints
+  app.get("/api/customers/device/:deviceId", async (req, res) => {
+    try {
+      const customer = await storage.getCustomerByDeviceId(req.params.deviceId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found for this device" });
+      }
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customer by device" });
+    }
+  });
+
+  app.patch("/api/customers/:id/device", async (req, res) => {
+    try {
+      const { deviceId, deviceFingerprint } = req.body;
+      const customer = await storage.updateCustomerDevice(req.params.id, deviceId, deviceFingerprint);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update device verification" });
+    }
+  });
+
   // Shared coupon routes
   app.post("/api/shared-coupons", async (req, res) => {
     try {

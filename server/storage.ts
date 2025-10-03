@@ -128,6 +128,9 @@ export class MemStorage implements IStorage {
       referralCode: insertCustomer.referralCode,
       totalPoints: insertCustomer.totalPoints ?? 0,
       redeemedPoints: insertCustomer.redeemedPoints ?? 0,
+      deviceId: (insertCustomer as any).deviceId ?? null,
+      deviceFingerprint: (insertCustomer as any).deviceFingerprint ?? null,
+      lastDeviceVerifiedAt: (insertCustomer as any).deviceId ? new Date() : null,
       createdAt: new Date(),
     };
     this.customers.set(id, customer);
@@ -143,6 +146,24 @@ export class MemStorage implements IStorage {
     if (!customer) return undefined;
 
     const updated = { ...customer, totalPoints };
+    this.customers.set(id, updated);
+    return updated;
+  }
+
+  async getCustomerByDeviceId(deviceId: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(c => (c as any).deviceId === deviceId);
+  }
+
+  async updateCustomerDevice(id: string, deviceId: string, deviceFingerprint: string): Promise<Customer | undefined> {
+    const customer = this.customers.get(id);
+    if (!customer) return undefined;
+
+    const updated = { 
+      ...customer, 
+      deviceId, 
+      deviceFingerprint,
+      lastDeviceVerifiedAt: new Date()
+    } as any;
     this.customers.set(id, updated);
     return updated;
   }
