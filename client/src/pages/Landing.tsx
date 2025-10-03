@@ -60,29 +60,55 @@ export default function Landing() {
         </div>
 
         <div className="mb-12 sm:mb-16">
-          <Card className="max-w-md mx-auto bg-gradient-to-br from-primary/5 to-chart-2/5">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Smartphone className="h-6 w-6 text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-br from-primary/5 to-chart-2/5">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
                 </div>
-              </div>
-              <CardTitle className="font-heading">Scan to Access PWA</CardTitle>
-              <CardDescription>
-                Install on your phone for quick access
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <div className="bg-white dark:bg-white p-4 rounded-lg" data-testid="qr-code-pwa">
-                <QRCodeSVG
-                  value={pwaUrl}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <CardTitle className="font-heading">Customer Login</CardTitle>
+                <CardDescription>
+                  Scan to access the customer app
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-4">
+                <div className="bg-white dark:bg-white p-4 rounded-lg" data-testid="qr-code-customer">
+                  <QRCodeSVG
+                    value={pwaUrl}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-chart-3/5 to-chart-4/5">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-chart-3/20 flex items-center justify-center">
+                    <Store className="h-6 w-6 text-chart-3" />
+                  </div>
+                </div>
+                <CardTitle className="font-heading">Store Login</CardTitle>
+                <CardDescription>
+                  Scan to access the store dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-4">
+                <div className="bg-white dark:bg-white p-4 rounded-lg" data-testid="qr-code-store">
+                  <QRCodeSVG
+                    value={`${window.location.origin}/store`}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-12 sm:mb-16">
