@@ -338,16 +338,20 @@ export function registerRoutes(app: Express): Server {
         .from(customerCoupons)
         .where(eq(customerCoupons.customerId, req.params.customerId));
       
-      const shopIds = coupons.map(c => c.shopProfileId);
+      const shopIds = [...new Set(coupons.map(c => c.shopProfileId))];
       if (shopIds.length === 0) {
         return res.json([]);
       }
       
-      const shops = await db.select()
-        .from(shopProfiles)
-        .where(eq(shopProfiles.id, shopIds[0]));
+      // Fetch all shops and filter by IDs
+      const allShops = await db.select()
+        .from(shopProfiles);
       
-      res.json(shops);
+      const customerShopsData = allShops.filter(shop => 
+        shopIds.includes(shop.id)
+      );
+      
+      res.json(customerShopsData);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

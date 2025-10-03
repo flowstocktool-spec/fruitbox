@@ -589,7 +589,7 @@ export default function CustomerPWA() {
                             <Button
                               className="w-full"
                               onClick={async () => {
-                                if (!shopCoupon) {
+                                if (!coupon) {
                                   toast({
                                     title: "Error",
                                     description: "No coupon found for this shop",
@@ -598,13 +598,13 @@ export default function CustomerPWA() {
                                   return;
                                 }
 
-                                setSelectedCouponForShare({ shop, coupon: shopCoupon });
+                                setSelectedCouponForShare({ shop, coupon });
                                 setShareSheetOpen(true);
                                 setIsCreatingShareToken(true);
 
                                 try {
                                   const sharedCoupon = await createSharedCoupon({
-                                    couponId: shopCoupon.id,
+                                    couponId: coupon.id,
                                     sharedByCustomerId: customer.id,
                                   });
                                   setShareToken(sharedCoupon.shareToken);
