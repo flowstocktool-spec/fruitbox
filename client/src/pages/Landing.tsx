@@ -67,9 +67,9 @@ export default function Landing() {
                   <Smartphone className="h-6 w-6 text-primary" />
                 </div>
               </div>
-              <CardTitle className="font-heading">Scan to Access Customer PWA</CardTitle>
+              <CardTitle className="font-heading">Scan to Access PWA</CardTitle>
               <CardDescription>
-                Scan this QR code with your phone to access the customer app instantly
+                Scan this QR code with your phone to access the app instantly
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
