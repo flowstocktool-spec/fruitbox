@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +25,9 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
     category: "",
     address: "",
     phone: "",
-    pointsPerDollar: 1,
+    currency: "INR", // Default currency
+    currencySymbol: "₹", // Default currency symbol
+    pointsPerUnit: 1, // Renamed from pointsPerDollar
     discountPercentage: 10,
   });
   const { toast } = useToast();
@@ -233,26 +234,51 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="pointsPerDollar">Points per ₹1</Label>
+                    <Label htmlFor="register-currency">Currency</Label>
                     <Input
-                      id="pointsPerDollar"
-                      type="number"
-                      min="1"
-                      value={registerData.pointsPerDollar}
-                      onChange={(e) => setRegisterData({ ...registerData, pointsPerDollar: parseInt(e.target.value) })}
+                      id="register-currency"
+                      value={registerData.currency}
+                      onChange={(e) => setRegisterData({ ...registerData, currency: e.target.value })}
+                      placeholder="INR, USD, EUR, etc."
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="discountPercentage">Discount %</Label>
+                    <Label htmlFor="register-currencySymbol">Currency Symbol</Label>
                     <Input
-                      id="discountPercentage"
+                      id="register-currencySymbol"
+                      value={registerData.currencySymbol}
+                      onChange={(e) => setRegisterData({ ...registerData, currencySymbol: e.target.value })}
+                      placeholder="₹, $, €, etc."
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="register-pointsPerUnit">Points per Currency Unit</Label>
+                    <Input
+                      id="register-pointsPerUnit"
+                      type="number"
+                      min="1"
+                      value={registerData.pointsPerUnit}
+                      onChange={(e) => setRegisterData({ ...registerData, pointsPerUnit: parseInt(e.target.value) })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="register-discountPercentage">Referral Discount (%)</Label>
+                    <Input
+                      id="register-discountPercentage"
                       type="number"
                       min="0"
                       max="100"
                       value={registerData.discountPercentage}
                       onChange={(e) => setRegisterData({ ...registerData, discountPercentage: parseInt(e.target.value) })}
+                      required
                     />
                   </div>
                 </div>

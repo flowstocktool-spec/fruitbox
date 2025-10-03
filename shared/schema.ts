@@ -18,6 +18,8 @@ export const shopProfiles = pgTable("shop_profiles", {
   password: text("password").notNull(),
   description: text("description"),
   logo: text("logo"),
+  currency: text("currency").notNull().default("INR"),
+  currencySymbol: text("currency_symbol").notNull().default("₹"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -26,7 +28,7 @@ export const campaigns = pgTable("campaigns", {
   storeId: varchar("store_id").notNull().references(() => stores.id),
   name: text("name").notNull(),
   description: text("description"),
-  pointsPerDollar: integer("points_per_dollar").notNull().default(1),
+  pointsPerUnit: integer("points_per_unit").notNull().default(1),
   minPurchaseAmount: integer("min_purchase_amount").notNull().default(0),
   discountPercentage: integer("discount_percentage").notNull().default(10),
   couponColor: text("coupon_color").notNull().default("#2563eb"),

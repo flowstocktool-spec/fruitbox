@@ -18,18 +18,32 @@ export async function seedData() {
     // Create demo shop profiles
     const [shop1] = await db.insert(shopProfiles).values({
       shopName: "Coffee Haven",
-      shopCode: "COFFEE123",
+      shopCode: "COFFEE001",
       username: "coffeehaven",
       password: hashedPassword,
-      description: "Premium coffee shop with artisan roasts",
+      description: "Premium coffee and pastries",
+      category: "Café",
+      address: "123 Main Street",
+      phone: "+1234567890",
+      pointsPerUnit: 10,
+      discountPercentage: 15,
+      currency: "INR",
+      currencySymbol: "₹",
     }).returning();
 
     const [shop2] = await db.insert(shopProfiles).values({
-      shopName: "Fitness Pro Gym",
-      shopCode: "FITNESS456",
-      username: "fitnesspro",
+      shopName: "Book Paradise",
+      shopCode: "BOOKS001",
+      username: "bookparadise",
       password: hashedPassword,
-      description: "Modern gym with personal training",
+      description: "Your favorite bookstore",
+      category: "Books",
+      address: "456 Oak Avenue",
+      phone: "+1234567891",
+      pointsPerUnit: 5,
+      discountPercentage: 10,
+      currency: "INR",
+      currencySymbol: "₹",
     }).returning();
 
     // Create demo customers
