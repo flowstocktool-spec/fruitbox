@@ -51,12 +51,15 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       return response.json();
     },
     onSuccess: (newCoupon) => {
+      // Invalidate all related queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons', customerId] });
       queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'shops'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shop-profiles'] });
+      
       toast({
-        title: "Registered as Affiliate!",
-        description: `Your unique referral code: ${newCoupon.referralCode}. Share it to earn rewards!`,
-        duration: 8000,
+        title: "✅ Successfully Registered!",
+        description: `You're now an affiliate! Check the "Share" tab to see your coupon code: ${newCoupon.referralCode}`,
+        duration: 10000,
       });
     },
     onError: (error: any) => {

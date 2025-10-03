@@ -502,71 +502,89 @@ export default function CustomerPWA() {
           <TabsContent value="share" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading">Share Your Coupons</CardTitle>
-                <CardDescription>Share your shop coupons with friends and earn rewards</CardDescription>
+                <CardTitle className="font-heading">My Affiliate Coupons</CardTitle>
+                <CardDescription>Your unique referral codes for each shop</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How Coupon Sharing Works</h3>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                    <Gift className="h-4 w-4" />
+                    How It Works
+                  </h3>
                   <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Click the Share button on any of your shop coupons below</li>
-                    <li>Share the unique link or QR code with friends</li>
-                    <li>They claim the coupon and shop at that store with a discount</li>
-                    <li>You earn points when they make purchases!</li>
+                    <li>Each shop gives you a unique coupon code below</li>
+                    <li>Share the code or QR link with friends</li>
+                    <li>They get a discount on their first purchase</li>
+                    <li>You earn points when they shop!</li>
                   </ol>
                 </div>
 
-                {customerShops.length === 0 ? (
-                  <div className="text-center py-8">
+                {customerCoupons.length === 0 ? (
+                  <div className="text-center py-8 bg-muted/50 rounded-lg">
                     <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-muted-foreground">No shop coupons yet</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Register at shops in the Shops tab to get coupons you can share
+                    <p className="font-medium text-muted-foreground mb-2">No Affiliate Coupons Yet</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Register as an affiliate at any shop to get your unique coupon code
                     </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const tabsList = document.querySelector('[data-testid="tab-shops"]') as HTMLElement;
+                        if (tabsList) tabsList.click();
+                      }}
+                    >
+                      Go to Shops Tab
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {customerShops.map((shop: any) => {
-                      const shopCoupon = customerCoupons.find((c: any) => c.shopProfileId === shop.id);
+                    {customerCoupons.map((coupon: any) => {
+                      const shop = customerShops.find((s: any) => s.id === coupon.shopProfileId);
+                      if (!shop) return null;
 
                       return (
-                        <Card key={shop.id} className="border-primary/20" data-testid={`share-coupon-${shop.id}`}>
+                        <Card key={coupon.id} className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5" data-testid={`share-coupon-${shop.id}`}>
                           <CardContent className="pt-4">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-2">
-                                <Store className="h-4 w-4 text-muted-foreground" />
+                                <Store className="h-5 w-5 text-primary" />
                                 <div>
-                                  <p className="font-medium">{shop.shopName}</p>
+                                  <p className="font-bold text-lg">{shop.shopName}</p>
                                   <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
                                 </div>
                               </div>
-                              <Badge variant="secondary">{shop.discountPercentage}% Off</Badge>
+                              <Badge variant="default" className="bg-green-600">{shop.discountPercentage}% Off</Badge>
                             </div>
 
-                            {shopCoupon && (
-                              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-300 dark:border-green-700 rounded-lg p-3 mb-3">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Your Referral Code</p>
-                                    <code className="text-sm font-mono font-bold text-green-700 dark:text-green-300">
-                                      {shopCoupon.referralCode}
-                                    </code>
-                                  </div>
+                            <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-primary/50 rounded-lg p-4 mb-3">
+                              <div className="text-center mb-2">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                                  Your Unique Coupon Code
+                                </p>
+                                <code className="text-2xl font-mono font-bold text-primary tracking-wider block my-2">
+                                  {coupon.referralCode}
+                                </code>
+                                <div className="flex gap-2 justify-center mt-3">
                                   <Button
                                     size="sm"
+                                    variant="outline"
                                     onClick={() => {
-                                      navigator.clipboard.writeText(shopCoupon.referralCode);
+                                      navigator.clipboard.writeText(coupon.referralCode);
                                       toast({
-                                        title: "Copied!",
+                                        title: "✅ Copied!",
                                         description: "Referral code copied to clipboard",
                                       });
                                     }}
                                   >
-                                    Copy
+                                    📋 Copy Code
                                   </Button>
                                 </div>
                               </div>
-                            )}
+                              <div className="text-center text-xs text-muted-foreground mt-3 pt-3 border-t">
+                                <p>💰 Earn {shop.pointsPerDollar || 1} pts per {shop.currencySymbol || '$'}1 spent</p>
+                                <p className="mt-1">Points: {coupon.totalPoints || 0} | Redeemed: {coupon.redeemedPoints || 0}</p>
+                              </div>
+                            </div>
 
                             <Button
                               className="w-full"
