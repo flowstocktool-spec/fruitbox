@@ -271,16 +271,32 @@ export function registerRoutes(app: Express): Server {
         .from(customerCoupons)
         .where(eq(customerCoupons.shopProfileId, req.params.shopId));
       
-      const customerIds = coupons.map(c => c.customerId);
+      const customerIds = [...new Set(coupons.map(c => c.customerId))];
       if (customerIds.length === 0) {
         return res.json([]);
       }
       
+      // Fetch all customers who are registered affiliates for this shop
       const customersData = await db.select()
-        .from(customers)
-        .where(eq(customers.id, customerIds[0]));
+        .from(customers);
       
-      res.json(customersData);
+      // Filter to only include customers with coupons for this shop
+      const filteredCustomers = customersData.filter(customer => 
+        customerIds.includes(customer.id)
+      );
+      
+      // Enrich with coupon data
+      const customersWithCoupons = filteredCustomers.map(customer => {
+        const coupon = coupons.find(c => c.customerId === customer.id);
+        return {
+          ...customer,
+          referralCode: coupon?.referralCode,
+          couponPoints: coupon?.totalPoints || 0,
+          couponRedeemedPoints: coupon?.redeemedPoints || 0,
+        };
+      });
+      
+      res.json(customersWithCoupons);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
