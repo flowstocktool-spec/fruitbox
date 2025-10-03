@@ -15,6 +15,7 @@ import { BillUpload } from "@/components/BillUpload";
 import { MyShops } from "@/components/MyShops";
 import { ShopSearch } from "@/components/ShopSearch";
 import { CouponShareSheet } from "@/components/CouponShareSheet";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons, getCustomer, getCustomerShops, createSharedCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -612,6 +613,8 @@ export default function CustomerPWA() {
         shopName={selectedCouponForShare?.shop?.shopName || ''}
         loading={isCreatingShareToken}
       />
+      
+      <PWAInstallPrompt />
     </div>
   );
 }

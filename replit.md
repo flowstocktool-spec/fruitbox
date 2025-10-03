@@ -15,6 +15,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**October 3, 2025 - PWA Installation Prompt Added**
+- Created PWAInstallPrompt component with custom install banner
+- Banner displays "For better experience, install the application" with Install Now button
+- Component listens for browser's `beforeinstallprompt` event
+- Triggers native browser PWA installation dialog when user clicks Install button
+- Added to both Landing page and Customer PWA page for maximum visibility
+- Dismissible banner with smooth animations (slides in from bottom)
+- Styled with gradient purple-to-blue background matching app theme
+- Only shows when app meets PWA installability criteria
+- Note: Won't show in Replit preview iframe, but works when accessed directly via deployment URL
+
 **October 3, 2025 - GitHub Import Successfully Configured for Replit**
 - Imported GitHub repository and configured for Replit environment
 - Installed all npm dependencies successfully (492 packages)

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Store, Users, TrendingUp, Gift, QrCode, Smartphone, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { useLocation } from "wouter";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -216,6 +217,8 @@ export default function Landing() {
           </p>
         </div>
       </footer>
+      
+      <PWAInstallPrompt />
     </div>
   );
 }
