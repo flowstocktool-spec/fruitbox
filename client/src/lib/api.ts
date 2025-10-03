@@ -155,8 +155,14 @@ export async function getShopProfiles() {
 
 export async function getCustomerShops(customerId: string) {
   const res = await fetch(`/api/customers/${customerId}/shops`);
-  if (!res.ok) throw new Error("Failed to fetch customer shops");
-  return res.json();
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Failed to fetch customer shops:", errorText);
+    throw new Error(`Failed to fetch customer shops: ${res.statusText}`);
+  }
+  const data = await res.json();
+  // Ensure we always return an array
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getShopProfile(id: string) {

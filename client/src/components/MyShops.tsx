@@ -12,7 +12,7 @@ interface MyShopsProps {
 }
 
 export function MyShops({ customerId }: MyShopsProps) {
-  const { data: shops = [], isLoading, isError } = useQuery({
+  const { data: shops = [], isLoading, isError, error } = useQuery({
     queryKey: ['/api/customers', customerId, 'shops'],
     queryFn: () => getCustomerShops(customerId),
     enabled: !!customerId,
@@ -29,20 +29,24 @@ export function MyShops({ customerId }: MyShopsProps) {
   }
 
   if (isError) {
+    console.error("Error loading shops:", error);
     return (
       <Card>
         <CardContent className="text-center py-8">
           <Store className="h-12 w-12 mx-auto text-destructive mb-3" />
           <p className="text-muted-foreground">Failed to load shops</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Please try again later
+            {error instanceof Error ? error.message : "Please try again later"}
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  if (shops.length === 0) {
+  // Filter out any invalid shop data
+  const validShops = shops.filter((shop: any) => shop && shop.id && shop.shopName);
+
+  if (validShops.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -58,7 +62,7 @@ export function MyShops({ customerId }: MyShopsProps) {
 
   return (
     <div className="space-y-3">
-      {shops.map((shop: any) => (
+      {validShops.map((shop: any) => (
         <Card key={shop.id} className="hover:shadow-md transition-shadow" data-testid={`shop-card-${shop.id}`}>
           <CardHeader>
             <div className="flex items-start justify-between">
