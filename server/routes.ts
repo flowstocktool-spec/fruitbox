@@ -267,23 +267,34 @@ export function registerRoutes(app: Express): Server {
   // Get customers for a shop
   app.get("/api/shop-profiles/:shopId/customers", async (req, res) => {
     try {
+      const { shopId } = req.params;
+      
+      // Get all coupons for this shop
       const coupons = await db.select()
         .from(customerCoupons)
-        .where(eq(customerCoupons.shopProfileId, req.params.shopId));
+        .where(eq(customerCoupons.shopProfileId, shopId));
       
-      const customerIds = [...new Set(coupons.map(c => c.customerId))];
-      if (customerIds.length === 0) {
+      console.log(`Found ${coupons.length} coupons for shop ${shopId}`);
+      
+      if (coupons.length === 0) {
         return res.json([]);
       }
       
-      // Fetch all customers who are registered affiliates for this shop
-      const customersData = await db.select()
+      const customerIds = [...new Set(coupons.map(c => c.customerId))];
+      console.log(`Unique customer IDs: ${customerIds.length}`, customerIds);
+      
+      // Fetch all customers
+      const allCustomers = await db.select()
         .from(customers);
       
+      console.log(`Total customers in database: ${allCustomers.length}`);
+      
       // Filter to only include customers with coupons for this shop
-      const filteredCustomers = customersData.filter(customer => 
+      const filteredCustomers = allCustomers.filter(customer => 
         customerIds.includes(customer.id)
       );
+      
+      console.log(`Filtered customers for this shop: ${filteredCustomers.length}`);
       
       // Enrich with coupon data
       const customersWithCoupons = filteredCustomers.map(customer => {
@@ -298,6 +309,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(customersWithCoupons);
     } catch (error: any) {
+      console.error("Error fetching shop customers:", error);
       res.status(500).json({ error: error.message });
     }
   });

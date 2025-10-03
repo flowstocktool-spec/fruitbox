@@ -69,6 +69,29 @@ export default function StoreDashboard() {
     enabled: isAuthenticated && campaigns.length > 0,
   });
 
+  // Customers query
+  const { data: customers = [], refetch: refetchCustomers } = useQuery({
+    queryKey: ['/api/shop-profiles', shopProfile?.id, 'customers'],
+    queryFn: async () => {
+      if (!shopProfile?.id) {
+        console.log("No shop profile ID available");
+        return [];
+      }
+      console.log("Fetching customers for shop:", shopProfile.id);
+      const response = await fetch(`/api/shop-profiles/${shopProfile.id}/customers`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Failed to fetch customers:", error);
+        throw new Error('Failed to fetch customers');
+      }
+      const data = await response.json();
+      console.log("Customers fetched:", data.length, data);
+      return data;
+    },
+    enabled: !!shopProfile,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <ShopAuthScreen onSuccess={(profile) => {
@@ -84,7 +107,7 @@ export default function StoreDashboard() {
 
   // Main dashboard after authentication
   const totalRevenue = campaigns.reduce((sum: number, c: any) => sum + (c.totalRevenue || 0), 0);
-  const totalCustomers = campaigns.reduce((sum: number, c: any) => sum + (c.participantCount || 0), 0);
+  const totalCustomers = customers.length; // Use the fetched customers count
   const conversionRate = totalCustomers > 0 ? ((totalRevenue / totalCustomers) * 100).toFixed(1) : "0";
 
   return (
