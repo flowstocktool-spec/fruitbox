@@ -87,31 +87,31 @@ export default function StoreDashboard() {
   const conversionRate = totalCustomers > 0 ? ((totalRevenue / totalCustomers) * 100).toFixed(1) : "0";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-safe">
       <header className="border-b bg-card sticky top-0 z-50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center">
-                <Store className="h-6 w-6 text-primary-foreground" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+                <Store className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold font-heading">{shopProfile?.shopName}</h1>
-                <p className="text-sm text-muted-foreground">Store Dashboard</p>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold font-heading truncate">{shopProfile?.shopName}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Store Dashboard</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
-                <LogOut className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" className="flex-shrink-0">
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatsCard
             title="Total Revenue"
             value={`₹${totalRevenue.toLocaleString()}`}
@@ -132,26 +132,30 @@ export default function StoreDashboard() {
           />
         </div>
 
-        <Tabs defaultValue="campaigns" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-            <TabsTrigger value="approvals">
-              Pending Approvals
+        <Tabs defaultValue="campaigns" className="space-y-4 sm:space-y-6">
+          <TabsList className="w-full grid grid-cols-3 h-auto">
+            <TabsTrigger value="campaigns" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">Campaigns</span>
+              <span className="sm:hidden">📊</span>
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className="text-xs sm:text-sm relative">
+              <span className="hidden sm:inline">Pending Approvals</span>
+              <span className="sm:hidden">✓</span>
               {pendingTransactions.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-destructive text-destructive-foreground">
+                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-destructive text-destructive-foreground">
                   {pendingTransactions.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="campaigns" className="space-y-6">
+          <TabsContent value="campaigns" className="space-y-4 sm:space-y-6">
             <CampaignBuilder storeId={shopProfile?.id} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {campaigns.map((campaign: any) => (
                 <CampaignCard key={campaign.id} campaign={campaign} />
               ))}

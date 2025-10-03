@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Store, Users, TrendingUp, Gift, QrCode, Smartphone } from "lucide-react";
+import { ArrowRight, Store, Users, TrendingUp, Gift, QrCode, Smartphone, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLocation } from "wouter";
 import { QRCodeSVG } from "qrcode.react";
@@ -30,27 +30,36 @@ export default function Landing() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center space-y-6 max-w-3xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold font-heading" data-testid="text-hero-title">
-            Reward Customers for Promoting Your Business
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4 sm:mb-6 bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent">
+            Reward Customers, Boost Walk-ins
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Fruitbox helps offline stores increase customer retention and walk-ins by rewarding customers 
-            for promoting their business. Create referral campaigns, track customer rewards, and grow your store.
+          <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
+            Create viral referral campaigns for your offline store. Turn customers into brand ambassadors with smart rewards.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => setLocation("/store")} data-testid="button-get-started">
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md mx-auto">
+            <Button
+              onClick={() => setLocation("/customer")}
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              <User className="h-5 w-5 mr-2" />
+              Customer Login
             </Button>
-            <Button size="lg" variant="outline" onClick={() => setLocation("/customer")} data-testid="button-view-demo">
-              View Customer Demo
+            <Button
+              onClick={() => setLocation("/store")}
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              <Store className="h-5 w-5 mr-2" />
+              Store Login
             </Button>
           </div>
         </div>
 
-        <div className="mb-16">
+        <div className="mb-12 sm:mb-16">
           <Card className="max-w-md mx-auto bg-gradient-to-br from-primary/5 to-chart-2/5">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
@@ -65,7 +74,7 @@ export default function Landing() {
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <div className="bg-white dark:bg-white p-4 rounded-lg" data-testid="qr-code-pwa">
-                <QRCodeSVG 
+                <QRCodeSVG
                   value={pwaUrl}
                   size={200}
                   level="H"
@@ -79,33 +88,33 @@ export default function Landing() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-12 sm:mb-16">
           <Card className="hover-elevate">
             <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
                 <Store className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="font-heading">For Offline Stores</CardTitle>
-              <CardDescription>
-                Increase customer retention and walk-ins with referral rewards
+              <CardTitle className="font-heading text-lg sm:text-xl">For Store Owners</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Complete dashboard to manage campaigns and track performance
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start gap-3">
+            <CardContent className="space-y-2 sm:space-y-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-sm">Set custom point values and discount percentages</p>
+                <p className="text-xs sm:text-sm">Create custom referral campaigns with flexible rules</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-sm">Approve bills and award points instantly</p>
+                <p className="text-xs sm:text-sm">Approve customer bills with photo verification</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-sm">Track campaign performance with analytics</p>
+                <p className="text-xs sm:text-sm">Real-time analytics and conversion tracking</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2" />
-                <p className="text-sm">Generate QR codes for easy customer signup</p>
+                <p className="text-xs sm:text-sm">Configure points, rewards, and incentives</p>
               </div>
             </CardContent>
           </Card>
@@ -115,27 +124,27 @@ export default function Landing() {
               <div className="w-12 h-12 rounded-lg bg-chart-2/20 flex items-center justify-center mb-4">
                 <Smartphone className="h-6 w-6 text-chart-2" />
               </div>
-              <CardTitle className="font-heading">For Customers</CardTitle>
-              <CardDescription>
-                Simple PWA to track points and share referral coupons
+              <CardTitle className="font-heading text-lg sm:text-xl">For Customers</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Simple app to track points and share referral coupons
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start gap-3">
+            <CardContent className="space-y-2 sm:space-y-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-sm">View points dashboard with progress tracking</p>
+                <p className="text-xs sm:text-sm">View points dashboard with progress tracking</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-sm">Share branded coupons via social media</p>
+                <p className="text-xs sm:text-sm">Share branded coupons via social media</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-sm">Access unique QR code and referral link</p>
+                <p className="text-xs sm:text-sm">Access unique QR code and referral link</p>
               </div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-chart-2 mt-2" />
-                <p className="text-sm">Track transaction history and rewards</p>
+                <p className="text-xs sm:text-sm">Track transaction history and rewards</p>
               </div>
             </CardContent>
           </Card>
