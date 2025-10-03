@@ -37,7 +37,7 @@ export default function Landing() {
             Reward Customers, Boost Walk-ins
           </h2>
           <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
-            Create viral referral campaigns for your offline store. Turn customers into brand ambassadors with smart rewards.
+            Create affiliate programs for your offline store. Turn customers into brand ambassadors with smart rewards.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md mx-auto">
             <Button
@@ -217,7 +217,7 @@ export default function Landing() {
           </p>
         </div>
       </footer>
-      
+
       <PWAInstallPrompt />
     </div>
   );
