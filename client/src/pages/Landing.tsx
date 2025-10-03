@@ -81,9 +81,6 @@ export default function Landing() {
                   includeMargin={true}
                 />
               </div>
-              <p className="text-sm text-muted-foreground text-center">
-                Or visit: <span className="font-mono text-primary">{pwaUrl}</span>
-              </p>
             </CardContent>
           </Card>
         </div>
