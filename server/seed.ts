@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { stores, campaigns, customers, shopProfiles, customerCoupons, transactions } from "@shared/schema";
+import { campaigns, customers, shopProfiles, customerCoupons, transactions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export async function seedData() {
@@ -29,16 +29,9 @@ export async function seedData() {
     currencySymbol: "$",
   }).returning();
 
-  // Create a demo store
-  const [store] = await db.insert(stores).values({
-    name: "Demo Retail Store",
-    email: "demo@store.com",
-    password: "demo123",
-  }).returning();
-
-  // Create demo campaigns
+  // Create demo campaigns for shop1
   const [campaign1] = await db.insert(campaigns).values({
-    storeId: store.id,
+    storeId: shop1.id,
     name: "Summer Rewards Campaign",
     description: "Earn points on every purchase and get your friends 10% off!",
     pointsPerDollar: 5,
@@ -50,7 +43,7 @@ export async function seedData() {
   }).returning();
 
   const [campaign2] = await db.insert(campaigns).values({
-    storeId: store.id,
+    storeId: shop1.id,
     name: "VIP Loyalty Program",
     description: "Exclusive rewards for our best customers",
     pointsPerDollar: 10,
@@ -142,8 +135,8 @@ export async function seedData() {
   });
 
   console.log("✅ Seed data created successfully");
-  console.log("Store ID:", store.id);
   console.log("Campaign 1 ID:", campaign1.id);
+  console.log("Campaign 2 ID:", campaign2.id);
   console.log(`Customer 1 ID: ${customer1.id}, Code: ${customer1.referralCode}`);
   console.log(`Customer 2 ID: ${customer2.id}, Code: ${customer2.referralCode}`);
   console.log(`Shop 1 ID: ${shop1.id}, Shop 2 ID: ${shop2.id}`);

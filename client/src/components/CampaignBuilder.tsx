@@ -55,15 +55,12 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
 
   const createCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      return await apiRequest("/api/campaigns", {
-        method: "POST",
-        body: JSON.stringify({
-          ...data,
-          description: data.description || null,
-          storeId,
-          couponTextColor: "#ffffff",
-          isActive: true,
-        }),
+      return await apiRequest("POST", "/api/campaigns", {
+        ...data,
+        description: data.description || null,
+        storeId,
+        couponTextColor: "#ffffff",
+        isActive: true,
       });
     },
     onSuccess: () => {
