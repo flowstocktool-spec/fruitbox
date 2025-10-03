@@ -12,7 +12,7 @@ import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BillUpload } from "@/components/BillUpload";
 import { MyShops } from "@/components/MyShops";
-import { getTransactions, createCustomer, generateReferralCode } from "@/lib/api";
+import { getTransactions, createCustomer, generateReferralCode, getCustomerCoupons } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -227,17 +227,17 @@ export default function CustomerPWA() {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={createCustomerMutation.isPending}
                 >
                   {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
-                  className="w-full" 
+                  variant="outline"
+                  className="w-full"
                   onClick={() => setShowRegistration(false)}
                 >
                   Back to Login
@@ -284,17 +284,17 @@ export default function CustomerPWA() {
                   required
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? "Logging in..." : "Login"}
               </Button>
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                className="w-full" 
+                variant="outline"
+                className="w-full"
                 onClick={() => setShowRegistration(true)}
               >
                 Create New Account
