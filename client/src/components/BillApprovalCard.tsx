@@ -1,7 +1,10 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Receipt } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { approveTransaction, rejectTransaction } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import type { Transaction } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -14,6 +17,48 @@ interface BillApprovalCardProps {
 }
 
 export function BillApprovalCard({ transaction, customerName, onApprove, onReject, onView }: BillApprovalCardProps) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const approveMutation = useMutation({
+    mutationFn: () => approveTransaction(transaction.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["customer"] });
+      toast({
+        title: "Transaction Approved",
+        description: "Points have been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: () => rejectTransaction(transaction.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast({
+        title: "Transaction Rejected",
+        description: "Transaction has been rejected",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <Card data-testid={`card-bill-${transaction.id}`} className="hover-elevate">
       <CardHeader>
@@ -70,27 +115,27 @@ export function BillApprovalCard({ transaction, customerName, onApprove, onRejec
             className="flex-1"
             data-testid={`button-view-bill-${transaction.id}`}
           >
-            <Eye className="h-4 w-4 mr-2" />
+            <Receipt className="h-4 w-4 mr-2" />
             View
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={onReject}
+            onClick={() => rejectMutation.mutate()}
             className="text-destructive hover:text-destructive"
             data-testid={`button-reject-${transaction.id}`}
           >
-            <X className="h-4 w-4 mr-2" />
+            <XCircle className="h-4 w-4 mr-2" />
             Reject
           </Button>
           <Button
             variant="default"
             size="sm"
-            onClick={onApprove}
+            onClick={() => approveMutation.mutate()}
             className="flex-1"
             data-testid={`button-approve-${transaction.id}`}
           >
-            <Check className="h-4 w-4 mr-2" />
+            <CheckCircle className="h-4 w-4 mr-2" />
             Approve
           </Button>
         </CardFooter>

@@ -408,6 +408,121 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Approve transaction and update points
+  app.patch("/api/transactions/:id/approve", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get the transaction
+      const [transaction] = await db.select()
+        .from(transactions)
+        .where(eq(transactions.id, id))
+        .limit(1);
+
+      if (!transaction) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+
+      if (transaction.status !== "pending") {
+        return res.status(400).json({ error: "Transaction already processed" });
+      }
+
+      // Update transaction status to approved
+      const [updatedTransaction] = await db.update(transactions)
+        .set({ status: "approved" })
+        .where(eq(transactions.id, id))
+        .returning();
+
+      // Update customer points based on transaction type
+      if (transaction.type === "purchase") {
+        // Add points for purchase
+        const [customer] = await db.select()
+          .from(customers)
+          .where(eq(customers.id, transaction.customerId))
+          .limit(1);
+
+        if (customer) {
+          await db.update(customers)
+            .set({ totalPoints: customer.totalPoints + transaction.points })
+            .where(eq(customers.id, transaction.customerId));
+        }
+
+        // If there's a coupon, update coupon points too
+        if (transaction.couponId) {
+          const [coupon] = await db.select()
+            .from(customerCoupons)
+            .where(eq(customerCoupons.id, transaction.couponId))
+            .limit(1);
+
+          if (coupon) {
+            await db.update(customerCoupons)
+              .set({ totalPoints: coupon.totalPoints + transaction.points })
+              .where(eq(customerCoupons.id, transaction.couponId));
+          }
+        }
+      } else if (transaction.type === "redemption") {
+        // Deduct points for redemption
+        const [customer] = await db.select()
+          .from(customers)
+          .where(eq(customers.id, transaction.customerId))
+          .limit(1);
+
+        if (customer) {
+          await db.update(customers)
+            .set({ redeemedPoints: customer.redeemedPoints + Math.abs(transaction.points) })
+            .where(eq(customers.id, transaction.customerId));
+        }
+
+        // If there's a coupon, update coupon redeemed points too
+        if (transaction.couponId) {
+          const [coupon] = await db.select()
+            .from(customerCoupons)
+            .where(eq(customerCoupons.id, transaction.couponId))
+            .limit(1);
+
+          if (coupon) {
+            await db.update(customerCoupons)
+              .set({ redeemedPoints: coupon.redeemedPoints + Math.abs(transaction.points) })
+              .where(eq(customerCoupons.id, transaction.couponId));
+          }
+        }
+      }
+
+      res.json(updatedTransaction);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reject transaction
+  app.patch("/api/transactions/:id/reject", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const [transaction] = await db.select()
+        .from(transactions)
+        .where(eq(transactions.id, id))
+        .limit(1);
+
+      if (!transaction) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+
+      if (transaction.status !== "pending") {
+        return res.status(400).json({ error: "Transaction already processed" });
+      }
+
+      const [updatedTransaction] = await db.update(transactions)
+        .set({ status: "rejected" })
+        .where(eq(transactions.id, id))
+        .returning();
+
+      res.json(updatedTransaction);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Campaigns
   app.get("/api/campaigns", async (req, res) => {
     try {

@@ -134,6 +134,24 @@ export async function createSharedCoupon(data: any) {
   return res.json();
 }
 
+export async function approveTransaction(transactionId: string) {
+  const response = await fetch(`/api/transactions/${transactionId}/approve`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to approve transaction");
+  return response.json();
+}
+
+export async function rejectTransaction(transactionId: string) {
+  const response = await fetch(`/api/transactions/${transactionId}/reject`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to reject transaction");
+  return response.json();
+}
+
 export async function getSharedCouponByToken(token: string) {
   const res = await fetch(`/api/shared-coupons/token/${token}`);
   if (!res.ok) throw new Error("Failed to fetch shared coupon");

@@ -85,7 +85,16 @@ export default function CustomerPWA() {
     queryKey: ['/api/transactions', customer?.id],
     queryFn: () => getTransactions(customer?.id ?? '', undefined),
     enabled: !!customer,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds to get updated points
   });
+
+  // Refetch customer data when transactions change
+  useEffect(() => {
+    if (customer?.id) {
+      queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
+    }
+  }, [transactions, customer?.id, queryClient]);
+
 
   // Customer coupons query
   const { data: customerCoupons = [] } = useQuery({
@@ -490,7 +499,7 @@ export default function CustomerPWA() {
                   <div className="space-y-3">
                     {customerShops.map((shop: any) => {
                       const shopCoupon = customerCoupons.find((c: any) => c.shopProfileId === shop.id);
-                      
+
                       return (
                         <Card key={shop.id} className="border-primary/20" data-testid={`share-coupon-${shop.id}`}>
                           <CardContent className="pt-4">
@@ -504,7 +513,7 @@ export default function CustomerPWA() {
                               </div>
                               <Badge variant="secondary">{shop.discountPercentage}% Off</Badge>
                             </div>
-                            
+
                             {shopCoupon && (
                               <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-300 dark:border-green-700 rounded-lg p-3 mb-3">
                                 <div className="flex items-center justify-between">
@@ -529,7 +538,7 @@ export default function CustomerPWA() {
                                 </div>
                               </div>
                             )}
-                            
+
                             <Button
                               className="w-full"
                               onClick={async () => {
@@ -541,11 +550,11 @@ export default function CustomerPWA() {
                                   });
                                   return;
                                 }
-                                
+
                                 setSelectedCouponForShare({ shop, coupon: shopCoupon });
                                 setShareSheetOpen(true);
                                 setIsCreatingShareToken(true);
-                                
+
                                 try {
                                   const sharedCoupon = await createSharedCoupon({
                                     couponId: shopCoupon.id,
@@ -613,7 +622,7 @@ export default function CustomerPWA() {
         shopName={selectedCouponForShare?.shop?.shopName || ''}
         loading={isCreatingShareToken}
       />
-      
+
       <PWAInstallPrompt />
     </div>
   );
