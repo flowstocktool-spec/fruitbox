@@ -12,12 +12,8 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configure SSL settings based on environment
-const isLocalhost = process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1');
-
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
-  ssl: isLocalhost ? false : { rejectUnauthorized: false }
+  connectionString: process.env.DATABASE_URL
 });
 
 export const db = drizzle({ client: pool, schema });
