@@ -25,10 +25,21 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
   });
 
   const createCouponMutation = useMutation({
-    mutationFn: (shopProfileId: string) => createCustomerCoupon({
-      customerId,
-      shopProfileId,
-    }),
+    mutationFn: async (shopProfileId: string) => {
+      const response = await fetch("/api/customer-coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId,
+          shopProfileId,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create customer coupon");
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons'] });
       toast({
@@ -37,6 +48,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       });
     },
     onError: (error: any) => {
+      console.error("Coupon creation error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to add coupon",
