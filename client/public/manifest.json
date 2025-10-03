@@ -1,3 +1,4 @@
+
 {
   "name": "Fruitbox - Reward Customers",
   "short_name": "Fruitbox",
@@ -22,9 +23,9 @@
       "purpose": "maskable"
     },
     {
-      "src": "/icon.svg",
+      "src": "/icon-192.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

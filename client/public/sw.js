@@ -1,22 +1,21 @@
-const CACHE_NAME = 'fruitbox-v2';
+
+const CACHE_NAME = 'fruitbox-v3';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(() => {
-      return self.skipWaiting();
-    })
-  );
+  console.log('Service Worker installing.');
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating.');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
           .map((name) => caches.delete(name))
-      ).then(() => self.clients.claim());
-    })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -26,7 +25,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response && response.status === 200) {
+        if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -34,6 +33,8 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
