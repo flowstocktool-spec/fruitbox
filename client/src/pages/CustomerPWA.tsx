@@ -36,6 +36,45 @@ export default function CustomerPWA() {
     username: "",
     password: ""
   });
+
+
+function CouponCard({ coupon }: { coupon: any }) {
+  const { data: shop } = useQuery({
+    queryKey: ['/api/shop-profiles', coupon.shopProfileId],
+    queryFn: () => getShopProfile(coupon.shopProfileId),
+  });
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold">{shop?.shopName || 'Loading...'}</h4>
+          <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
+            My Coupon
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+          <div>
+            <p className="text-muted-foreground">Points Earned</p>
+            <p className="font-bold text-green-600">{coupon.totalPoints}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Redeemed</p>
+            <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Remaining</p>
+            <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Referral Code: <span className="font-mono font-semibold">{coupon.referralCode}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
   
   const { toast } = useToast();
 
@@ -378,42 +417,9 @@ export default function CustomerPWA() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {coupons.map((coupon) => {
-                    const { data: shop } = useQuery({
-                      queryKey: ['/api/shop-profiles', coupon.shopProfileId],
-                      queryFn: () => getShopProfile(coupon.shopProfileId),
-                    });
-                    
-                    return (
-                      <Card key={coupon.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold">{shop?.shopName || 'Loading...'}</h4>
-                            <span className="text-xs text-muted-foreground bg-green-100 px-2 py-1 rounded">
-                              My Coupon
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                            <div>
-                              <p className="text-muted-foreground">Points Earned</p>
-                              <p className="font-bold text-green-600">{coupon.totalPoints}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Redeemed</p>
-                              <p className="font-bold text-blue-600">{coupon.redeemedPoints}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Remaining</p>
-                              <p className="font-bold text-purple-600">{coupon.totalPoints - coupon.redeemedPoints}</p>
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Referral Code: <span className="font-mono font-semibold">{coupon.referralCode}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                  {coupons.map((coupon) => (
+                    <CouponCard key={coupon.id} coupon={coupon} />
+                  ))}
                 </div>
               )}
             </div>
