@@ -73,10 +73,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get customers who have coupons for a specific shop
   app.get("/api/shop-profiles/:id/customers", async (req, res) => {
     try {
-      const coupons = await storage.db.select().from(customerCoupons).where(eq(customerCoupons.shopProfileId, req.params.id));
-      const customerIds = [...new Set(coupons.map(c => c.customerId))];
-      const customers = await Promise.all(customerIds.map(id => storage.getCustomer(id)));
-      res.json(customers.filter(c => c !== undefined));
+      const customers = await storage.getCustomersByShopProfileId(req.params.id);
+      res.json(customers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch shop customers" });
     }
@@ -536,12 +534,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a new coupon for the claiming customer
       const newCoupon = await storage.createCustomerCoupon({
         customerId,
-        shopName: originalCoupon.shopName,
-        shopId: originalCoupon.shopId,
+        shopProfileId: (originalCoupon as any).shopProfileId,
+        shopName: (originalCoupon as any).shopName,
+        shopId: (originalCoupon as any).shopId,
         referralCode: originalCoupon.referralCode + '-' + customerId.substring(0, 4),
         totalPoints: 0,
         redeemedPoints: 0,
-      });
+      } as any);
 
       // Mark the shared coupon as claimed
       await storage.claimSharedCoupon(req.params.id, customerId);

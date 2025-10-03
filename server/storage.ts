@@ -40,6 +40,7 @@ export interface IStorage {
   getShopProfileByCode(shopCode: string): Promise<any | undefined>;
   getShopProfile(id: string): Promise<any | undefined>;
   updateShopProfile(id: string, data: any): Promise<any | undefined>;
+  getCustomersByShopProfileId(shopProfileId: string): Promise<Customer[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -185,11 +186,12 @@ export class MemStorage implements IStorage {
 
   async createCustomerCoupon(insertCoupon: InsertCustomerCoupon): Promise<CustomerCoupon> {
     const id = randomUUID();
-    const coupon: CustomerCoupon = {
+    const coupon: any = {
       id,
       customerId: insertCoupon.customerId,
-      shopName: insertCoupon.shopName,
-      shopId: insertCoupon.shopId !== undefined ? insertCoupon.shopId : null,
+      shopProfileId: (insertCoupon as any).shopProfileId,
+      shopName: (insertCoupon as any).shopName,
+      shopId: (insertCoupon as any).shopId !== undefined ? (insertCoupon as any).shopId : null,
       referralCode: insertCoupon.referralCode,
       totalPoints: insertCoupon.totalPoints ?? 0,
       redeemedPoints: insertCoupon.redeemedPoints ?? 0,
@@ -254,7 +256,7 @@ export class MemStorage implements IStorage {
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = randomUUID();
-    const transaction: Transaction = {
+    const transaction: any = {
       id,
       customerId: insertTransaction.customerId,
       campaignId: insertTransaction.campaignId !== undefined ? insertTransaction.campaignId : null,
@@ -264,6 +266,8 @@ export class MemStorage implements IStorage {
       points: insertTransaction.points,
       status: insertTransaction.status ?? "pending",
       billImageUrl: insertTransaction.billImageUrl !== undefined ? insertTransaction.billImageUrl : null,
+      referralCode: (insertTransaction as any).referralCode || null,
+      shopName: (insertTransaction as any).shopName || null,
       createdAt: new Date(),
     };
     this.transactions.set(id, transaction);
@@ -282,21 +286,21 @@ export class MemStorage implements IStorage {
   async createShopProfile(data: any): Promise<any> {
     const id = randomUUID();
     const shopProfile = { ...data, id, type: 'shop', createdAt: new Date() };
-    this.stores.set(id, shopProfile);
+    this.stores.set(id, shopProfile as any);
     return shopProfile;
   }
 
   async getShopProfiles(): Promise<any[]> {
-    return Array.from(this.stores.values()).filter(store => store.type === 'shop');
+    return Array.from(this.stores.values()).filter(store => (store as any).type === 'shop');
   }
 
   async getShopProfileByCode(shopCode: string): Promise<any | undefined> {
-    return Array.from(this.stores.values()).find(store => store.type === 'shop' && store.shopCode === shopCode);
+    return Array.from(this.stores.values()).find(store => (store as any).type === 'shop' && (store as any).shopCode === shopCode);
   }
 
   async getShopProfile(id: string): Promise<any | undefined> {
     const store = this.stores.get(id);
-    if (store && store.type === 'shop') {
+    if (store && (store as any).type === 'shop') {
       return store;
     }
     return undefined;
@@ -304,11 +308,18 @@ export class MemStorage implements IStorage {
 
   async updateShopProfile(id: string, data: any): Promise<any | undefined> {
     const shopProfile = this.stores.get(id);
-    if (!shopProfile || shopProfile.type !== 'shop') return undefined;
+    if (!shopProfile || (shopProfile as any).type !== 'shop') return undefined;
 
     const updated = { ...shopProfile, ...data };
     this.stores.set(id, updated);
     return updated;
+  }
+
+  async getCustomersByShopProfileId(shopProfileId: string): Promise<Customer[]> {
+    const coupons = Array.from(this.customerCoupons.values()).filter(c => (c as any).shopProfileId === shopProfileId);
+    const customerIds = Array.from(new Set(coupons.map(c => c.customerId)));
+    const customers = await Promise.all(customerIds.map(id => this.getCustomer(id)));
+    return customers.filter(c => c !== undefined) as Customer[];
   }
 }
 
