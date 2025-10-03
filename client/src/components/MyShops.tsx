@@ -94,16 +94,28 @@ export function MyShops({ customerId }: MyShopsProps) {
                   <Badge variant="secondary">Affiliate</Badge>
                 </div>
                 
+                {!shopCoupon && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      No referral code found. Please try registering again.
+                    </p>
+                  </div>
+                )}
+                
                 {shopCoupon && (
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Your Affiliate Code:</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <code className="text-lg font-mono font-bold text-green-900 dark:text-green-100 tracking-wider">
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-2 border-green-300 dark:border-green-700 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <p className="text-sm font-semibold text-green-900 dark:text-green-100">Your Affiliate Code</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <code className="text-xl font-mono font-bold text-green-700 dark:text-green-300 tracking-wider bg-white dark:bg-gray-800 px-3 py-2 rounded">
                         {shopCoupon.referralCode}
                       </code>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
+                        className="bg-green-600 hover:bg-green-700"
                         onClick={() => {
                           navigator.clipboard.writeText(shopCoupon.referralCode);
                           toast({
@@ -115,8 +127,8 @@ export function MyShops({ customerId }: MyShopsProps) {
                         Copy
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Share this code to earn {shop.pointsPerDollar} points per ₹1 spent by referrals
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      💰 Share this code to earn {shop.pointsPerDollar} points per ₹1 spent by referrals
                     </p>
                   </div>
                 )}
