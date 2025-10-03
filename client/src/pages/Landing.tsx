@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRight, Store, Users, TrendingUp, Gift, QrCode, Smartphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLocation } from "wouter";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const pwaUrl = `${window.location.origin}/customer`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,6 +48,35 @@ export default function Landing() {
               View Customer Demo
             </Button>
           </div>
+        </div>
+
+        <div className="mb-16">
+          <Card className="max-w-md mx-auto bg-gradient-to-br from-primary/5 to-chart-2/5">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="font-heading">Scan to Access Customer PWA</CardTitle>
+              <CardDescription>
+                Scan this QR code with your phone to access the customer app instantly
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center space-y-4">
+              <div className="bg-white dark:bg-white p-4 rounded-lg" data-testid="qr-code-pwa">
+                <QRCodeSVG 
+                  value={pwaUrl}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Or visit: <span className="font-mono text-primary">{pwaUrl}</span>
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
