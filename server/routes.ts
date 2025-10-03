@@ -115,12 +115,12 @@ export function registerRoutes(app: Express): Server {
   // Shop Owner Registration
   app.post("/api/shops/register", async (req, res) => {
     try {
-      const validatedData = insertShopProfileSchema.parse(req.body);
+      const { shopName, shopCode, username, password, description, logo } = req.body;
       
       // Check if username already exists
       const [existingByUsername] = await db.select()
         .from(shopProfiles)
-        .where(eq(shopProfiles.username, validatedData.username))
+        .where(eq(shopProfiles.username, username))
         .limit(1);
       
       if (existingByUsername) {
@@ -130,7 +130,7 @@ export function registerRoutes(app: Express): Server {
       // Check if shop code already exists
       const [existingByCode] = await db.select()
         .from(shopProfiles)
-        .where(eq(shopProfiles.shopCode, validatedData.shopCode))
+        .where(eq(shopProfiles.shopCode, shopCode))
         .limit(1);
       
       if (existingByCode) {
@@ -138,11 +138,15 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hash password
-      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       
       const [newShop] = await db.insert(shopProfiles).values({
-        ...validatedData,
+        shopName,
+        shopCode,
+        username,
         password: hashedPassword,
+        description,
+        logo,
       }).returning();
       req.session.shopProfileId = newShop.id;
       res.status(201).json(newShop);
