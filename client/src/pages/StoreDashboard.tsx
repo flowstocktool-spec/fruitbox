@@ -118,18 +118,21 @@ export default function StoreDashboard() {
             value={`${shopProfile?.currencySymbol || '$'}${totalRevenue.toLocaleString()}`}
             icon={DollarSign}
             trend="+12.5%"
+            description={`% from last month`}
           />
           <StatsCard
             title="Active Customers"
             value={totalCustomers.toString()}
             icon={Users}
             trend="+8.2%"
+            description={`% from last month`}
           />
           <StatsCard
             title="Conversion Rate"
             value={`${conversionRate}%`}
             icon={TrendingUp}
             trend="+3.1%"
+            description={`% from last month`}
           />
         </div>
 

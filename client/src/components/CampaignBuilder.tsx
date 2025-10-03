@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Palette } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getShopProfile } from "@/lib/api";
 
 const campaignSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -23,9 +25,10 @@ type CampaignFormData = z.infer<typeof campaignSchema>;
 interface CampaignBuilderProps {
   onSubmit?: (data: CampaignFormData) => void;
   defaultValues?: Partial<CampaignFormData>;
+  storeId: string;
 }
 
-export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProps) {
+export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBuilderProps) {
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
@@ -37,6 +40,12 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
       couponColor: "#7c3aed",
       ...defaultValues,
     },
+  });
+
+  const { data: shopProfile } = useQuery({
+    queryKey: ["shop-profile", storeId],
+    queryFn: () => getShopProfile(storeId),
+    enabled: !!storeId,
   });
 
   const handleSubmit = (data: CampaignFormData) => {
@@ -74,7 +83,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Describe your campaign..."
                       {...field}
                       data-testid="input-campaign-description"
@@ -91,7 +100,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
                 name="pointsPerDollar"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Points per $1</FormLabel>
+                    <FormLabel>Points per {shopProfile?.currencySymbol || '$'}1</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -111,7 +120,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
                 name="minPurchaseAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Min. Purchase ($)</FormLabel>
+                    <FormLabel>Min. Purchase ({shopProfile?.currencySymbol || '$'})</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -163,7 +172,7 @@ export function CampaignBuilder({ onSubmit, defaultValues }: CampaignBuilderProp
                       />
                       <Input
                         {...field}
-                        placeholder="#7c3aed"
+                        placeholder={shopProfile?.currencySymbol || "#7c3aed"}
                         className="flex-1"
                       />
                     </div>
