@@ -18,7 +18,7 @@ export default function Landing() {
               <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
                 <Gift className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold font-heading">ReferralHub</h1>
+              <h1 className="text-xl font-bold font-heading">Fruitbox</h1>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -33,11 +33,11 @@ export default function Landing() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center space-y-6 max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-bold font-heading" data-testid="text-hero-title">
-            Turn Customers Into Your Best Salespeople
+            Reward Customers for Promoting Your Business
           </h2>
           <p className="text-xl text-muted-foreground">
-            Create powerful referral campaigns for your retail store. Reward customers for sharing, 
-            track every transaction, and watch your business grow.
+            Fruitbox helps offline stores increase customer retention and walk-ins by rewarding customers 
+            for promoting their business. Create referral campaigns, track customer rewards, and grow your store.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" onClick={() => setLocation("/store")} data-testid="button-get-started">
@@ -85,9 +85,9 @@ export default function Landing() {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Store className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="font-heading">For Retail Stores</CardTitle>
+              <CardTitle className="font-heading">For Offline Stores</CardTitle>
               <CardDescription>
-                Create and manage referral campaigns with custom rewards and rules
+                Increase customer retention and walk-ins with referral rewards
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -180,7 +180,7 @@ export default function Landing() {
       <footer className="border-t mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-sm text-muted-foreground">
-            © 2024 ReferralHub. Transform your customers into brand ambassadors.
+            © 2024 Fruitbox. Helping offline stores grow through customer referrals.
           </p>
         </div>
       </footer>

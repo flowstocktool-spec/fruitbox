@@ -1,8 +1,8 @@
-# Referral Campaign Management SaaS
+# Fruitbox - Customer Referral & Rewards Platform
 
 ## Overview
 
-This is a dual-interface SaaS platform for managing referral campaigns in retail stores. The system enables store owners to create and manage referral programs while providing customers with a mobile-friendly PWA to track rewards, share referral codes, and submit purchase receipts for approval.
+Fruitbox is a dual-interface SaaS platform that helps offline stores reward customers for promoting their business, increasing customer retention and walk-ins. The system enables store owners to create and manage referral programs while providing customers with a mobile-friendly PWA to track rewards, share referral codes, and submit purchase receipts for approval.
 
 The application consists of:
 - **Store Dashboard**: A professional interface for retailers to create campaigns, approve transactions, and monitor performance
