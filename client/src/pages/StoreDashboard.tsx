@@ -160,13 +160,17 @@ export default function StoreDashboard() {
         </div>
 
         <Tabs defaultValue="campaigns" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full grid grid-cols-3 h-auto">
+          <TabsList className="w-full grid grid-cols-4 h-auto">
             <TabsTrigger value="campaigns" className="text-xs sm:text-sm">
               <span className="hidden sm:inline">Campaigns</span>
               <span className="sm:hidden">📊</span>
             </TabsTrigger>
+            <TabsTrigger value="customers" className="text-xs sm:text-sm">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-2" />
+              <span className="hidden sm:inline">Customers</span>
+            </TabsTrigger>
             <TabsTrigger value="approvals" className="text-xs sm:text-sm relative">
-              <span className="hidden sm:inline">Pending Approvals</span>
+              <span className="hidden sm:inline">Approvals</span>
               <span className="sm:hidden">✓</span>
               {pendingTransactions.length > 0 && (
                 <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-destructive text-destructive-foreground">
@@ -175,7 +179,7 @@ export default function StoreDashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger value="settings" className="text-xs sm:text-sm">
-              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-2" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
@@ -187,6 +191,73 @@ export default function StoreDashboard() {
                 <CampaignCard key={campaign.id} campaign={campaign} />
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="customers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Customers</CardTitle>
+                <CardDescription>
+                  Customers who have registered as affiliates for your shop
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {customers.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">
+                    No customers yet. Share your shop code to get started!
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {customers.map((customer: any) => (
+                      <Card key={customer.id} data-testid={`card-customer-${customer.id}`}>
+                        <CardContent className="pt-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="font-semibold text-lg mb-2" data-testid={`text-customer-name-${customer.id}`}>
+                                {customer.name}
+                              </h3>
+                              <div className="space-y-1 text-sm">
+                                <p className="text-muted-foreground">
+                                  <span className="font-medium">Phone:</span> {customer.phone}
+                                </p>
+                                {customer.email && (
+                                  <p className="text-muted-foreground">
+                                    <span className="font-medium">Email:</span> {customer.email}
+                                  </p>
+                                )}
+                                <p className="text-muted-foreground">
+                                  <span className="font-medium">Username:</span> {customer.username}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <span className="text-sm font-medium">Referral Code</span>
+                                <span className="font-mono font-semibold text-primary" data-testid={`text-referral-code-${customer.id}`}>
+                                  {customer.referralCode}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <span className="text-sm font-medium">Total Points</span>
+                                <span className="font-semibold text-chart-3" data-testid={`text-points-${customer.id}`}>
+                                  {customer.couponPoints || 0}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <span className="text-sm font-medium">Redeemed Points</span>
+                                <span className="font-semibold text-muted-foreground">
+                                  {customer.couponRedeemedPoints || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="approvals">
