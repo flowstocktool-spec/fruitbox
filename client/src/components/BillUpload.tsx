@@ -115,9 +115,9 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       setShowRedemption(false);
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
-      
+
       const earnedPoints = response.points || 0;
-      
+
       toast({
         title: "Bill uploaded successfully!",
         description: affiliateCode

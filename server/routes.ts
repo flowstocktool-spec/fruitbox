@@ -530,9 +530,12 @@ export function registerRoutes(app: Express): Server {
           .from(campaigns)
           .where(eq(campaigns.storeId, shopProfileId as string));
         
+        console.log(`Shop ${shopProfileId} has ${shopCampaigns.length} campaigns:`, shopCampaigns.map(c => c.id));
+        
         const campaignIds = shopCampaigns.map(c => c.id);
         
         if (campaignIds.length === 0) {
+          console.log(`No campaigns found for shop ${shopProfileId}`);
           return res.json([]);
         }
         
@@ -541,8 +544,14 @@ export function registerRoutes(app: Express): Server {
           .from(transactions)
           .orderBy(desc(transactions.createdAt));
         
+        console.log(`Total transactions in database: ${allTxs.length}`);
+        console.log(`Campaign IDs to match:`, campaignIds);
+        console.log(`Transaction campaign IDs:`, allTxs.map(tx => tx.campaignId));
+        
         // Filter to only include transactions for this shop's campaigns
         const txs = allTxs.filter(tx => campaignIds.includes(tx.campaignId));
+        
+        console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
         
         return res.json(txs);
       }
