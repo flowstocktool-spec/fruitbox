@@ -485,6 +485,7 @@ export default function CustomerPWA() {
                             variant={activeCoupon?.id === coupon.id ? "default" : "outline"}
                             className="w-full justify-start"
                             onClick={() => {
+                              console.log('Selecting shop:', shop.shopName, 'with campaignId:', shop.campaigns?.[0]?.id);
                               setActiveCoupon(coupon);
                               setSelectedShop(shop);
                             }}
