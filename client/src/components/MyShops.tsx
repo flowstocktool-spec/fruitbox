@@ -104,11 +104,11 @@ export function MyShops({ customerId }: MyShopsProps) {
                 
                 {shopCoupon && (
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-2 border-green-300 dark:border-green-700 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-3">
                       <Tag className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <p className="text-sm font-semibold text-green-900 dark:text-green-100">Your Affiliate Code</p>
                     </div>
-                    <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center justify-between gap-3 mb-3">
                       <code className="text-xl font-mono font-bold text-green-700 dark:text-green-300 tracking-wider bg-white dark:bg-gray-800 px-3 py-2 rounded">
                         {shopCoupon.referralCode}
                       </code>
@@ -127,22 +127,32 @@ export function MyShops({ customerId }: MyShopsProps) {
                         Copy
                       </Button>
                     </div>
-                    <p className="text-xs text-green-700 dark:text-green-300">
-                      💰 Share this code to earn {shop.pointsPerDollar} points per {shop.currencySymbol || '$'}1 spent by referrals
+                    <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+                      📢 Share your coupon to earn points and avail these offers
                     </p>
                   </div>
                 )}
               </div>
             </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
-                <p className="font-bold text-green-600" data-testid={`shop-points-${shop.id}`}>{shop.pointsPerDollar}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Discount</p>
-                <p className="font-bold text-blue-600" data-testid={`shop-discount-${shop.id}`}>{shop.discountPercentage}%</p>
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900 dark:to-pink-900 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Campaign Offers
+              </h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-purple-800 dark:text-purple-200">Earn per referral purchase</span>
+                  <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-points-${shop.id}`}>
+                    {shop.pointsPerDollar} points
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-purple-800 dark:text-purple-200">Referral discount</span>
+                  <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-discount-${shop.id}`}>
+                    {shop.discountPercentage} off
+                  </span>
+                </div>
               </div>
             </div>
 
