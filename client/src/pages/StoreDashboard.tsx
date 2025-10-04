@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampaignBuilder } from "@/components/CampaignBuilder";
 import { CampaignCard } from "@/components/CampaignCard";
+import { CampaignSettings } from "@/components/CampaignSettings";
 import { BillApprovalCard } from "@/components/BillApprovalCard";
 import { StatsCard } from "@/components/StatsCard";
 import { ShopSettings } from "@/components/ShopSettings";
@@ -22,6 +23,7 @@ import {
 export default function StoreDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shopProfile, setShopProfile] = useState<any>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -188,9 +190,20 @@ export default function StoreDashboard() {
             <CampaignBuilder storeId={shopProfile?.id} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {campaigns.map((campaign: any) => (
-                <CampaignCard key={campaign.id} campaign={campaign} />
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onSettings={() => setSelectedCampaign(campaign)}
+                />
               ))}
             </div>
+            {selectedCampaign && (
+              <CampaignSettings
+                campaign={selectedCampaign}
+                open={!!selectedCampaign}
+                onOpenChange={(open) => !open && setSelectedCampaign(null)}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="customers">
