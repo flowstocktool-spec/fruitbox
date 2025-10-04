@@ -201,6 +201,25 @@ export default function StoreDashboard() {
                   key={campaign.id}
                   campaign={campaign}
                   onSettings={() => setSelectedCampaign(campaign)}
+                  onDelete={async () => {
+                    try {
+                      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+                        method: "DELETE",
+                      });
+                      if (!response.ok) throw new Error("Failed to delete campaign");
+                      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+                      toast({
+                        title: "Success",
+                        description: "Campaign deleted successfully",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to delete campaign",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                 />
               ))}
             </div>

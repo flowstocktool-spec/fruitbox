@@ -1,16 +1,17 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, TrendingUp } from "lucide-react";
+import { Settings, TrendingUp, Trash2 } from "lucide-react";
 import type { Campaign } from "@shared/schema";
 
 interface CampaignCardProps {
   campaign: Campaign;
   onViewQR?: () => void;
   onSettings?: () => void;
+  onDelete?: () => void;
 }
 
-export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardProps) {
+export function CampaignCard({ campaign, onViewQR, onSettings, onDelete }: CampaignCardProps) {
   return (
     <Card data-testid={`card-campaign-${campaign.id}`} className="hover-elevate">
       <CardHeader>
@@ -69,6 +70,20 @@ export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardPro
         <Button variant="ghost" size="sm" onClick={onSettings} data-testid={`button-settings-${campaign.id}`}>
           <Settings className="h-4 w-4 mr-2" />
           Settings
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => {
+            if (confirm(`Are you sure you want to delete "${campaign.name}"? This action cannot be undone.`)) {
+              onDelete?.();
+            }
+          }} 
+          data-testid={`button-delete-${campaign.id}`}
+          className="text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete
         </Button>
       </CardFooter>
     </Card>
