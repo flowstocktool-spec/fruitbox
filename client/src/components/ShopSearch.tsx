@@ -170,19 +170,9 @@ function ShopCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
-              <p className="font-bold text-green-600">{shop.pointsPerDollar}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Discount</p>
-              <p className="font-bold text-blue-600">{shop.discountPercentage}%</p>
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-3">
           {hasCoupon ? (
-            <Button variant="outline" disabled>
+            <Button variant="outline" disabled className="flex-shrink-0">
               <Check className="h-4 w-4 mr-2" />
               Registered
             </Button>
@@ -190,7 +180,7 @@ function ShopCard({
             <Button 
               onClick={onRegister}
               disabled={isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 flex-shrink-0"
             >
               <Plus className="h-4 w-4 mr-2" />
               Register as Affiliate
@@ -234,16 +224,18 @@ function ShopCard({
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
                       <div>
-                        <p className="text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
-                        <p className="font-bold text-green-600">{campaign.pointsPerDollar}</p>
+                        <p className="text-muted-foreground">Earn Points</p>
+                        <p className="font-bold text-green-600">
+                          {campaign.pointRules?.[0]?.points ?? 'N/A'} pts
+                        </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Min Purchase</p>
-                        <p className="font-bold">{shop.currencySymbol || '$'}{campaign.minPurchaseAmount}</p>
+                        <p className="font-bold">{shop.currencySymbol || '$'}{campaign.minPurchaseAmount ?? 0}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Discount</p>
-                        <p className="font-bold text-blue-600">{campaign.discountPercentage}%</p>
+                        <p className="text-muted-foreground">Referral Discount</p>
+                        <p className="font-bold text-blue-600">{campaign.referralDiscountPercentage ?? 'N/A'}%</p>
                       </div>
                     </div>
                   </CardContent>

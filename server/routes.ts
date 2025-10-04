@@ -605,8 +605,19 @@ export function registerRoutes(app: Express): Server {
   // Campaigns
   app.get("/api/campaigns", async (req, res) => {
     try {
-      const allCampaigns = await db.select().from(campaigns);
-      res.json(allCampaigns);
+      const { storeId } = req.query;
+      
+      if (storeId) {
+        // Filter by storeId if provided
+        const storeCampaigns = await db.select()
+          .from(campaigns)
+          .where(eq(campaigns.storeId, storeId as string));
+        res.json(storeCampaigns);
+      } else {
+        // Return all campaigns if no filter
+        const allCampaigns = await db.select().from(campaigns);
+        res.json(allCampaigns);
+      }
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
