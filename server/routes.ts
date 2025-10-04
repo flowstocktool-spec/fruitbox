@@ -550,13 +550,19 @@ export function registerRoutes(app: Express): Server {
         // Filter to only include transactions for this shop's coupons
         const txs = allTxs.filter(tx => {
           const matches = tx.couponId && couponIds.includes(tx.couponId);
-          if (matches) {
-            console.log(`Transaction ${tx.id} matches coupon ${tx.couponId}`);
+          if (!tx.couponId) {
+            console.log(`Transaction ${tx.id} has NO couponId - this is the problem!`);
+          } else if (matches) {
+            console.log(`✅ Transaction ${tx.id} matches coupon ${tx.couponId}`);
+          } else {
+            console.log(`❌ Transaction ${tx.id} couponId ${tx.couponId} doesn't match shop coupons`);
           }
           return matches;
         });
         
         console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
+        console.log(`Shop coupon IDs:`, couponIds);
+        console.log(`Transaction coupon IDs:`, allTxs.map(t => t.couponId).filter(Boolean));
         
         return res.json(txs);
       }
