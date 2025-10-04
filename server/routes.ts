@@ -612,6 +612,43 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update campaign
+  app.patch("/api/campaigns/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      const [updated] = await db.update(campaigns)
+        .set(updateData)
+        .where(eq(campaigns.id, id))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating campaign:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete campaign
+  app.delete("/api/campaigns/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await db.delete(campaigns)
+        .where(eq(campaigns.id, id));
+
+      res.json({ message: "Campaign deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/customers/campaign/:campaignId", async (req, res) => {
     try {
       const customersData = await db.select()
