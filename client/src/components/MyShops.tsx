@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Store, MapPin, Phone, Tag, TrendingUp } from "lucide-react";
+import { Store, Tag, TrendingUp } from "lucide-react";
 import { getCustomerShops, getCustomerCoupons } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,17 +18,11 @@ export function MyShops({ customerId }: MyShopsProps) {
     enabled: !!customerId,
   });
 
-  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const { data: customerCoupons = [] } = useQuery({
     queryKey: ['/api/customer-coupons', customerId],
     queryFn: () => getCustomerCoupons(customerId),
     enabled: !!customerId,
   });
-
-  // Find the coupon for the selected shop
-  const coupon = selectedShopId
-    ? customerCoupons.find((c: any) => c.shopProfileId === selectedShopId)
-    : null;
 
   if (isLoading) {
     return (
@@ -190,91 +182,6 @@ export function MyShops({ customerId }: MyShopsProps) {
                 </div>
               </div>
             </div>
-
-            <Dialog onOpenChange={(isOpen) => {
-              if (isOpen) {
-                setSelectedShopId(shop.id);
-              } else {
-                setSelectedShopId(null);
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  data-testid={`button-view-profile-${shop.id}`}
-                >
-                  <Store className="h-4 w-4 mr-2" />
-                  View Shop Profile
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md" data-testid={`shop-profile-dialog-${shop.id}`}>
-                <DialogHeader>
-                  <DialogTitle className="text-xl">{shop.shopName}</DialogTitle>
-                  <DialogDescription>
-                    {shop.category && `${shop.category} • `}Shop Code: {shop.shopCode}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                  {shop.description && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">About</h4>
-                      <p className="text-sm text-muted-foreground">{shop.description}</p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <p className="text-xs text-muted-foreground">Points/{shop.currencySymbol || '$'}</p>
-                        </div>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{shop.pointsPerDollar}</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          <p className="text-xs text-muted-foreground">Discount</p>
-                        </div>
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{shop.discountPercentage}%</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {shop.address && (
-                    <div className="flex gap-3">
-                      <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-medium">Address</h4>
-                        <p className="text-sm text-muted-foreground">{shop.address}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {shop.phone && (
-                    <div className="flex gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-medium">Phone</h4>
-                        <p className="text-sm text-muted-foreground">{shop.phone}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-sm font-medium">Status</span>
-                    <Badge variant={shop.isActive ? "default" : "secondary"}>
-                      {shop.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           </CardContent>
         </Card>
         );
