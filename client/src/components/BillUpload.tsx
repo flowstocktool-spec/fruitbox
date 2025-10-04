@@ -303,14 +303,6 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">📋 Campaign Benefits</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="bg-white dark:bg-green-900/20 rounded p-2">
-                      <p className="font-semibold text-green-800 dark:text-green-200">Points You'll Earn:</p>
-                      {pointRules.map((rule, idx) => (
-                        <p key={idx} className="text-xs text-green-700 dark:text-green-300">
-                          • Spend ${rule.minAmount} - ${rule.maxAmount} = Earn {rule.points} points
-                        </p>
-                      ))}
-                    </div>
                     <div className="bg-white dark:bg-blue-900/20 rounded p-2">
                       <p className="text-xs text-blue-700 dark:text-blue-300">
                         💝 Your welcome discount: <span className="font-bold">{discountPercentage}% OFF</span>
