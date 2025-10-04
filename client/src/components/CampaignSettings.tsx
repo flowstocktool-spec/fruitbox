@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { Trash2, Plus } from "lucide-react";
 import type { Campaign } from "@shared/schema";
 
 interface CampaignSettingsProps {
@@ -22,13 +23,20 @@ interface CampaignSettingsProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface PointRule {
+  minAmount: number;
+  maxAmount: number;
+  points: number;
+}
+
 export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSettingsProps) {
   const { toast } = useToast();
+  const [pointRules, setPointRules] = useState<PointRule[]>(
+    (campaign as any).pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]
+  );
   const [formData, setFormData] = useState({
     name: campaign.name,
     description: campaign.description || "",
-    spendAmount: (campaign as any).spendAmount || 100,
-    earnPoints: (campaign as any).earnPoints || 5,
     minPurchaseAmount: campaign.minPurchaseAmount,
     referralDiscountPercentage: (campaign as any).referralDiscountPercentage || 10,
     pointsRedemptionValue: (campaign as any).pointsRedemptionValue || 100,
@@ -40,7 +48,7 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: typeof formData & { pointRules: PointRule[] }) => {
       const response = await fetch(`/api/campaigns/${campaign.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +100,25 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate(formData);
+    updateMutation.mutate({ ...formData, pointRules });
+  };
+
+  const addPointRule = () => {
+    const lastRule = pointRules[pointRules.length - 1];
+    const newMinAmount = lastRule ? lastRule.maxAmount : 0;
+    setPointRules([...pointRules, { minAmount: newMinAmount, maxAmount: newMinAmount + 100, points: 10 }]);
+  };
+
+  const removePointRule = (index: number) => {
+    if (pointRules.length > 1) {
+      setPointRules(pointRules.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePointRule = (index: number, field: keyof PointRule, value: number) => {
+    const newRules = [...pointRules];
+    newRules[index] = { ...newRules[index], [field]: value };
+    setPointRules(newRules);
   };
 
   return (
@@ -128,39 +154,80 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
 
           <div className="space-y-4">
             <div className="border-t pt-4">
-              <Label className="text-sm font-semibold">Points Earning Rules</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="spendAmount">Customer Spends</Label>
-                  <Input
-                    id="spendAmount"
-                    type="number"
-                    min="1"
-                    value={formData.spendAmount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, spendAmount: parseInt(e.target.value) })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="earnPoints">Earns Points</Label>
-                  <Input
-                    id="earnPoints"
-                    type="number"
-                    min="1"
-                    value={formData.earnPoints}
-                    onChange={(e) =>
-                      setFormData({ ...formData, earnPoints: parseInt(e.target.value) })
-                    }
-                    required
-                  />
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-semibold">Points Earning Rules</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addPointRule}
+                  data-testid="button-add-point-rule"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Range
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Example: Spend ${formData.spendAmount} = Earn {formData.earnPoints} points
-              </p>
+              
+              <div className="space-y-3">
+                {pointRules.map((rule, index) => (
+                  <div key={index} className="border rounded-lg p-3 bg-muted/30">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor={`minAmount-${index}`} className="text-xs">Min Amount</Label>
+                        <Input
+                          id={`minAmount-${index}`}
+                          type="number"
+                          min="0"
+                          value={rule.minAmount}
+                          onChange={(e) => updatePointRule(index, 'minAmount', parseInt(e.target.value) || 0)}
+                          required
+                          data-testid={`input-min-amount-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`maxAmount-${index}`} className="text-xs">Max Amount</Label>
+                        <Input
+                          id={`maxAmount-${index}`}
+                          type="number"
+                          min="0"
+                          value={rule.maxAmount}
+                          onChange={(e) => updatePointRule(index, 'maxAmount', parseInt(e.target.value) || 0)}
+                          required
+                          data-testid={`input-max-amount-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`points-${index}`} className="text-xs">Points Earned</Label>
+                        <Input
+                          id={`points-${index}`}
+                          type="number"
+                          min="0"
+                          value={rule.points}
+                          onChange={(e) => updatePointRule(index, 'points', parseInt(e.target.value) || 0)}
+                          required
+                          data-testid={`input-points-${index}`}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removePointRule(index)}
+                          disabled={pointRules.length === 1}
+                          className="w-full"
+                          data-testid={`button-remove-rule-${index}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Spend ${rule.minAmount} to ${rule.maxAmount} → Earn {rule.points} points
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -174,6 +241,7 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
                   setFormData({ ...formData, minPurchaseAmount: parseInt(e.target.value) })
                 }
                 required
+                data-testid="input-min-purchase"
               />
             </div>
           </div>
