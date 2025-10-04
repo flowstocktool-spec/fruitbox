@@ -356,7 +356,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get customer by ID
+  // Get customer by ID with aggregated points from all coupons
   app.get("/api/customers/:id", async (req, res) => {
     try {
       const [customer] = await db.select()
@@ -367,7 +367,21 @@ export function registerRoutes(app: Express): Server {
       if (!customer) {
         return res.status(404).json({ error: "Customer not found" });
       }
-      res.json(customer);
+
+      // Get all coupons for this customer to calculate actual points
+      const coupons = await db.select()
+        .from(customerCoupons)
+        .where(eq(customerCoupons.customerId, customer.id));
+
+      // Calculate total points and redeemed points from all coupons
+      const totalPoints = coupons.reduce((sum, coupon) => sum + (coupon.totalPoints || 0), 0);
+      const redeemedPoints = coupons.reduce((sum, coupon) => sum + (coupon.redeemedPoints || 0), 0);
+
+      res.json({
+        ...customer,
+        totalPoints,
+        redeemedPoints,
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -495,21 +509,9 @@ export function registerRoutes(app: Express): Server {
         .where(eq(transactions.id, id))
         .returning();
 
-      // Update customer points based on transaction type
-      if (transaction.type === "purchase") {
-        // Add points for purchase
-        const [customer] = await db.select()
-          .from(customers)
-          .where(eq(customers.id, transaction.customerId))
-          .limit(1);
-
-        if (customer) {
-          await db.update(customers)
-            .set({ totalPoints: customer.totalPoints + transaction.points })
-            .where(eq(customers.id, transaction.customerId));
-        }
-
-        // If there's a coupon, update coupon points too
+      // Update points - ONLY in the coupon table, customer table will aggregate from coupons
+      if (transaction.type === "purchase" || transaction.type === "referral") {
+        // Add points for purchase/referral
         if (transaction.couponId) {
           const [coupon] = await db.select()
             .from(customerCoupons)
@@ -524,18 +526,6 @@ export function registerRoutes(app: Express): Server {
         }
       } else if (transaction.type === "redemption") {
         // Deduct points for redemption
-        const [customer] = await db.select()
-          .from(customers)
-          .where(eq(customers.id, transaction.customerId))
-          .limit(1);
-
-        if (customer) {
-          await db.update(customers)
-            .set({ redeemedPoints: customer.redeemedPoints + Math.abs(transaction.points) })
-            .where(eq(customers.id, transaction.customerId));
-        }
-
-        // If there's a coupon, update coupon redeemed points too
         if (transaction.couponId) {
           const [coupon] = await db.select()
             .from(customerCoupons)

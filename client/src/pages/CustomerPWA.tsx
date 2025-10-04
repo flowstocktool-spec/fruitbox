@@ -114,9 +114,9 @@ export default function CustomerPWA() {
   // Refetch customer data when transactions change
   useEffect(() => {
     if (customer?.id) {
-      queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers', customer.id] });
     }
-  }, [transactions, customer?.id, queryClient]);
+  }, [transactions, customer?.id]);
 
 
   // Customer coupons query
@@ -377,8 +377,8 @@ export default function CustomerPWA() {
     );
   }
 
-  const totalPoints = customer.totalPoints || 0;
-  const totalRedeemed = customer.redeemedPoints || 0;
+  const totalPoints = customerData?.totalPoints || customer?.totalPoints || 0;
+  const totalRedeemed = customerData?.redeemedPoints || customer?.redeemedPoints || 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">

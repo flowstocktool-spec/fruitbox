@@ -28,7 +28,7 @@ export function MyShops({ customerId }: MyShopsProps) {
   });
 
   // Find the coupon for the selected shop
-  const coupon = selectedShopId 
+  const coupon = selectedShopId
     ? customerCoupons.find((c: any) => c.shopProfileId === selectedShopId)
     : null;
 
@@ -78,7 +78,7 @@ export function MyShops({ customerId }: MyShopsProps) {
     <div className="space-y-3">
       {validShops.map((shop: any) => {
         const shopCoupon = customerCoupons.find((c: any) => c.shopProfileId === shop.id);
-        
+
         return (
           <Card key={shop.id} className="hover:shadow-md transition-shadow" data-testid={`shop-card-${shop.id}`}>
             <CardHeader>
@@ -93,7 +93,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                   </div>
                   <Badge variant="secondary">Affiliate</Badge>
                 </div>
-                
+
                 {!shopCoupon && (
                   <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
                     <p className="text-sm text-yellow-800 dark:text-yellow-200">
@@ -101,7 +101,7 @@ export function MyShops({ customerId }: MyShopsProps) {
                     </p>
                   </div>
                 )}
-                
+
                 {shopCoupon && (
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-2 border-green-300 dark:border-green-700 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
