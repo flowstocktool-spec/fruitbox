@@ -329,6 +329,7 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
               {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
             </Button>
           </form>
+        </Form>
       </CardContent>
     </Card>
   );
