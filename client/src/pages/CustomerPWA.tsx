@@ -136,19 +136,29 @@ export default function CustomerPWA() {
     enabled: !!customer,
   });
 
-  // Update selected shop and active coupon when customer coupons change
+  // Automatically select first shop and coupon when data loads
   useEffect(() => {
-    if (customerCoupons.length > 0 && !activeCoupon) {
-      const firstCoupon = customerCoupons[0];
-      setActiveCoupon(firstCoupon);
+    if (customerCoupons.length > 0 && customerShops.length > 0) {
+      // Auto-select first coupon if none selected
+      if (!activeCoupon) {
+        const firstCoupon = customerCoupons[0];
+        setActiveCoupon(firstCoupon);
 
-      // Find the corresponding shop
-      const shop = customerShops.find((s: any) => s.id === firstCoupon.shopProfileId);
-      if (shop) {
-        setSelectedShop(shop);
+        // Find the corresponding shop
+        const shop = customerShops.find((s: any) => s.id === firstCoupon.shopProfileId);
+        if (shop) {
+          setSelectedShop(shop);
+        }
+      }
+      // If coupon is selected but shop is not, find the shop
+      else if (!selectedShop && activeCoupon) {
+        const shop = customerShops.find((s: any) => s.id === activeCoupon.shopProfileId);
+        if (shop) {
+          setSelectedShop(shop);
+        }
       }
     }
-  }, [customerCoupons, customerShops, activeCoupon]);
+  }, [customerCoupons, customerShops, activeCoupon, selectedShop]);
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
