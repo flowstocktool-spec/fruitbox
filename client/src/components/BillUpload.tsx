@@ -75,8 +75,37 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
   });
 
   const uploadMutation = useMutation({
-    mutationFn: (data: any) => createTransaction(data, selectedFile),
-    onSuccess: () => {
+    mutationFn: async (data: any) => {
+      // Convert file to base64 if exists
+      let billImageUrl = undefined;
+      if (selectedFile) {
+        const reader = new FileReader();
+        billImageUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
+      }
+
+      const transactionData = {
+        ...data,
+        billImageUrl,
+      };
+
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transactionData),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload bill");
+      }
+
+      return response.json();
+    },
+    onSuccess: (response) => {
       form.reset();
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -86,15 +115,19 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       setShowRedemption(false);
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      
+      const earnedPoints = response.points || 0;
+      
       toast({
         title: "Bill uploaded successfully!",
         description: affiliateCode
-          ? `Your bill is submitted with referral code ${affiliateCode}. You'll get ${discountPercentage}% welcome discount on approval!`
-          : "Your bill is pending approval.",
+          ? `Your bill is submitted with referral code ${affiliateCode}. You'll earn ${earnedPoints} points and get ${discountPercentage}% welcome discount on approval!`
+          : `Your bill is pending approval. You'll earn ${earnedPoints} points once approved.`,
       });
       onSuccess?.();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Upload error:", error);
       toast({
         title: "Upload failed",
         description: "Please try again.",
@@ -192,103 +225,29 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       }
     }
 
-    try {
-      // First, create the purchase transaction
-      const formData = new FormData();
-      formData.append("customerId", customerId);
-      if (couponId) {
-        formData.append("couponId", couponId);
-      }
-      formData.append("type", "purchase");
-      formData.append("amount", purchaseAmount.toString());
-      formData.append("status", "pending");
-      if (affiliateCode) {
-        formData.append("referralCode", affiliateCode);
-      }
-
-      if (selectedFile) {
-        const reader = new FileReader();
-        reader.readAsDataURL(selectedFile);
-        const base64 = await new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-        });
-        formData.append("billImageUrl", base64);
-      }
-
-      // Calculate points based on amount and point rules
-      let earnedPoints = 0;
-      if (pointRules && pointRules.length > 0) {
-        for (const rule of pointRules) {
-          if (purchaseAmount >= rule.minAmount && purchaseAmount <= rule.maxAmount) {
-            earnedPoints = rule.points;
-            break;
-          }
+    // Calculate points based on amount and point rules
+    let earnedPoints = 0;
+    if (pointRules && pointRules.length > 0) {
+      for (const rule of pointRules) {
+        if (purchaseAmount >= rule.minAmount && purchaseAmount <= rule.maxAmount) {
+          earnedPoints = rule.points;
+          break;
         }
       }
-
-      formData.append("points", earnedPoints.toString());
-      formData.append("shopName", shopName || "");
-
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) throw new Error("Failed to submit transaction");
-
-      // If points are being redeemed, create redemption transaction
-      if (pointsToRedeem > 0) {
-        const redemptionFormData = new FormData();
-        redemptionFormData.append("customerId", customerId);
-        if (couponId) {
-          redemptionFormData.append("couponId", couponId);
-        }
-        redemptionFormData.append("type", "redemption");
-        redemptionFormData.append("amount", purchaseAmount.toString());
-        redemptionFormData.append("points", (-pointsToRedeem).toString()); // Negative for redemption
-        redemptionFormData.append("status", "pending");
-        if (shopName) {
-          redemptionFormData.append("shopName", shopName);
-        }
-
-        const redemptionResponse = await fetch("/api/transactions", {
-          method: "POST",
-          body: redemptionFormData,
-          credentials: "include",
-        });
-
-        if (!redemptionResponse.ok) throw new Error("Failed to submit redemption");
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-
-      setAmount("");
-      setReferralCode("");
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setPointsToRedeem(0);
-      setShowRedemption(false);
-      setAffiliateCode("");
-      setAffiliateDetails(null);
-
-      const redemptionMessage = pointsToRedeem > 0
-        ? ` ${pointsToRedeem} points will be redeemed once approved.`
-        : '';
-
-      toast({
-        title: "Success!",
-        description: `Bill uploaded successfully! You'll earn ${earnedPoints} points once approved.${redemptionMessage}`,
-      });
-    } catch (error) {
-      console.error("Error submitting bill:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload bill. Please try again.",
-        variant: "destructive",
-      });
     }
+
+    const transactionData = {
+      customerId,
+      couponId: couponId || undefined,
+      type: "purchase",
+      amount: purchaseAmount,
+      status: "pending",
+      referralCode: affiliateCode || undefined,
+      points: earnedPoints,
+      shopName: shopName || "",
+    };
+
+    uploadMutation.mutate(transactionData);
   };
 
   const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
