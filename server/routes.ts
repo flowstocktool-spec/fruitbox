@@ -537,6 +537,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         const couponIds = shopCoupons.map(c => c.id);
+        console.log(`Coupon IDs for shop:`, couponIds);
         
         // Get all transactions for these coupons
         const allTxs = await db.select()
@@ -544,10 +545,16 @@ export function registerRoutes(app: Express): Server {
           .orderBy(desc(transactions.createdAt));
         
         console.log(`Total transactions in database: ${allTxs.length}`);
-        console.log(`Coupon IDs to match:`, couponIds);
+        console.log(`Sample transaction couponIds:`, allTxs.slice(0, 3).map(tx => ({ id: tx.id, couponId: tx.couponId })));
         
         // Filter to only include transactions for this shop's coupons
-        const txs = allTxs.filter(tx => tx.couponId && couponIds.includes(tx.couponId));
+        const txs = allTxs.filter(tx => {
+          const matches = tx.couponId && couponIds.includes(tx.couponId);
+          if (matches) {
+            console.log(`Transaction ${tx.id} matches coupon ${tx.couponId}`);
+          }
+          return matches;
+        });
         
         console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
         

@@ -71,22 +71,28 @@ export default function StoreDashboard() {
     queryKey: ['/api/transactions', shopProfile?.id],
     queryFn: async () => {
       if (!shopProfile?.id) return [];
+      console.log("Fetching transactions for shop:", shopProfile.id);
       const response = await fetch(`/api/transactions?shopProfileId=${shopProfile.id}`, {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const allTransactions = await response.json();
+      console.log("Received transactions:", allTransactions.length, allTransactions);
       // Show pending and approved transactions, sorted by date
-      return allTransactions.filter((t: any) => 
+      const filtered = allTransactions.filter((t: any) => 
         t.status === 'pending' || t.status === 'approved'
       ).sort((a: any, b: any) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+      console.log("Filtered transactions:", filtered.length, filtered);
+      return filtered;
     },
     enabled: !!shopProfile?.id,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
   const transactions = transactionsQuery.data || [];
   const pendingCount = transactions.filter((t: any) => t.status === 'pending').length;
+  console.log("Transactions to display:", transactions.length, "Pending:", pendingCount);
 
 
   // Customers query
