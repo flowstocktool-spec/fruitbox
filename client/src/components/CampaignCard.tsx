@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Settings, TrendingUp } from "lucide-react";
+import { Settings, TrendingUp } from "lucide-react";
 import type { Campaign } from "@shared/schema";
 
 interface CampaignCardProps {
@@ -50,11 +50,7 @@ export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardPro
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex gap-2 justify-between">
-        <Button variant="outline" size="sm" onClick={onViewQR} data-testid={`button-view-qr-${campaign.id}`}>
-          <QrCode className="h-4 w-4 mr-2" />
-          QR Code
-        </Button>
+      <CardFooter className="flex gap-2 justify-end">
         <Button variant="ghost" size="sm" onClick={onSettings} data-testid={`button-settings-${campaign.id}`}>
           <Settings className="h-4 w-4 mr-2" />
           Settings
