@@ -30,6 +30,8 @@ export default function CustomerPWA() {
   const [selectedCouponForShare, setSelectedCouponForShare] = useState<any>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isCreatingShareToken, setIsCreatingShareToken] = useState(false);
+  const [selectedShop, setSelectedShop] = useState<any>(null);
+  const [activeCoupon, setActiveCoupon] = useState<any>(null);
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -132,6 +134,20 @@ export default function CustomerPWA() {
     queryFn: () => getCustomerShops(customer?.id ?? ''),
     enabled: !!customer,
   });
+
+  // Update selected shop and active coupon when customer coupons change
+  useEffect(() => {
+    if (customerCoupons.length > 0 && !activeCoupon) {
+      const firstCoupon = customerCoupons[0];
+      setActiveCoupon(firstCoupon);
+      
+      // Find the corresponding shop
+      const shop = customerShops.find((s: any) => s.id === firstCoupon.shopProfileId);
+      if (shop) {
+        setSelectedShop(shop);
+      }
+    }
+  }, [customerCoupons, customerShops, activeCoupon]);
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
@@ -430,6 +446,39 @@ export default function CustomerPWA() {
             />
 
             <div className="space-y-4">
+              {customerCoupons.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-sm">Select Shop</CardTitle>
+                    <CardDescription>Choose which shop you're uploading a bill for</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {customerCoupons.map((coupon: any) => {
+                        const shop = customerShops.find((s: any) => s.id === coupon.shopProfileId);
+                        if (!shop) return null;
+                        
+                        return (
+                          <Button
+                            key={coupon.id}
+                            variant={activeCoupon?.id === coupon.id ? "default" : "outline"}
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setActiveCoupon(coupon);
+                              setSelectedShop(shop);
+                            }}
+                          >
+                            <Store className="h-4 w-4 mr-2" />
+                            {shop.shopName}
+                            {activeCoupon?.id === coupon.id && " ✓"}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
                   <Gift className="h-4 w-4" />
@@ -470,14 +519,41 @@ export default function CustomerPWA() {
                 </div>
               </div>
 
-              <BillUpload
-                customerId={customer.id}
-                couponId={activeCoupon?.id || null}
-                campaignId={selectedShop?.campaigns?.[0]?.id}
-                pointRules={selectedShop?.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
-                minPurchaseAmount={selectedShop?.campaigns?.[0]?.minPurchaseAmount || 0}
-                discountPercentage={selectedShop?.campaigns?.[0]?.referralDiscountPercentage || 10}
-              />
+              {customerCoupons.length === 0 ? (
+                <div className="text-center py-8 bg-muted/50 rounded-lg">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="font-medium text-muted-foreground mb-2">No Shops Registered</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    You need to register as an affiliate at a shop first before uploading bills
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const tabsList = document.querySelector('[data-testid="tab-shops"]') as HTMLElement;
+                      if (tabsList) tabsList.click();
+                    }}
+                  >
+                    Go to Shops Tab
+                  </Button>
+                </div>
+              ) : !selectedShop || !activeCoupon ? (
+                <div className="text-center py-8 bg-muted/50 rounded-lg">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="font-medium text-muted-foreground mb-2">Select a Shop</p>
+                  <p className="text-sm text-muted-foreground">
+                    Please select a shop above to upload your bill
+                  </p>
+                </div>
+              ) : (
+                <BillUpload
+                  customerId={customer.id}
+                  couponId={activeCoupon?.id || null}
+                  campaignId={selectedShop?.campaigns?.[0]?.id}
+                  pointRules={selectedShop?.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
+                  minPurchaseAmount={selectedShop?.campaigns?.[0]?.minPurchaseAmount || 0}
+                  discountPercentage={selectedShop?.campaigns?.[0]?.referralDiscountPercentage || 10}
+                />
+              )}
             </div>
           </TabsContent>
 
