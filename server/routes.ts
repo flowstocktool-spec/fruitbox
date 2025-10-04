@@ -356,6 +356,25 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get customer by referral code
+  app.get("/api/customers/code/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const [customer] = await db.select()
+        .from(customers)
+        .where(eq(customers.referralCode, code))
+        .limit(1);
+      
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      res.json(customer);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get customer by ID with aggregated points from all coupons
   app.get("/api/customers/:id", async (req, res) => {
     try {
@@ -447,6 +466,24 @@ export function registerRoutes(app: Express): Server {
         .from(customerCoupons)
         .where(eq(customerCoupons.customerId, req.params.customerId));
       res.json(coupons);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/customer-coupons/code/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const [coupon] = await db.select()
+        .from(customerCoupons)
+        .where(eq(customerCoupons.referralCode, code))
+        .limit(1);
+      
+      if (!coupon) {
+        return res.status(404).json({ error: "Coupon not found" });
+      }
+      
+      res.json(coupon);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
