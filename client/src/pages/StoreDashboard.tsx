@@ -180,7 +180,7 @@ export default function StoreDashboard() {
         </div>
 
         <Tabs defaultValue="campaigns" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full grid grid-cols-4 h-auto">
+          <TabsList className="w-full grid grid-cols-5 h-auto">
             <TabsTrigger value="campaigns" className="text-xs sm:text-sm">
               <span className="hidden sm:inline">Campaigns</span>
               <span className="sm:hidden">📊</span>
@@ -197,6 +197,10 @@ export default function StoreDashboard() {
                   {pendingCount}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">History</span>
+              <span className="sm:hidden">📜</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="text-xs sm:text-sm">
               <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-2" />
@@ -312,28 +316,66 @@ export default function StoreDashboard() {
 
           <TabsContent value="approvals">
             <div className="grid grid-cols-1 gap-4">
-              {transactions.length === 0 ? (
+              {transactions.filter((t: any) => t.status === 'pending').length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
-                    No transactions yet
+                    No pending approvals
                   </CardContent>
                 </Card>
               ) : (
-                transactions.map((transaction: any) => {
-                  // Find customer name from the customers list
-                  const customer = customers.find((c: any) => c.id === transaction.customerId);
-                  const customerName = customer?.name || "Unknown Customer";
-                  
-                  return (
-                    <BillApprovalCard 
-                      key={transaction.id} 
-                      transaction={transaction}
-                      customerName={customerName}
-                    />
-                  );
-                })
+                transactions
+                  .filter((t: any) => t.status === 'pending')
+                  .map((transaction: any) => {
+                    // Find customer name from the customers list
+                    const customer = customers.find((c: any) => c.id === transaction.customerId);
+                    const customerName = customer?.name || "Unknown Customer";
+                    
+                    return (
+                      <BillApprovalCard 
+                        key={transaction.id} 
+                        transaction={transaction}
+                        customerName={customerName}
+                      />
+                    );
+                  })
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>
+                  All past transactions (approved and rejected)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4">
+                  {transactions.filter((t: any) => t.status !== 'pending').length === 0 ? (
+                    <div className="py-12 text-center text-muted-foreground">
+                      No transaction history yet
+                    </div>
+                  ) : (
+                    transactions
+                      .filter((t: any) => t.status !== 'pending')
+                      .map((transaction: any) => {
+                        // Find customer name from the customers list
+                        const customer = customers.find((c: any) => c.id === transaction.customerId);
+                        const customerName = customer?.name || "Unknown Customer";
+                        
+                        return (
+                          <BillApprovalCard 
+                            key={transaction.id} 
+                            transaction={transaction}
+                            customerName={customerName}
+                          />
+                        );
+                      })
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">
