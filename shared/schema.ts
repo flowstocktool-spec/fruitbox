@@ -1,7 +1,13 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const pointRuleSchema = z.object({
+  minAmount: z.number().min(0),
+  maxAmount: z.number().min(0),
+  points: z.number().min(0),
+});
 
 export const stores = pgTable("stores", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -27,9 +33,11 @@ export const campaigns = pgTable("campaigns", {
   storeId: varchar("store_id").notNull().references(() => shopProfiles.id),
   name: text("name").notNull(),
   description: text("description"),
-  // New simplified points system
-  spendAmount: integer("spend_amount").notNull().default(100), // Amount customer needs to spend
-  earnPoints: integer("earn_points").notNull().default(5), // Points earned for that amount
+  // Range-based points system
+  pointRules: jsonb("point_rules").$type<Array<{ minAmount: number; maxAmount: number; points: number }>>().notNull().default(sql`'[{"minAmount":0,"maxAmount":999999,"points":10}]'::jsonb`),
+  // Legacy fields for backward compatibility
+  spendAmount: integer("spend_amount").default(100),
+  earnPoints: integer("earn_points").default(5),
   minPurchaseAmount: integer("min_purchase_amount").notNull().default(0),
   referralDiscountPercentage: integer("referral_discount_percentage").notNull().default(10), // Discount for new customers using referral
   pointsRedemptionValue: integer("points_redemption_value").notNull().default(100), // How many points needed
@@ -95,7 +103,9 @@ export const transactions = pgTable("transactions", {
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
 export const insertShopProfileSchema = createInsertSchema(shopProfiles).omit({ id: true, createdAt: true });
-export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
+export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true }).extend({
+  pointRules: z.array(pointRuleSchema).min(1, "At least one point rule is required"),
+});
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertCustomerCouponSchema = createInsertSchema(customerCoupons).omit({ id: true, createdAt: true });
 export const insertSharedCouponSchema = createInsertSchema(sharedCoupons).omit({ id: true, createdAt: true });
