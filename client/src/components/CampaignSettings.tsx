@@ -241,81 +241,80 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
               rows={4}
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="couponColor">Coupon Color</Label>
-            <div className="flex gap-2">
-              <Input
-                type="color"
-                value={formData.couponColor}
-                onChange={(e) => setFormData({ ...formData, couponColor: e.target.value })}
-                className="w-20 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                value={formData.couponColor}
-                onChange={(e) => setFormData({ ...formData, couponColor: e.target.value })}
-                className="flex-1"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="couponColor">Coupon Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="color"
+                  value={formData.couponColor}
+                  onChange={(e) => setFormData({ ...formData, couponColor: e.target.value })}
+                  className="w-20 h-10 p-1 cursor-pointer"
+                />
+                <Input
+                  value={formData.couponColor}
+                  onChange={(e) => setFormData({ ...formData, couponColor: e.target.value })}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="couponTextColor">Text Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="color"
+                  value={formData.couponTextColor}
+                  onChange={(e) => setFormData({ ...formData, couponTextColor: e.target.value })}
+                  className="w-20 h-10 p-1 cursor-pointer"
+                />
+                <Input
+                  value={formData.couponTextColor}
+                  onChange={(e) => setFormData({ ...formData, couponTextColor: e.target.value })}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="couponTextColor">Text Color</Label>
-            <div className="flex gap-2">
-              <Input
-                type="color"
-                value={formData.couponTextColor}
-                onChange={(e) => setFormData({ ...formData, couponTextColor: e.target.value })}
-                className="w-20 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                value={formData.couponTextColor}
-                onChange={(e) => setFormData({ ...formData, couponTextColor: e.target.value })}
-                className="flex-1"
-              />
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="isActive">Campaign Status</Label>
+              <p className="text-sm text-muted-foreground">
+                {formData.isActive ? "Campaign is active" : "Campaign is inactive"}
+              </p>
             </div>
+            <Switch
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+            />
           </div>
-        </div>
 
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="space-y-0.5">
-            <Label htmlFor="isActive">Campaign Status</Label>
-            <p className="text-sm text-muted-foreground">
-              {formData.isActive ? "Campaign is active" : "Campaign is inactive"}
-            </p>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this campaign?")) {
+                  deleteMutation.mutate();
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
           </div>
-          <Switch
-            id="isActive"
-            checked={formData.isActive}
-            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          />
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <Button
-            type="submit"
-            className="flex-1"
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => {
-              if (confirm("Are you sure you want to delete this campaign?")) {
-                deleteMutation.mutate();
-              }
-            }}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
-      </form>
-    </DialogContent>
-  </Dialog>
+        </form>
+      </DialogContent>
+    </Dialog>
 );
 }
