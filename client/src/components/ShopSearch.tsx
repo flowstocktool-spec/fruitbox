@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Store, Plus, Check, Tag, Gift } from "lucide-react";
-import { getShopProfiles, createCustomerCoupon, getCampaigns } from "@/lib/api";
+import { Search, Store, Plus, Check } from "lucide-react";
+import { getShopProfiles, createCustomerCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,7 +16,6 @@ interface ShopSearchProps {
 
 export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedShopId, setExpandedShopId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: shops = [] } = useQuery({
@@ -101,15 +100,12 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
         ) : (
           filteredShops.map((shop) => {
             const hasCoupon = existingShopIds.includes(shop.id);
-            const isExpanded = expandedShopId === shop.id;
 
             return (
               <ShopCard 
                 key={shop.id} 
                 shop={shop} 
                 hasCoupon={hasCoupon}
-                isExpanded={isExpanded}
-                onToggleExpand={() => setExpandedShopId(isExpanded ? null : shop.id)}
                 onRegister={() => createCouponMutation.mutate(shop.id)}
                 isPending={createCouponMutation.isPending}
               />
@@ -124,32 +120,14 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
 function ShopCard({ 
   shop, 
   hasCoupon, 
-  isExpanded, 
-  onToggleExpand, 
   onRegister,
   isPending 
 }: { 
   shop: any; 
   hasCoupon: boolean; 
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   onRegister: () => void;
   isPending: boolean;
 }) {
-  const { data: campaigns = [] } = useQuery({
-    queryKey: ['/api/campaigns', { storeId: shop.id }],
-    queryFn: async () => {
-      const response = await fetch(`/api/campaigns?storeId=${shop.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
-      }
-      return response.json();
-    },
-    enabled: isExpanded,
-  });
-
-  const activeCampaigns = campaigns.filter((c: any) => c.isActive);
-
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
@@ -175,80 +153,21 @@ function ShopCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          {hasCoupon ? (
-            <Button variant="outline" disabled className="flex-shrink-0">
-              <Check className="h-4 w-4 mr-2" />
-              Registered
-            </Button>
-          ) : (
-            <Button 
-              onClick={onRegister}
-              disabled={isPending}
-              className="bg-green-600 hover:bg-green-700 flex-shrink-0"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Register as Affiliate
-            </Button>
-          )}
-        </div>
-
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full"
-          onClick={onToggleExpand}
-        >
-          <Tag className="h-4 w-4 mr-2" />
-          {isExpanded ? 'Hide' : 'View'} Campaigns & Offers
-        </Button>
-
-        {isExpanded && (
-          <div className="space-y-2 pt-2 border-t">
-            {activeCampaigns.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                No active campaigns at the moment
-              </p>
-            ) : (
-              activeCampaigns.map((campaign: any) => (
-                <Card key={campaign.id} className="bg-muted/50">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{campaign.name}</h4>
-                        {campaign.description && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {campaign.description}
-                          </p>
-                        )}
-                      </div>
-                      <Badge variant="default" className="shrink-0">
-                        <Gift className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                      <div>
-                        <p className="text-muted-foreground">Earn Points</p>
-                        <p className="font-bold text-green-600">
-                          {campaign.pointRules?.[0]?.points ?? 'N/A'} pts
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Min Purchase</p>
-                        <p className="font-bold">{shop.currencySymbol || '$'}{campaign.minPurchaseAmount ?? 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Referral Discount</p>
-                        <p className="font-bold text-blue-600">{campaign.referralDiscountPercentage ?? 'N/A'}%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+      <CardContent>
+        {hasCoupon ? (
+          <Button variant="outline" disabled className="w-full">
+            <Check className="h-4 w-4 mr-2" />
+            Registered
+          </Button>
+        ) : (
+          <Button 
+            onClick={onRegister}
+            disabled={isPending}
+            className="bg-green-600 hover:bg-green-700 w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Register as Affiliate
+          </Button>
         )}
       </CardContent>
     </Card>
