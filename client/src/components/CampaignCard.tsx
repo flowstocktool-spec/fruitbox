@@ -29,24 +29,23 @@ export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardPro
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Points per $1</span>
-            <span className="font-medium" data-testid={`text-points-rate-${campaign.id}`}>
-              {campaign.pointsPerDollar} pts
-            </span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <TrendingUp className="h-4 w-4" />
+            <span>Earn {(campaign as any).pointsPercentage || 5}% points on purchases</span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Min. Purchase</span>
-            <span className="font-medium" data-testid={`text-min-purchase-${campaign.id}`}>
-              ${campaign.minPurchaseAmount}
-            </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Min Purchase</p>
+              <p className="font-bold">${campaign.minPurchaseAmount}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Referral Discount</p>
+              <p className="font-bold text-blue-600">{(campaign as any).referralDiscountPercentage || 10}%</p>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Referral Discount</span>
-            <span className="font-medium" data-testid={`text-discount-${campaign.id}`}>
-              {campaign.discountPercentage}%
-            </span>
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground">Redeem: {(campaign as any).pointsRedemptionValue || 100} pts = {(campaign as any).pointsRedemptionDiscount || 10}% off</p>
           </div>
         </div>
       </CardContent>

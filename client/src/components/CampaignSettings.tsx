@@ -28,9 +28,12 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
   const [formData, setFormData] = useState({
     name: campaign.name,
     description: campaign.description || "",
-    pointsPerDollar: campaign.pointsPerDollar,
+    pointsPercentage: (campaign as any).pointsPercentage || 5,
     minPurchaseAmount: campaign.minPurchaseAmount,
-    discountPercentage: campaign.discountPercentage,
+    referralDiscountPercentage: (campaign as any).referralDiscountPercentage || 10,
+    pointsRedemptionValue: (campaign as any).pointsRedemptionValue || 100,
+    pointsRedemptionDiscount: (campaign as any).pointsRedemptionDiscount || 10,
+    termsAndConditions: (campaign as any).termsAndConditions || "",
     isActive: campaign.isActive,
     couponColor: campaign.couponColor,
     couponTextColor: campaign.couponTextColor,
@@ -123,50 +126,104 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="pointsPerDollar">Points per $1</Label>
-              <Input
-                id="pointsPerDollar"
-                type="number"
-                min="1"
-                value={formData.pointsPerDollar}
-                onChange={(e) =>
-                  setFormData({ ...formData, pointsPerDollar: parseInt(e.target.value) })
-                }
-                required
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pointsPercentage">Points Earning Rate (%)</Label>
+                <Input
+                  id="pointsPercentage"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={formData.pointsPercentage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pointsPercentage: parseInt(e.target.value) })
+                  }
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.pointsPercentage}% = {formData.pointsPercentage} points per 100 currency
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minPurchaseAmount">Min. Purchase Amount</Label>
+                <Input
+                  id="minPurchaseAmount"
+                  type="number"
+                  min="0"
+                  value={formData.minPurchaseAmount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minPurchaseAmount: parseInt(e.target.value) })
+                  }
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="minPurchaseAmount">Min. Purchase Amount</Label>
+              <Label htmlFor="referralDiscountPercentage">New Customer Referral Discount %</Label>
               <Input
-                id="minPurchaseAmount"
+                id="referralDiscountPercentage"
                 type="number"
                 min="0"
-                step="0.01"
-                value={formData.minPurchaseAmount}
+                max="100"
+                value={formData.referralDiscountPercentage}
                 onChange={(e) =>
-                  setFormData({ ...formData, minPurchaseAmount: parseFloat(e.target.value) })
+                  setFormData({ ...formData, referralDiscountPercentage: parseInt(e.target.value) })
                 }
                 required
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="discountPercentage">Referral Discount %</Label>
-            <Input
-              id="discountPercentage"
-              type="number"
-              min="0"
-              max="100"
-              value={formData.discountPercentage}
-              onChange={(e) =>
-                setFormData({ ...formData, discountPercentage: parseInt(e.target.value) })
-              }
-              required
-            />
+            <div className="border-t pt-4">
+              <Label className="text-sm font-semibold">Points Redemption Rules</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="pointsRedemptionValue">Points Required</Label>
+                  <Input
+                    id="pointsRedemptionValue"
+                    type="number"
+                    min="1"
+                    value={formData.pointsRedemptionValue}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pointsRedemptionValue: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pointsRedemptionDiscount">Discount %</Label>
+                  <Input
+                    id="pointsRedemptionDiscount"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={formData.pointsRedemptionDiscount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pointsRedemptionDiscount: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {formData.pointsRedemptionValue} points = {formData.pointsRedemptionDiscount}% off
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="termsAndConditions">Terms & Conditions</Label>
+              <Textarea
+                id="termsAndConditions"
+                value={formData.termsAndConditions}
+                onChange={(e) =>
+                  setFormData({ ...formData, termsAndConditions: e.target.value })
+                }
+                rows={4}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
