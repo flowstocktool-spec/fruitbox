@@ -196,11 +196,15 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       // First, create the purchase transaction
       const formData = new FormData();
       formData.append("customerId", customerId);
-      formData.append("couponId", couponId || "");
+      if (couponId) {
+        formData.append("couponId", couponId);
+      }
       formData.append("type", "purchase");
       formData.append("amount", purchaseAmount.toString());
       formData.append("status", "pending");
-      formData.append("referralCode", affiliateCode || "");
+      if (affiliateCode) {
+        formData.append("referralCode", affiliateCode);
+      }
 
       if (selectedFile) {
         const reader = new FileReader();
@@ -237,13 +241,16 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       if (pointsToRedeem > 0) {
         const redemptionFormData = new FormData();
         redemptionFormData.append("customerId", customerId);
-        redemptionFormData.append("couponId", couponId || "");
+        if (couponId) {
+          redemptionFormData.append("couponId", couponId);
+        }
         redemptionFormData.append("type", "redemption");
         redemptionFormData.append("amount", purchaseAmount.toString());
         redemptionFormData.append("points", (-pointsToRedeem).toString()); // Negative for redemption
         redemptionFormData.append("status", "pending");
-        redemptionFormData.append("referralCode", "");
-        redemptionFormData.append("shopName", shopName || "");
+        if (shopName) {
+          redemptionFormData.append("shopName", shopName);
+        }
 
         const redemptionResponse = await fetch("/api/transactions", {
           method: "POST",

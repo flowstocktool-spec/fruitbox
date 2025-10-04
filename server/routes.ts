@@ -540,10 +540,13 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/transactions", upload.single("billImage"), async (req, res) => {
     try {
+      console.log("Transaction request body:", req.body);
       const validatedData = insertTransactionSchema.parse(req.body);
+      console.log("Validated transaction data:", validatedData);
       const [transaction] = await db.insert(transactions).values(validatedData).returning();
       res.status(201).json(transaction);
     } catch (error: any) {
+      console.error("Transaction creation error:", error);
       res.status(400).json({ error: error.message });
     }
   });
