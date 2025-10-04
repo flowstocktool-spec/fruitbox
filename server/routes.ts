@@ -524,31 +524,30 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (shopProfileId) {
-        // Get all campaigns for this shop
-        const shopCampaigns = await db.select()
-          .from(campaigns)
-          .where(eq(campaigns.storeId, shopProfileId as string));
+        // Get all customer coupons for this shop
+        const shopCoupons = await db.select()
+          .from(customerCoupons)
+          .where(eq(customerCoupons.shopProfileId, shopProfileId as string));
         
-        console.log(`Shop ${shopProfileId} has ${shopCampaigns.length} campaigns:`, shopCampaigns.map(c => c.id));
+        console.log(`Shop ${shopProfileId} has ${shopCoupons.length} coupons`);
         
-        const campaignIds = shopCampaigns.map(c => c.id);
-        
-        if (campaignIds.length === 0) {
-          console.log(`No campaigns found for shop ${shopProfileId}`);
+        if (shopCoupons.length === 0) {
+          console.log(`No coupons found for shop ${shopProfileId}`);
           return res.json([]);
         }
         
-        // Get all transactions for these campaigns
+        const couponIds = shopCoupons.map(c => c.id);
+        
+        // Get all transactions for these coupons
         const allTxs = await db.select()
           .from(transactions)
           .orderBy(desc(transactions.createdAt));
         
         console.log(`Total transactions in database: ${allTxs.length}`);
-        console.log(`Campaign IDs to match:`, campaignIds);
-        console.log(`Transaction campaign IDs:`, allTxs.map(tx => tx.campaignId));
+        console.log(`Coupon IDs to match:`, couponIds);
         
-        // Filter to only include transactions for this shop's campaigns
-        const txs = allTxs.filter(tx => tx.campaignId && campaignIds.includes(tx.campaignId));
+        // Filter to only include transactions for this shop's coupons
+        const txs = allTxs.filter(tx => tx.couponId && couponIds.includes(tx.couponId));
         
         console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
         
