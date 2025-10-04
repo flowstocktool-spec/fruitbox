@@ -54,18 +54,6 @@ Preferred communication style: Simple, everyday language.
 - Only shows when app meets PWA installability criteria
 - Note: Won't show in Replit preview iframe, but works when accessed directly via deployment URL
 
-**October 3, 2025 - GitHub Import Successfully Configured for Replit**
-- Imported GitHub repository and configured for Replit environment
-- Installed all npm dependencies successfully (492 packages)
-- Provisioned PostgreSQL database (Neon-backed) and pushed schema using Drizzle
-- Configured development workflow on port 5000 with webview output type
-- Configured deployment with autoscale target for production (npm run build → npm run start)
-- Application running successfully with database integration active
-- All routes tested and functional: Landing page, Customer PWA login, Store Owner portal
-- Demo accounts seeded: Customer (username: sarah, password: password123), Shop (username: coffeehaven, password: password123)
-- Vite HMR (Hot Module Replacement) working correctly on port 5000
-- Host configuration verified: Server binds to 0.0.0.0:5000, Vite allowedHosts set to true
-- Database migration completed: All tables created (stores, shopProfiles, campaigns, customers, customerCoupons, sharedCoupons, transactions)
 
 **October 1, 2025 - Coupon Sharing Feature**
 - Added comprehensive coupon sharing flow where Customer A can share coupons with Customer B
@@ -178,10 +166,11 @@ Six main tables with UUID primary keys:
    - Used for PWA installation and account creation via shared URLs
 
 **Data Access Pattern**
-- Abstracted through IStorage interface for future database swapping
-- Current implementation uses in-memory Map structures (MemStorage class)
-- Drizzle schema defined with type generation for compile-time safety
-- Query helpers in `/client/src/lib/api.ts` wrap fetch calls
+- Application uses PostgreSQL database via Drizzle ORM with @neondatabase/serverless driver
+- IStorage interface exists in codebase but routes directly use db (Drizzle) for persistence
+- Database schema defined in `shared/schema.ts` with type generation for compile-time safety
+- Express sessions stored in PostgreSQL using connect-pg-simple (user_sessions table)
+- Query helpers in `/client/src/lib/api.ts` wrap fetch calls for frontend-backend communication
 
 ### External Dependencies
 
@@ -197,10 +186,10 @@ Six main tables with UUID primary keys:
 - ESBuild for production server bundling
 - PostCSS with Autoprefixer for CSS processing
 
-**Planned Integrations** (based on dependencies)
-- PostgreSQL via @neondatabase/serverless (configured but using in-memory storage currently)
-- File storage for bill images (Multer configured with memory storage, 5MB limit)
-- Session management via connect-pg-simple (configured but not active)
+**Active Integrations**
+- PostgreSQL via @neondatabase/serverless (fully configured and operational)
+- Session management via connect-pg-simple (active with 30-day cookie expiration)
+- File storage for bill images (Multer configured with memory storage, 50MB limit)
 
 **Frontend State Libraries**
 - @tanstack/react-query for async state with configurable cache behavior
