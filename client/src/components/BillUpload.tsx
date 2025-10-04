@@ -196,7 +196,6 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       // First, create the purchase transaction
       const formData = new FormData();
       formData.append("customerId", customerId);
-      formData.append("campaignId", couponId || "");
       formData.append("couponId", couponId || "");
       formData.append("type", "purchase");
       formData.append("amount", purchaseAmount.toString());
@@ -238,7 +237,6 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       if (pointsToRedeem > 0) {
         const redemptionFormData = new FormData();
         redemptionFormData.append("customerId", customerId);
-        redemptionFormData.append("campaignId", couponId || "");
         redemptionFormData.append("couponId", couponId || "");
         redemptionFormData.append("type", "redemption");
         redemptionFormData.append("amount", purchaseAmount.toString());
