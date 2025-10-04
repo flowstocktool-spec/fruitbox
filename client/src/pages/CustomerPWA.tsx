@@ -160,6 +160,16 @@ export default function CustomerPWA() {
     }
   }, [customerCoupons, customerShops, activeCoupon, selectedShop]);
 
+  // Sync activeCoupon when selectedShop changes
+  useEffect(() => {
+    if (selectedShop && customerCoupons.length > 0) {
+      const matchingCoupon = customerCoupons.find((c: any) => c.shopProfileId === selectedShop.id);
+      if (matchingCoupon && matchingCoupon.id !== activeCoupon?.id) {
+        setActiveCoupon(matchingCoupon);
+      }
+    }
+  }, [selectedShop, customerCoupons]);
+
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
       const response = await fetch('/api/customers/login', {
