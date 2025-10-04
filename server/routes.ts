@@ -24,21 +24,24 @@ declare module 'express-session' {
 }
 
 export function registerRoutes(app: Express): Server {
-  // Session middleware
+  // Session middleware - persistent across restarts
   app.use(
     session({
       store: new PgSession({
         pool: pool,
         tableName: 'user_sessions',
         createTableIfMissing: true,
+        pruneSessionInterval: 60, // Prune expired sessions every 60 seconds
       }),
-      secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+      secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
       saveUninitialized: false,
+      rolling: true, // Extend session on each request
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
       },
     })
   );
@@ -48,7 +51,7 @@ export function registerRoutes(app: Express): Server {
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, deviceId, deviceFingerprint } = req.body;
       
       const [customer] = await db.select()
         .from(customers)
@@ -59,7 +62,26 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Invalid username or password" });
       }
 
+      // Update device info if provided
+      if (deviceId && deviceFingerprint) {
+        await db.update(customers)
+          .set({ 
+            deviceId, 
+            deviceFingerprint,
+            lastDeviceVerifiedAt: new Date()
+          })
+          .where(eq(customers.id, customer.id));
+      }
+
       req.session.customerId = customer.id;
+      
+      // Save session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+        }
+      });
+      
       res.json(customer);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -148,6 +170,14 @@ export function registerRoutes(app: Express): Server {
       }
 
       req.session.shopProfileId = shop.id;
+      
+      // Save session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+        }
+      });
+      
       res.json(shop);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

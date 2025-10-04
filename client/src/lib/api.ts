@@ -35,10 +35,16 @@ export async function getCustomerByCode(code: string): Promise<Customer> {
 }
 
 export async function createCustomer(data: any): Promise<Customer> {
+  const { getDeviceId, getDeviceFingerprint } = await import('./deviceAuth');
+  
   const res = await fetch("/api/customers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      deviceId: getDeviceId(),
+      deviceFingerprint: getDeviceFingerprint()
+    }),
     credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to create customer");
@@ -234,6 +240,7 @@ export async function loginShopOwner(username: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    credentials: "include",
   });
   if (!res.ok) {
     const error = await res.json();
@@ -251,10 +258,18 @@ export async function getShopCustomers(shopProfileId: string) {
 }
 
 export async function loginCustomer(username: string, password: string): Promise<Customer> {
+  const { getDeviceId, getDeviceFingerprint } = await import('./deviceAuth');
+  
   const res = await fetch("/api/customers/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ 
+      username, 
+      password,
+      deviceId: getDeviceId(),
+      deviceFingerprint: getDeviceFingerprint()
+    }),
+    credentials: "include",
   });
   if (!res.ok) {
     const error = await res.json();
