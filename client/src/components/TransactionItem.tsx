@@ -1,6 +1,7 @@
-import { ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import type { Transaction } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -10,8 +11,33 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
   const isEarned = transaction.type === "purchase" || transaction.type === "referral";
   const isPending = transaction.status === "pending";
 
+  const getStatusColor = () => {
+    switch (transaction.status) {
+      case "approved":
+        return "text-green-600 dark:text-green-400";
+      case "rejected":
+        return "text-red-600 dark:text-red-400";
+      default:
+        return "text-yellow-600 dark:text-yellow-400";
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (transaction.status) {
+      case "approved":
+        return <CheckCircle className="h-4 w-4" />;
+      case "rejected":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const isRedemption = transaction.type === "redemption";
+  const pointsDisplay = isRedemption ? Math.abs(transaction.points) : transaction.points;
+
   return (
-    <div 
+    <div
       className="flex items-center justify-between py-3 border-b last:border-0 hover-elevate rounded-md px-2 -mx-2"
       data-testid={`transaction-item-${transaction.id}`}
     >

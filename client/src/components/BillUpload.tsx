@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Camera } from "lucide-react";
 import { createTransaction } from "@/lib/api";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
@@ -51,6 +51,8 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
   const [affiliateCode, setAffiliateCode] = useState(referralCode || "");
   const [affiliateDetails, setAffiliateDetails] = useState<any>(null);
   const [loadingAffiliate, setLoadingAffiliate] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [showRedemption, setShowRedemption] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<BillUploadData>({
@@ -58,6 +60,17 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
     defaultValues: {
       amount: 0,
     },
+  });
+
+  // Fetch customer data to get current points
+  const customerQuery = useQuery({
+    queryKey: ['/api/customers', customerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/customers/${customerId}`, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch customer');
+      return response.json();
+    },
+    enabled: !!customerId,
   });
 
   const uploadMutation = useMutation({
@@ -68,7 +81,10 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       setPreviewUrl(null);
       setAffiliateCode("");
       setAffiliateDetails(null);
+      setPointsToRedeem(0);
+      setShowRedemption(false);
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
       toast({
         title: "Bill uploaded successfully!",
         description: affiliateCode
@@ -149,7 +165,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
     }
   };
 
-  const handleSubmit = (data: BillUploadData) => {
+  const handleSubmit = async (data: BillUploadData) => {
     if (data.amount < minPurchaseAmount) {
       toast({
         title: "Minimum purchase not met",
@@ -159,17 +175,119 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       return;
     }
 
-    uploadMutation.mutate({
-      customerId,
-      campaignId: couponId,
-      amount: data.amount,
-      points: calculatePointsFromRules(data.amount, pointRules),
-      status: 'pending',
-      type: 'purchase',
-      referralCode: affiliateCode || null,
-      shopName: shopName,
-    });
+    const purchaseAmount = parseFloat(data.amount.toString());
+
+    // Validate points redemption if requested
+    if (pointsToRedeem > 0) {
+      const availablePoints = (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0);
+
+      if (pointsToRedeem > availablePoints) {
+        toast({
+          title: "Error",
+          description: `You only have ${availablePoints} points available`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      // First, create the purchase transaction
+      const formData = new FormData();
+      formData.append("customerId", customerId);
+      formData.append("campaignId", couponId || "");
+      formData.append("couponId", couponId || "");
+      formData.append("type", "purchase");
+      formData.append("amount", purchaseAmount.toString());
+      formData.append("status", "pending");
+      formData.append("referralCode", affiliateCode || "");
+
+      if (selectedFile) {
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedFile);
+        const base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+        });
+        formData.append("billImageUrl", base64);
+      }
+
+      // Calculate points based on amount and point rules
+      let earnedPoints = 0;
+      if (pointRules && pointRules.length > 0) {
+        for (const rule of pointRules) {
+          if (purchaseAmount >= rule.minAmount && purchaseAmount <= rule.maxAmount) {
+            earnedPoints = rule.points;
+            break;
+          }
+        }
+      }
+
+      formData.append("points", earnedPoints.toString());
+      formData.append("shopName", shopName || "");
+
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to submit transaction");
+
+      // If points are being redeemed, create redemption transaction
+      if (pointsToRedeem > 0) {
+        const redemptionFormData = new FormData();
+        redemptionFormData.append("customerId", customerId);
+        redemptionFormData.append("campaignId", couponId || "");
+        redemptionFormData.append("couponId", couponId || "");
+        redemptionFormData.append("type", "redemption");
+        redemptionFormData.append("amount", purchaseAmount.toString());
+        redemptionFormData.append("points", (-pointsToRedeem).toString()); // Negative for redemption
+        redemptionFormData.append("status", "pending");
+        redemptionFormData.append("referralCode", "");
+        redemptionFormData.append("shopName", shopName || "");
+
+        const redemptionResponse = await fetch("/api/transactions", {
+          method: "POST",
+          body: redemptionFormData,
+          credentials: "include",
+        });
+
+        if (!redemptionResponse.ok) throw new Error("Failed to submit redemption");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+
+      setAmount("");
+      setReferralCode("");
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setPointsToRedeem(0);
+      setShowRedemption(false);
+      setAffiliateCode("");
+      setAffiliateDetails(null);
+
+      const redemptionMessage = pointsToRedeem > 0
+        ? ` ${pointsToRedeem} points will be redeemed once approved.`
+        : '';
+
+      toast({
+        title: "Success!",
+        description: `Bill uploaded successfully! You'll earn ${earnedPoints} points once approved.${redemptionMessage}`,
+      });
+    } catch (error) {
+      console.error("Error submitting bill:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload bill. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
+  const finalAmount = Math.max(0, parseFloat(form.getValues('amount').toString() || '0') - calculatedDiscount);
+  const remainingPoints = Math.max(0, (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0) - pointsToRedeem);
 
   return (
     <Card data-testid="card-bill-upload">
@@ -266,7 +384,18 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
                       step="0.01"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        // Update preview amount when amount changes
+                        const amountValue = parseFloat(e.target.value);
+                        if (!isNaN(amountValue)) {
+                          const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
+                          const finalAmount = Math.max(0, amountValue - calculatedDiscount);
+                          // This is a bit of a hack to trigger a re-render for the preview amount
+                          // A more robust solution would involve lifting state or using a state management library
+                          setPointsToRedeem(pointsToRedeem); // No change, but forces re-render
+                        }
+                      }}
                       data-testid="input-bill-amount"
                     />
                   </FormControl>
@@ -333,34 +462,75 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
               </div>
             </div>
 
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <p className="text-sm text-muted-foreground">
-                <strong>Original Amount:</strong> ${(form.watch('amount') || 0).toFixed(2)}
-              </p>
-              {affiliateDetails && discountPercentage > 0 && form.watch('amount') > 0 && (
-                <>
-                  <p className="text-sm font-medium text-green-600">
-                    <strong>Welcome Discount ({discountPercentage}%):</strong> -${((form.watch('amount') || 0) * discountPercentage / 100).toFixed(2)}
-                  </p>
-                  <p className="text-sm font-semibold text-primary">
-                    <strong>You Pay:</strong> ${((form.watch('amount') || 0) * (1 - discountPercentage / 100)).toFixed(2)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Referrer ({affiliateDetails.name}) earns:</strong> {Math.floor((form.watch('amount') || 0) * 10 * 0.1)} points
-                  </p>
-                </>
-              )}
-              {!affiliateDetails && (
-                <p className="text-sm text-orange-600">
-                  Enter a valid referral code to get {discountPercentage}% welcome discount!
-                </p>
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-base font-semibold">Redeem Points for Discount</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowRedemption(!showRedemption)}
+                >
+                  {showRedemption ? "Hide" : "Show"}
+                </Button>
+              </div>
+
+              {showRedemption && (
+                <div className="space-y-4 p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Your Available Points</span>
+                      <span className="font-bold text-green-600">
+                        {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <Label htmlFor="pointsToRedeem">Points to Redeem</Label>
+                    <Input
+                      id="pointsToRedeem"
+                      type="number"
+                      min="0"
+                      max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
+                      value={pointsToRedeem}
+                      onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="Enter points to redeem"
+                    />
+
+                    {pointsToRedeem > 0 && (
+                      <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border-2 border-green-300 dark:border-green-700">
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Original Amount:</span>
+                            <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
+                          </div>
+                          <div className="flex justify-between text-green-600 dark:text-green-400">
+                            <span>Discount (approx):</span>
+                            <span className="font-medium">-${calculatedDiscount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-1">
+                            <span>Final Amount:</span>
+                            <span className="text-blue-600 dark:text-blue-400">
+                              ${finalAmount.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground border-t pt-1">
+                            <span>Remaining Points:</span>
+                            <span className="font-medium">
+                              {remainingPoints.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={uploadMutation.isPending}
+              disabled={uploadMutation.isPending || customerQuery.isLoading}
               data-testid="button-submit-bill"
             >
               {uploadMutation.isPending ? "Uploading..." : "Submit Bill"}
