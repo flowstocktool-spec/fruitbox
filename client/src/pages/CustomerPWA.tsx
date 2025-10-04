@@ -47,30 +47,46 @@ export default function CustomerPWA() {
   const { toast } = useToast();
   const setLocation = useLocation()[1];
 
-  // Check if user is already logged in
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/customers/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setCustomer(null);
+      setIsLoggedIn(false);
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out.",
+      });
+    },
+  });
+
+  // Check if user is already logged in via session
   useEffect(() => {
-    const customerId = localStorage.getItem('customerId');
-    if (customerId) {
-      // Auto-login if we have a stored customer ID
-      fetch(`/api/customers/${customerId}`, {
-        credentials: "include",
+    fetch('/api/customers/me', {
+      credentials: "include",
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Not authenticated");
+        }
+        return res.json();
       })
-        .then(res => {
-          if (!res.ok) {
-            throw new Error("Customer not found");
-          }
-          return res.json();
-        })
-        .then(data => {
-          setCustomer(data);
-          setIsLoggedIn(true);
-        })
-        .catch(() => {
-          localStorage.removeItem('customerId');
-          setCustomer(null);
-          setIsLoggedIn(false);
-        });
-    }
+      .then(data => {
+        setCustomer(data);
+        setIsLoggedIn(true);
+      })
+      .catch(() => {
+        setCustomer(null);
+        setIsLoggedIn(false);
+      });
   }, []);
 
   // Customer query
@@ -83,8 +99,6 @@ export default function CustomerPWA() {
 
   // If customer not found, redirect to login
   if (customerError && !isLoadingCustomer) {
-    localStorage.removeItem('customerId');
-    localStorage.removeItem('customerCode');
     setLocation('/');
     return null;
   }
@@ -136,7 +150,6 @@ export default function CustomerPWA() {
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
-      localStorage.setItem('customerId', data.id);
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
@@ -165,7 +178,6 @@ export default function CustomerPWA() {
     onSuccess: (newCustomer) => {
       setCustomer(newCustomer);
       setIsLoggedIn(true);
-      localStorage.setItem('customerId', newCustomer.id);
       setShowRegistration(false);
       toast({
         title: "Welcome!",
