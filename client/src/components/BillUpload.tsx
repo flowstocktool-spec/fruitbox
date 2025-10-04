@@ -76,7 +76,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: BillUploadData) => {
       // Convert file to base64 if exists
       let billImageUrl = undefined;
       if (selectedFile) {
@@ -89,8 +89,16 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       }
 
       const transactionData = {
-        ...data,
+        customerId,
+        couponId: couponId || undefined,
+        campaignId: campaignId || undefined, // Ensure campaignId is passed
+        type: "purchase" as const,
+        amount: data.amount,
+        points: calculatePointsFromRules(data.amount, pointRules), // This should be calculated before mutation
+        status: "pending" as const,
         billImageUrl,
+        referralCode: affiliateCode || undefined,
+        shopName: shopName || "",
       };
 
       const response = await fetch("/api/transactions", {
