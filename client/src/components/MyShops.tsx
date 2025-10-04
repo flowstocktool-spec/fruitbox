@@ -138,20 +138,40 @@ export function MyShops({ customerId }: MyShopsProps) {
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900 dark:to-pink-900 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
               <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Campaign Offers
+                Campaign Details
               </h4>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-purple-800 dark:text-purple-200">Earn per referral purchase</span>
-                  <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-points-${shop.id}`}>
-                    {shop.pointsPerDollar} points
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Points Earning Rules:</p>
+                  {(shop.pointRules || [{ minAmount: 0, maxAmount: 999999, points: shop.pointsPerDollar || 1 }]).map((rule: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1 mb-1">
+                      <span className="text-xs text-purple-800 dark:text-purple-200">
+                        Spend {shop.currencySymbol || '$'}{rule.minAmount} - {shop.currencySymbol || '$'}{rule.maxAmount}
+                      </span>
+                      <span className="font-bold text-xs text-purple-900 dark:text-purple-100">
+                        Earn {rule.points} pts
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
+                  <span className="text-sm text-purple-800 dark:text-purple-200">New customer gets</span>
+                  <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-discount-${shop.id}`}>
+                    {shop.discountPercentage}% OFF
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-purple-800 dark:text-purple-200">Referral discount</span>
-                  <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-discount-${shop.id}`}>
-                    {shop.discountPercentage} off
+                <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
+                  <span className="text-sm text-purple-800 dark:text-purple-200">Min. purchase</span>
+                  <span className="font-bold text-purple-900 dark:text-purple-100">
+                    {shop.currencySymbol || '$'}{shop.minPurchaseAmount || 0}
                   </span>
+                </div>
+                <div className="border-t border-purple-300 dark:border-purple-600 pt-2">
+                  <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Redeem Points:</p>
+                  <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
+                    <span className="text-xs text-purple-800 dark:text-purple-200">{shop.pointsRedemptionValue || 100} points</span>
+                    <span className="font-bold text-xs text-purple-900 dark:text-purple-100">= {shop.pointsRedemptionDiscount || 10}% discount</span>
+                  </div>
                 </div>
               </div>
             </div>

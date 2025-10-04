@@ -29,23 +29,39 @@ export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardPro
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm">
-            <TrendingUp className="h-4 w-4 text-green-600" />
-            <span className="font-medium">Spend ${(campaign as any).spendAmount || 100} = Earn {(campaign as any).earnPoints || 5} points</span>
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+            <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              Points Earning Rules
+            </h4>
+            <div className="space-y-1">
+              {((campaign as any).pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]).map((rule: any, index: number) => (
+                <div key={index} className="flex items-center justify-between text-xs bg-white dark:bg-green-900/20 rounded px-2 py-1">
+                  <span className="font-medium">Spend ${rule.minAmount} - ${rule.maxAmount}</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">Earn {rule.points} points</span>
+                </div>
+              ))}
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
+            <div className="space-y-1 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-muted-foreground">Min Purchase</p>
-              <p className="font-bold">${campaign.minPurchaseAmount}</p>
+              <p className="font-bold text-lg">${campaign.minPurchaseAmount}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Referral Discount</p>
-              <p className="font-bold text-blue-600">{(campaign as any).referralDiscountPercentage || 10}%</p>
+            <div className="space-y-1 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">New Customer Gets</p>
+              <p className="font-bold text-lg text-purple-600 dark:text-purple-400">{(campaign as any).referralDiscountPercentage || 10}% OFF</p>
             </div>
           </div>
-          <div className="pt-2 border-t">
-            <p className="text-xs text-muted-foreground">Redeem: {(campaign as any).pointsRedemptionValue || 100} pts = {(campaign as any).pointsRedemptionDiscount || 10}% off</p>
+
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+            <h4 className="font-semibold text-sm mb-2">Points Redemption</h4>
+            <div className="flex items-center justify-between text-xs bg-white dark:bg-orange-900/20 rounded px-2 py-1">
+              <span className="font-medium">{(campaign as any).pointsRedemptionValue || 100} points</span>
+              <span className="font-bold text-orange-600 dark:text-orange-400">= {(campaign as any).pointsRedemptionDiscount || 10}% discount</span>
+            </div>
           </div>
         </div>
       </CardContent>

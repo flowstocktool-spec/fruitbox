@@ -519,13 +519,14 @@ export default function CustomerPWA() {
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
                     <Gift className="h-4 w-4" />
-                    How It Works
+                    How Referrals Work
                   </h3>
-                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-2 list-decimal list-inside">
                     <li>Each shop gives you a unique coupon code below</li>
                     <li>Share the code or QR link with friends</li>
-                    <li>They get a discount on their first purchase</li>
-                    <li>You earn points when they shop!</li>
+                    <li>They get a discount on their first purchase (varies by shop)</li>
+                    <li>You earn points based on their purchase amount (see each shop's point rules)</li>
+                    <li>Redeem your accumulated points for discounts on future purchases</li>
                   </ol>
                 </div>
 

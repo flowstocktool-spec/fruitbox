@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -92,7 +91,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       setAffiliateDetails(null);
       return;
     }
-    
+
     setLoadingAffiliate(true);
     try {
       // First try to find as a customer coupon (shop-specific code)
@@ -111,7 +110,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
           return;
         }
       }
-      
+
       // Fallback to checking main customer referral code
       const response = await fetch(`/api/customers/code/${code}`);
       if (response.ok) {
@@ -181,6 +180,46 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="space-y-3">
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">📋 Campaign Benefits</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="bg-white dark:bg-green-900/20 rounded p-2">
+                      <p className="font-semibold text-green-800 dark:text-green-200">Points You'll Earn:</p>
+                      {pointRules.map((rule, idx) => (
+                        <p key={idx} className="text-xs text-green-700 dark:text-green-300">
+                          • Spend ${rule.minAmount} - ${rule.maxAmount} = Earn {rule.points} points
+                        </p>
+                      ))}
+                    </div>
+                    <div className="bg-white dark:bg-blue-900/20 rounded p-2">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        💝 Your welcome discount: <span className="font-bold">{discountPercentage}% OFF</span>
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        📦 Minimum purchase: <span className="font-bold">${minPurchaseAmount}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Upload a Bill</h3>
+                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+                    <li>Enter the referral code you received from a friend</li>
+                    <li>Take a photo or select your purchase bill (clear, original photo only)</li>
+                    <li>Enter the purchase amount (must match your bill)</li>
+                    <li>Submit for approval</li>
+                    <li>On approval, you get the welcome discount and your friend earns points!</li>
+                  </ol>
+                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                      ⚠️ <strong>Important:</strong> Upload only original, clear bills from the shop. Duplicate or fake bills will be rejected and may result in account suspension.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             {!referralCode && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Referral Code from Friend (Required for Discount)</label>
@@ -214,7 +253,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
                 )}
               </div>
             )}
-            
+
             <FormField
               control={form.control}
               name="amount"
@@ -307,7 +346,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
                     <strong>You Pay:</strong> ${((form.watch('amount') || 0) * (1 - discountPercentage / 100)).toFixed(2)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    <strong>Referrer ({affiliateDetails.name}) earns:</strong> {Math.floor((form.watch('amount') || 0) * pointsPerDollar * 0.1)} points
+                    <strong>Referrer ({affiliateDetails.name}) earns:</strong> {Math.floor((form.watch('amount') || 0) * 10 * 0.1)} points
                   </p>
                 </>
               )}
