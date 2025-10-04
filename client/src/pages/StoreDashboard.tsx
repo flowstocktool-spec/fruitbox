@@ -207,7 +207,7 @@ export default function StoreDashboard() {
                         method: "DELETE",
                       });
                       if (!response.ok) throw new Error("Failed to delete campaign");
-                      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+                      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", { storeId: shopProfile?.id }] });
                       toast({
                         title: "Success",
                         description: "Campaign deleted successfully",
