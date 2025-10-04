@@ -66,8 +66,8 @@ export default function StoreDashboard() {
     enabled: isAuthenticated && !!shopProfile?.id,
   });
 
-  // Fetch pending transactions for this shop
-  const pendingTransactionsQuery = useQuery({
+  // Fetch all transactions for this shop (pending and approved)
+  const transactionsQuery = useQuery({
     queryKey: ['/api/transactions', shopProfile?.id],
     queryFn: async () => {
       if (!shopProfile?.id) return [];
@@ -76,11 +76,17 @@ export default function StoreDashboard() {
       });
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const allTransactions = await response.json();
-      return allTransactions.filter((t: any) => t.status === 'pending');
+      // Show pending and approved transactions, sorted by date
+      return allTransactions.filter((t: any) => 
+        t.status === 'pending' || t.status === 'approved'
+      ).sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     },
     enabled: !!shopProfile?.id,
   });
-  const pendingTransactions = pendingTransactionsQuery.data || [];
+  const transactions = transactionsQuery.data || [];
+  const pendingCount = transactions.filter((t: any) => t.status === 'pending').length;
 
 
   // Customers query
@@ -186,9 +192,9 @@ export default function StoreDashboard() {
             <TabsTrigger value="approvals" className="text-xs sm:text-sm relative">
               <span className="hidden sm:inline">Approvals</span>
               <span className="sm:hidden">✓</span>
-              {pendingTransactions.length > 0 && (
+              {pendingCount > 0 && (
                 <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-destructive text-destructive-foreground">
-                  {pendingTransactions.length}
+                  {pendingCount}
                 </span>
               )}
             </TabsTrigger>
@@ -306,14 +312,14 @@ export default function StoreDashboard() {
 
           <TabsContent value="approvals">
             <div className="grid grid-cols-1 gap-4">
-              {pendingTransactions.length === 0 ? (
+              {transactions.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
-                    No pending approvals
+                    No transactions yet
                   </CardContent>
                 </Card>
               ) : (
-                pendingTransactions.map((transaction: any) => {
+                transactions.map((transaction: any) => {
                   // Find customer name from the customers list
                   const customer = customers.find((c: any) => c.id === transaction.customerId);
                   const customerName = customer?.name || "Unknown Customer";
