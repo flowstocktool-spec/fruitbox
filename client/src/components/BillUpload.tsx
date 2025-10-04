@@ -29,6 +29,7 @@ interface PointRule {
 interface BillUploadProps {
   customerId: string;
   couponId: string | null;
+  campaignId?: string;
   pointRules: PointRule[];
   minPurchaseAmount: number;
   discountPercentage?: number;
@@ -46,7 +47,7 @@ function calculatePointsFromRules(amount: number, pointRules: PointRule[]): numb
   return 0;
 }
 
-export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
+export function BillUpload({ customerId, couponId, campaignId, pointRules, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [affiliateCode, setAffiliateCode] = useState(referralCode || "");
@@ -239,6 +240,7 @@ export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount
     const transactionData = {
       customerId,
       couponId: couponId || undefined,
+      campaignId: campaignId || undefined,
       type: "purchase",
       amount: purchaseAmount,
       status: "pending",

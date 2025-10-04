@@ -472,10 +472,11 @@ export default function CustomerPWA() {
 
               <BillUpload
                 customerId={customer.id}
-                couponId={null}
-                pointRules={[{ minAmount: 0, maxAmount: 999999, points: 10 }]}
-                minPurchaseAmount={0}
-                discountPercentage={10}
+                couponId={activeCoupon?.id || null}
+                campaignId={selectedShop?.campaigns?.[0]?.id}
+                pointRules={selectedShop?.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
+                minPurchaseAmount={selectedShop?.campaigns?.[0]?.minPurchaseAmount || 0}
+                discountPercentage={selectedShop?.campaigns?.[0]?.referralDiscountPercentage || 10}
               />
             </div>
           </TabsContent>
