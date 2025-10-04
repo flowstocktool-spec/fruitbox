@@ -394,10 +394,14 @@ export function registerRoutes(app: Express): Server {
         .from(customerCoupons)
         .where(eq(customerCoupons.customerId, req.params.customerId));
       
+      console.log(`Found ${coupons.length} coupons for customer ${req.params.customerId}`);
+      
       const shopIds = [...new Set(coupons.map(c => c.shopProfileId))];
       if (shopIds.length === 0) {
         return res.json([]);
       }
+      
+      console.log(`Fetching data for ${shopIds.length} shops:`, shopIds);
       
       // Fetch all shops and filter by IDs
       const allShops = await db.select()
@@ -407,12 +411,19 @@ export function registerRoutes(app: Express): Server {
         shopIds.includes(shop.id)
       );
       
+      console.log(`Found ${customerShopsData.length} matching shops`);
+      
       // Fetch campaigns for each shop
       const shopsWithCampaigns = await Promise.all(
         customerShopsData.map(async (shop) => {
           const shopCampaigns = await db.select()
             .from(campaigns)
             .where(eq(campaigns.storeId, shop.id));
+          
+          console.log(`Shop ${shop.shopName} (${shop.id}) has ${shopCampaigns.length} campaigns`);
+          if (shopCampaigns.length > 0) {
+            console.log(`Campaign data:`, JSON.stringify(shopCampaigns[0], null, 2));
+          }
           
           return {
             ...shop,
@@ -421,8 +432,10 @@ export function registerRoutes(app: Express): Server {
         })
       );
       
+      console.log(`Returning ${shopsWithCampaigns.length} shops with campaign data`);
       res.json(shopsWithCampaigns);
     } catch (error: any) {
+      console.error("Error in /api/customers/:customerId/shops:", error);
       res.status(500).json({ error: error.message });
     }
   });

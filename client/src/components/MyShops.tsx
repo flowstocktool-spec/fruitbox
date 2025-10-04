@@ -143,7 +143,7 @@ export function MyShops({ customerId }: MyShopsProps) {
               <div className="space-y-3">
                 <div>
                   <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Points Earning Rules:</p>
-                  {shop.campaigns && shop.campaigns.length > 0 && shop.campaigns[0].pointRules ? (
+                  {shop.campaigns && shop.campaigns.length > 0 && shop.campaigns[0].pointRules && shop.campaigns[0].pointRules.length > 0 ? (
                     shop.campaigns[0].pointRules.map((rule: any, index: number) => (
                       <div key={index} className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1 mb-1">
                         <span className="text-xs text-purple-800 dark:text-purple-200">
@@ -157,10 +157,10 @@ export function MyShops({ customerId }: MyShopsProps) {
                   ) : (
                     <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1 mb-1">
                       <span className="text-xs text-purple-800 dark:text-purple-200">
-                        Per purchase
+                        No earning rules configured
                       </span>
                       <span className="font-bold text-xs text-purple-900 dark:text-purple-100">
-                        Earn 1 pts
+                        0 pts
                       </span>
                     </div>
                   )}
@@ -168,31 +168,23 @@ export function MyShops({ customerId }: MyShopsProps) {
                 <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
                   <span className="text-sm text-purple-800 dark:text-purple-200">New customer gets</span>
                   <span className="font-bold text-purple-900 dark:text-purple-100" data-testid={`shop-discount-${shop.id}`}>
-                    {shop.campaigns && shop.campaigns.length > 0 
-                      ? `${shop.campaigns[0].referralDiscountPercentage || 0}%` 
-                      : '0%'} OFF
+                    {shop.campaigns?.[0]?.referralDiscountPercentage ?? 0}% OFF
                   </span>
                 </div>
                 <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
                   <span className="text-sm text-purple-800 dark:text-purple-200">Min. purchase</span>
                   <span className="font-bold text-purple-900 dark:text-purple-100">
-                    {shop.currencySymbol || '$'}{shop.campaigns && shop.campaigns.length > 0 
-                      ? shop.campaigns[0].minPurchaseAmount || 0 
-                      : 0}
+                    {shop.currencySymbol || '$'}{shop.campaigns?.[0]?.minPurchaseAmount ?? 0}
                   </span>
                 </div>
                 <div className="border-t border-purple-300 dark:border-purple-600 pt-2">
                   <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Redeem Points:</p>
                   <div className="flex justify-between items-center bg-white dark:bg-purple-800/30 rounded px-2 py-1">
                     <span className="text-xs text-purple-800 dark:text-purple-200">
-                      {shop.campaigns && shop.campaigns.length > 0 
-                        ? shop.campaigns[0].pointsRedemptionValue || 100 
-                        : 100} points
+                      {shop.campaigns?.[0]?.pointsRedemptionValue ?? 100} points
                     </span>
                     <span className="font-bold text-xs text-purple-900 dark:text-purple-100">
-                      = {shop.campaigns && shop.campaigns.length > 0 
-                        ? shop.campaigns[0].pointsRedemptionDiscount || 10 
-                        : 10}% discount
+                      = {shop.campaigns?.[0]?.pointsRedemptionDiscount ?? 10}% discount
                     </span>
                   </div>
                 </div>
