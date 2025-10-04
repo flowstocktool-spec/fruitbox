@@ -54,8 +54,15 @@ export default function StoreDashboard() {
   };
 
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["campaigns", shopProfile?.id],
-    queryFn: () => getCampaigns(shopProfile?.id),
+    queryKey: ["/api/campaigns", { storeId: shopProfile?.id }],
+    queryFn: async () => {
+      if (!shopProfile?.id) return [];
+      const response = await fetch(`/api/campaigns?storeId=${shopProfile.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      return response.json();
+    },
     enabled: isAuthenticated && !!shopProfile?.id,
   });
 
