@@ -37,7 +37,7 @@ interface CampaignBuilderProps {
 export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
@@ -199,137 +199,137 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
                     <FormMessage />
                   </FormItem>
                 )}
-              /></div>
+              />
+            </div>
 
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Referral Benefits</h3>
-                <FormField
-                  control={form.control}
-                  name="referralDiscountPercentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Customer Discount (%)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          data-testid="input-referral-discount"
-                        />
-                      </FormControl>
-                      <FormDescription>Discount for customers using a referral code</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Points Redemption Rules</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="pointsRedemptionValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Points Required</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                            data-testid="input-redemption-points"
-                          />
-                        </FormControl>
-                        <FormDescription>How many points to redeem</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="pointsRedemptionDiscount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Redemption Discount (%)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                            data-testid="input-redemption-discount"
-                          />
-                        </FormControl>
-                        <FormDescription>Discount % for those points</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Example: {form.watch("pointsRedemptionValue")} points = {form.watch("pointsRedemptionDiscount")}% off
-                </p>
-              </div>
-
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Referral Benefits</h3>
               <FormField
                 control={form.control}
-                name="termsAndConditions"
+                name="referralDiscountPercentage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Terms & Conditions</FormLabel>
+                    <FormLabel>New Customer Discount (%)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter terms and conditions for this campaign..."
+                      <Input
+                        type="number"
                         {...field}
-                        data-testid="input-terms"
-                        rows={4}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        data-testid="input-referral-discount"
                       />
                     </FormControl>
-                    <FormDescription>Optional: Add any specific rules or conditions</FormDescription>
+                    <FormDescription>Discount for customers using a referral code</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Points Redemption Rules</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="pointsRedemptionValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Points Required</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          data-testid="input-redemption-points"
+                        />
+                      </FormControl>
+                      <FormDescription>How many points to redeem</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pointsRedemptionDiscount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Redemption Discount (%)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          data-testid="input-redemption-discount"
+                        />
+                      </FormControl>
+                      <FormDescription>Discount % for those points</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Example: {form.watch("pointsRedemptionValue")} points = {form.watch("pointsRedemptionDiscount")}% off
+              </p>
+            </div>
+
             <FormField
               control={form.control}
-              name="couponColor"
+              name="termsAndConditions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Coupon Color</FormLabel>
+                  <FormLabel>Terms & Conditions</FormLabel>
                   <FormControl>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        {...field}
-                        className="w-20 h-10 p-1 cursor-pointer"
-                        data-testid="input-coupon-color"
-                      />
-                      <Input
-                        {...field}
-                        placeholder={shopProfile?.currencySymbol || "#7c3aed"}
-                        className="flex-1"
-                      />
-                    </div>
+                    <Textarea
+                      placeholder="Enter terms and conditions for this campaign..."
+                      {...field}
+                      data-testid="input-terms"
+                      rows={4}
+                    />
                   </FormControl>
-                  <FormDescription>Choose your brand color</FormDescription>
+                  <FormDescription>Optional: Add any specific rules or conditions</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              data-testid="button-create-campaign"
-              disabled={createCampaignMutation.isPending}
-            >
-              {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
-            </Button>
-          </form>
-        </Form>
+          <FormField
+            control={form.control}
+            name="couponColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Coupon Color</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      {...field}
+                      className="w-20 h-10 p-1 cursor-pointer"
+                      data-testid="input-coupon-color"
+                    />
+                    <Input
+                      {...field}
+                      placeholder={shopProfile?.currencySymbol || "#7c3aed"}
+                      className="flex-1"
+                    />
+                  </div>
+                </FormControl>
+                <FormDescription>Choose your brand color</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            data-testid="button-create-campaign"
+            disabled={createCampaignMutation.isPending}
+          >
+            {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
