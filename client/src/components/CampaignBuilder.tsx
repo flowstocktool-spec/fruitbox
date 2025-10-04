@@ -4,20 +4,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Palette } from "lucide-react";
+import { Palette, Plus, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getShopProfile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+interface PointRule {
+  minAmount: number;
+  maxAmount: number;
+  points: number;
+}
+
+const pointRuleSchema = z.object({
+  minAmount: z.number().min(0),
+  maxAmount: z.number().min(0),
+  points: z.number().min(0),
+});
+
 const campaignSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().optional(),
-  spendAmount: z.number().min(1, "Must be at least 1"),
-  earnPoints: z.number().min(1, "Must be at least 1 point"),
   minPurchaseAmount: z.number().min(0, "Cannot be negative"),
   referralDiscountPercentage: z.number().min(1).max(100, "Must be between 1-100%"),
   pointsRedemptionValue: z.number().min(1, "Must be at least 1 point"),
@@ -37,14 +48,17 @@ interface CampaignBuilderProps {
 export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBuilderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [pointRules, setPointRules] = useState<PointRule[]>([
+    { minAmount: 0, maxAmount: 100, points: 10 },
+    { minAmount: 100, maxAmount: 200, points: 20 },
+    { minAmount: 200, maxAmount: 500, points: 50 },
+  ]);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       name: "",
       description: "",
-      spendAmount: 100,
-      earnPoints: 5,
       minPurchaseAmount: 0,
       referralDiscountPercentage: 10,
       pointsRedemptionValue: 100,
@@ -62,13 +76,14 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
   });
 
   const createCampaignMutation = useMutation({
-    mutationFn: async (data: CampaignFormData) => {
+    mutationFn: async (data: CampaignFormData & { pointRules: PointRule[] }) => {
       return await apiRequest("POST", "/api/campaigns", {
         ...data,
         description: data.description || null,
         storeId,
         couponTextColor: "#ffffff",
         isActive: true,
+        pointRules: data.pointRules,
       });
     },
     onSuccess: () => {
@@ -90,7 +105,25 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
   });
 
   const handleSubmit = (data: CampaignFormData) => {
-    createCampaignMutation.mutate(data);
+    createCampaignMutation.mutate({ ...data, pointRules });
+  };
+
+  const addPointRule = () => {
+    const lastRule = pointRules[pointRules.length - 1];
+    const newMinAmount = lastRule ? lastRule.maxAmount : 0;
+    setPointRules([...pointRules, { minAmount: newMinAmount, maxAmount: newMinAmount + 100, points: 10 }]);
+  };
+
+  const removePointRule = (index: number) => {
+    if (pointRules.length > 1) {
+      setPointRules(pointRules.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePointRule = (index: number, field: keyof PointRule, value: number) => {
+    const newRules = [...pointRules];
+    newRules[index] = { ...newRules[index], [field]: value };
+    setPointRules(newRules);
   };
 
   return (
@@ -136,49 +169,80 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
 
             <div className="space-y-4">
               <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Points Earning Rules</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="spendAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Customer Spends ({shopProfile?.currencySymbol || '$'})</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                            data-testid="input-spend-amount"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="earnPoints"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Earns Points</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                            data-testid="input-earn-points"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Points Earning Rules</h3>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addPointRule}
+                    data-testid="button-add-point-rule"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Range
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Example: Spend {shopProfile?.currencySymbol || '$'}{form.watch("spendAmount")} = Earn {form.watch("earnPoints")} points
-                </p>
+                
+                <div className="space-y-3">
+                  {pointRules.map((rule, index) => (
+                    <div key={index} className="border rounded-lg p-3 bg-muted/30">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor={`minAmount-${index}`} className="text-xs">Min Amount ({shopProfile?.currencySymbol || '$'})</Label>
+                          <Input
+                            id={`minAmount-${index}`}
+                            type="number"
+                            min="0"
+                            value={rule.minAmount}
+                            onChange={(e) => updatePointRule(index, 'minAmount', parseInt(e.target.value) || 0)}
+                            required
+                            data-testid={`input-min-amount-${index}`}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`maxAmount-${index}`} className="text-xs">Max Amount ({shopProfile?.currencySymbol || '$'})</Label>
+                          <Input
+                            id={`maxAmount-${index}`}
+                            type="number"
+                            min="0"
+                            value={rule.maxAmount}
+                            onChange={(e) => updatePointRule(index, 'maxAmount', parseInt(e.target.value) || 0)}
+                            required
+                            data-testid={`input-max-amount-${index}`}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`points-${index}`} className="text-xs">Points Earned</Label>
+                          <Input
+                            id={`points-${index}`}
+                            type="number"
+                            min="0"
+                            value={rule.points}
+                            onChange={(e) => updatePointRule(index, 'points', parseInt(e.target.value) || 0)}
+                            required
+                            data-testid={`input-points-${index}`}
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePointRule(index)}
+                            disabled={pointRules.length === 1}
+                            className="w-full"
+                            data-testid={`button-remove-rule-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Spend {shopProfile?.currencySymbol || '$'}{rule.minAmount} to {shopProfile?.currencySymbol || '$'}{rule.maxAmount} → Earn {rule.points} points
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <FormField
