@@ -461,7 +461,7 @@ export default function CustomerPWA() {
               <BillUpload
                 customerId={customer.id}
                 couponId={null}
-                pointsPerDollar={1}
+                pointRules={[{ minAmount: 0, maxAmount: 999999, points: 10 }]}
                 minPurchaseAmount={0}
                 discountPercentage={10}
               />

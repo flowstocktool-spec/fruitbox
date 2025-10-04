@@ -20,10 +20,16 @@ const billUploadSchema = z.object({
 
 type BillUploadData = z.infer<typeof billUploadSchema>;
 
+interface PointRule {
+  minAmount: number;
+  maxAmount: number;
+  points: number;
+}
+
 interface BillUploadProps {
   customerId: string;
   couponId: string | null;
-  pointsPerDollar: number;
+  pointRules: PointRule[];
   minPurchaseAmount: number;
   discountPercentage?: number;
   referralCode?: string;
@@ -31,7 +37,16 @@ interface BillUploadProps {
   onSuccess?: () => void;
 }
 
-export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
+function calculatePointsFromRules(amount: number, pointRules: PointRule[]): number {
+  for (const rule of pointRules) {
+    if (amount >= rule.minAmount && amount <= rule.maxAmount) {
+      return rule.points;
+    }
+  }
+  return 0;
+}
+
+export function BillUpload({ customerId, couponId, pointRules, minPurchaseAmount, discountPercentage = 10, referralCode, shopName, onSuccess }: BillUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [affiliateCode, setAffiliateCode] = useState(referralCode || "");
@@ -149,7 +164,7 @@ export function BillUpload({ customerId, couponId, pointsPerDollar, minPurchaseA
       customerId,
       campaignId: couponId,
       amount: data.amount,
-      points: Math.floor(data.amount * pointsPerDollar),
+      points: calculatePointsFromRules(data.amount, pointRules),
       status: 'pending',
       type: 'purchase',
       referralCode: affiliateCode || null,
