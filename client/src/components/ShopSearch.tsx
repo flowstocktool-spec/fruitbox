@@ -137,8 +137,14 @@ function ShopCard({
   isPending: boolean;
 }) {
   const { data: campaigns = [] } = useQuery({
-    queryKey: ['/api/campaigns', shop.id],
-    queryFn: () => getCampaigns(shop.id),
+    queryKey: ['/api/campaigns', { storeId: shop.id }],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns?storeId=${shop.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      return response.json();
+    },
     enabled: isExpanded,
   });
 
