@@ -27,13 +27,15 @@ export function BillApprovalCard({ transaction, customerName, onApprove, onRejec
   const approveMutation = useMutation({
     mutationFn: () => approveTransaction(transaction.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pending-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["customer"] });
+      // Invalidate all transaction-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/shop-profiles"] });
       toast({
         title: "Transaction Approved",
         description: "Points have been updated successfully",
       });
+      if (onApprove) onApprove();
     },
     onError: (error: Error) => {
       toast({
@@ -47,12 +49,14 @@ export function BillApprovalCard({ transaction, customerName, onApprove, onRejec
   const rejectMutation = useMutation({
     mutationFn: () => rejectTransaction(transaction.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pending-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      // Invalidate all transaction-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/shop-profiles"] });
       toast({
         title: "Transaction Rejected",
         description: "Transaction has been rejected",
       });
+      if (onReject) onReject();
     },
     onError: (error: Error) => {
       toast({
