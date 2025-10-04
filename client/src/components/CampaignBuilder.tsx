@@ -129,8 +129,8 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
   return (
     <Card data-testid="card-campaign-builder">
       <CardHeader>
-        <CardTitle className="font-heading">Create New Campaign</CardTitle>
-        <CardDescription>Set up your referral campaign with custom rewards</CardDescription>
+        <CardTitle className="font-heading">Setup Your Points System</CardTitle>
+        <CardDescription>Configure how customers earn and redeem points</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
