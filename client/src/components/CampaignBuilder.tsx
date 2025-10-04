@@ -292,44 +292,43 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
                 </FormItem>
               )}
             />
-          </div>
 
-          <FormField
-            control={form.control}
-            name="couponColor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Coupon Color</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2">
-                    <Input
-                      type="color"
-                      {...field}
-                      className="w-20 h-10 p-1 cursor-pointer"
-                      data-testid="input-coupon-color"
-                    />
-                    <Input
-                      {...field}
-                      placeholder={shopProfile?.currencySymbol || "#7c3aed"}
-                      className="flex-1"
-                    />
-                  </div>
-                </FormControl>
-                <FormDescription>Choose your brand color</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="couponColor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Coupon Color</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        {...field}
+                        className="w-20 h-10 p-1 cursor-pointer"
+                        data-testid="input-coupon-color"
+                      />
+                      <Input
+                        {...field}
+                        placeholder="#7c3aed"
+                        className="flex-1"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>Choose your brand color</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            data-testid="button-create-campaign"
-            disabled={createCampaignMutation.isPending}
-          >
-            {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
-          </Button>
-        </form>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              data-testid="button-create-campaign"
+              disabled={createCampaignMutation.isPending}
+            >
+              {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
+            </Button>
+          </form>
       </CardContent>
     </Card>
   );
