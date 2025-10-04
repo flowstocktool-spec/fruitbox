@@ -310,7 +310,7 @@ export function registerRoutes(app: Express): Server {
         return res.json([]);
       }
       
-      const customerIds = [...new Set(coupons.map(c => c.customerId))];
+      const customerIds = Array.from(new Set(coupons.map(c => c.customerId)));
       console.log(`Unique customer IDs: ${customerIds.length}`, customerIds);
       
       // Fetch all customers
@@ -415,7 +415,7 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`Found ${coupons.length} coupons for customer ${req.params.customerId}`);
       
-      const shopIds = [...new Set(coupons.map(c => c.shopProfileId))];
+      const shopIds = Array.from(new Set(coupons.map(c => c.shopProfileId)));
       if (shopIds.length === 0) {
         return res.json([]);
       }
@@ -549,7 +549,7 @@ export function registerRoutes(app: Express): Server {
         console.log(`Transaction campaign IDs:`, allTxs.map(tx => tx.campaignId));
         
         // Filter to only include transactions for this shop's campaigns
-        const txs = allTxs.filter(tx => campaignIds.includes(tx.campaignId));
+        const txs = allTxs.filter(tx => tx.campaignId && campaignIds.includes(tx.campaignId));
         
         console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
         
