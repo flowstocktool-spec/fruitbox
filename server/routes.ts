@@ -564,10 +564,18 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/transactions", upload.single("billImage"), async (req, res) => {
     try {
-      console.log("Transaction request body:", req.body);
+      console.log("=== Transaction Creation Request ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      console.log("campaignId received:", req.body.campaignId);
+      
       const validatedData = insertTransactionSchema.parse(req.body);
-      console.log("Validated transaction data:", validatedData);
+      console.log("Validated transaction data:", JSON.stringify(validatedData, null, 2));
+      console.log("campaignId after validation:", validatedData.campaignId);
+      
       const [transaction] = await db.insert(transactions).values(validatedData).returning();
+      console.log("Created transaction:", JSON.stringify(transaction, null, 2));
+      console.log("Transaction campaignId:", transaction.campaignId);
+      
       res.status(201).json(transaction);
     } catch (error: any) {
       console.error("Transaction creation error:", error);

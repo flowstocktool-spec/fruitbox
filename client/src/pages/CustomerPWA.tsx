@@ -32,6 +32,7 @@ export default function CustomerPWA() {
   const [isCreatingShareToken, setIsCreatingShareToken] = useState(false);
   const [selectedShop, setSelectedShop] = useState<any>(null);
   const [activeCoupon, setActiveCoupon] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("upload"); // State to manage active tab
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -140,7 +141,7 @@ export default function CustomerPWA() {
     if (customerCoupons.length > 0 && !activeCoupon) {
       const firstCoupon = customerCoupons[0];
       setActiveCoupon(firstCoupon);
-      
+
       // Find the corresponding shop
       const shop = customerShops.find((s: any) => s.id === firstCoupon.shopProfileId);
       if (shop) {
@@ -418,7 +419,7 @@ export default function CustomerPWA() {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
-        <Tabs defaultValue="upload" className="space-y-6">
+        <Tabs defaultValue="upload" value={activeTab} onValueChange={(value) => setActiveTab(value as string)} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="upload" data-testid="tab-upload">
               <Receipt className="h-4 w-4 mr-1" />
@@ -457,7 +458,7 @@ export default function CustomerPWA() {
                       {customerCoupons.map((coupon: any) => {
                         const shop = customerShops.find((s: any) => s.id === coupon.shopProfileId);
                         if (!shop) return null;
-                        
+
                         return (
                           <Button
                             key={coupon.id}
@@ -548,10 +549,15 @@ export default function CustomerPWA() {
                 <BillUpload
                   customerId={customer.id}
                   couponId={activeCoupon?.id || null}
-                  campaignId={selectedShop?.campaigns?.[0]?.id}
+                  campaignId={selectedShop?.campaigns?.[0]?.id || ""}
                   pointRules={selectedShop?.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
                   minPurchaseAmount={selectedShop?.campaigns?.[0]?.minPurchaseAmount || 0}
                   discountPercentage={selectedShop?.campaigns?.[0]?.referralDiscountPercentage || 10}
+                  shopName={selectedShop?.shopName}
+                  onSuccess={() => {
+                    setActiveTab("history");
+                    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+                  }}
                 />
               )}
             </div>

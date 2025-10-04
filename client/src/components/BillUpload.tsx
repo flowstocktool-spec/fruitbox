@@ -245,19 +245,9 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       }
     }
 
-    const transactionData = {
-      customerId,
-      couponId: couponId || undefined,
-      campaignId: campaignId || undefined,
-      type: "purchase",
-      amount: purchaseAmount,
-      status: "pending",
-      referralCode: affiliateCode || undefined,
-      points: earnedPoints,
-      shopName: shopName || "",
-    };
+    console.log("Submitting transaction with campaignId:", campaignId);
 
-    uploadMutation.mutate(transactionData);
+    uploadMutation.mutate(data);
   };
 
   const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
