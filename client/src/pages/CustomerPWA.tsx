@@ -52,14 +52,23 @@ export default function CustomerPWA() {
     const customerId = localStorage.getItem('customerId');
     if (customerId) {
       // Auto-login if we have a stored customer ID
-      fetch(`/api/customers/${customerId}`)
-        .then(res => res.json())
+      fetch(`/api/customers/${customerId}`, {
+        credentials: "include",
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Customer not found");
+          }
+          return res.json();
+        })
         .then(data => {
           setCustomer(data);
           setIsLoggedIn(true);
         })
         .catch(() => {
           localStorage.removeItem('customerId');
+          setCustomer(null);
+          setIsLoggedIn(false);
         });
     }
   }, []);
@@ -116,6 +125,7 @@ export default function CustomerPWA() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();

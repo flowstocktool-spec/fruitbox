@@ -42,6 +42,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
           customerId,
           shopProfileId,
         }),
+        credentials: "include",
       });
       if (!response.ok) {
         const error = await response.json();
