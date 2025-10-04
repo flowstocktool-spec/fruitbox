@@ -30,9 +30,9 @@ export function CampaignCard({ campaign, onViewQR, onSettings }: CampaignCardPro
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" />
-            <span>Earn {(campaign as any).pointsPercentage || 5}% points on purchases</span>
+          <div className="flex items-center gap-2 text-sm">
+            <TrendingUp className="h-4 w-4 text-green-600" />
+            <span className="font-medium">Spend ${(campaign as any).spendAmount || 100} = Earn {(campaign as any).earnPoints || 5} points</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

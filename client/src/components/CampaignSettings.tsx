@@ -28,7 +28,8 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
   const [formData, setFormData] = useState({
     name: campaign.name,
     description: campaign.description || "",
-    pointsPercentage: (campaign as any).pointsPercentage || 5,
+    spendAmount: (campaign as any).spendAmount || 100,
+    earnPoints: (campaign as any).earnPoints || 5,
     minPurchaseAmount: campaign.minPurchaseAmount,
     referralDiscountPercentage: (campaign as any).referralDiscountPercentage || 10,
     pointsRedemptionValue: (campaign as any).pointsRedemptionValue || 100,
@@ -127,39 +128,55 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pointsPercentage">Points Earning Rate (%)</Label>
-                <Input
-                  id="pointsPercentage"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={formData.pointsPercentage}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pointsPercentage: parseInt(e.target.value) })
-                  }
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  {formData.pointsPercentage}% = {formData.pointsPercentage} points per 100 currency
-                </p>
-              </div>
+            <div className="border-t pt-4">
+              <Label className="text-sm font-semibold">Points Earning Rules</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="spendAmount">Customer Spends</Label>
+                  <Input
+                    id="spendAmount"
+                    type="number"
+                    min="1"
+                    value={formData.spendAmount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, spendAmount: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="minPurchaseAmount">Min. Purchase Amount</Label>
-                <Input
-                  id="minPurchaseAmount"
-                  type="number"
-                  min="0"
-                  value={formData.minPurchaseAmount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, minPurchaseAmount: parseInt(e.target.value) })
-                  }
-                  required
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="earnPoints">Earns Points</Label>
+                  <Input
+                    id="earnPoints"
+                    type="number"
+                    min="1"
+                    value={formData.earnPoints}
+                    onChange={(e) =>
+                      setFormData({ ...formData, earnPoints: parseInt(e.target.value) })
+                    }
+                    required
+                  />
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Example: Spend ${formData.spendAmount} = Earn {formData.earnPoints} points
+              </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minPurchaseAmount">Min. Purchase Amount</Label>
+              <Input
+                id="minPurchaseAmount"
+                type="number"
+                min="0"
+                value={formData.minPurchaseAmount}
+                onChange={(e) =>
+                  setFormData({ ...formData, minPurchaseAmount: parseInt(e.target.value) })
+                }
+                required
+              />
+            </div></div>
 
             <div className="space-y-2">
               <Label htmlFor="referralDiscountPercentage">New Customer Referral Discount %</Label>

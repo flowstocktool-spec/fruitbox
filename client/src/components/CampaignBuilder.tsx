@@ -16,7 +16,8 @@ import { apiRequest } from "@/lib/queryClient";
 const campaignSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().optional(),
-  pointsPercentage: z.number().min(1).max(100, "Must be between 1-100%"),
+  spendAmount: z.number().min(1, "Must be at least 1"),
+  earnPoints: z.number().min(1, "Must be at least 1 point"),
   minPurchaseAmount: z.number().min(0, "Cannot be negative"),
   referralDiscountPercentage: z.number().min(1).max(100, "Must be between 1-100%"),
   pointsRedemptionValue: z.number().min(1, "Must be at least 1 point"),
@@ -42,7 +43,8 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
     defaultValues: {
       name: "",
       description: "",
-      pointsPercentage: 5,
+      spendAmount: 100,
+      earnPoints: 5,
       minPurchaseAmount: 0,
       referralDiscountPercentage: 10,
       pointsRedemptionValue: 100,
@@ -133,49 +135,71 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
             />
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="pointsPercentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Points Earning Rate (%)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          data-testid="input-points-percentage"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {field.value}% = {field.value} points per {shopProfile?.currencySymbol || '$'}100 spent
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3">Points Earning Rules</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="spendAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Customer Spends ({shopProfile?.currencySymbol || '$'})</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            data-testid="input-spend-amount"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="minPurchaseAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min. Purchase ({shopProfile?.currencySymbol || '$'})</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          data-testid="input-min-purchase"
-                        />
-                      </FormControl>
-                      <FormDescription>Minimum amount to earn points</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="earnPoints"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Earns Points</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            data-testid="input-earn-points"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Example: Spend {shopProfile?.currencySymbol || '$'}{form.watch("spendAmount")} = Earn {form.watch("earnPoints")} points
+                </p>
               </div>
+
+              <FormField
+                control={form.control}
+                name="minPurchaseAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min. Purchase Amount ({shopProfile?.currencySymbol || '$'})</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        data-testid="input-min-purchase"
+                      />
+                    </FormControl>
+                    <FormDescription>Minimum amount to qualify for earning points</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /></div>
 
               <div className="border-t pt-4">
                 <h3 className="text-sm font-semibold mb-3">Referral Benefits</h3>

@@ -27,7 +27,9 @@ export const campaigns = pgTable("campaigns", {
   storeId: varchar("store_id").notNull().references(() => shopProfiles.id),
   name: text("name").notNull(),
   description: text("description"),
-  pointsPercentage: integer("points_percentage").notNull().default(5), // 5% = 5 points per 100 currency
+  // New simplified points system
+  spendAmount: integer("spend_amount").notNull().default(100), // Amount customer needs to spend
+  earnPoints: integer("earn_points").notNull().default(5), // Points earned for that amount
   minPurchaseAmount: integer("min_purchase_amount").notNull().default(0),
   referralDiscountPercentage: integer("referral_discount_percentage").notNull().default(10), // Discount for new customers using referral
   pointsRedemptionValue: integer("points_redemption_value").notNull().default(100), // How many points needed
