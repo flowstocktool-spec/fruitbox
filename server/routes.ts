@@ -407,7 +407,21 @@ export function registerRoutes(app: Express): Server {
         shopIds.includes(shop.id)
       );
       
-      res.json(customerShopsData);
+      // Fetch campaigns for each shop
+      const shopsWithCampaigns = await Promise.all(
+        customerShopsData.map(async (shop) => {
+          const shopCampaigns = await db.select()
+            .from(campaigns)
+            .where(eq(campaigns.storeId, shop.id));
+          
+          return {
+            ...shop,
+            campaigns: shopCampaigns,
+          };
+        })
+      );
+      
+      res.json(shopsWithCampaigns);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
