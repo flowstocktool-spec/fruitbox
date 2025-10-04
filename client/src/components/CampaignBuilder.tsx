@@ -87,7 +87,7 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", { storeId }] });
       form.reset();
       toast({
         title: "Campaign created",

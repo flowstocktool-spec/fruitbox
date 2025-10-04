@@ -58,7 +58,7 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", { storeId: campaign.storeId }] });
       toast({
         title: "Success",
         description: "Campaign updated successfully",
@@ -82,7 +82,7 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
       if (!response.ok) throw new Error("Failed to delete campaign");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", { storeId: campaign.storeId }] });
       toast({
         title: "Success",
         description: "Campaign deleted successfully",
