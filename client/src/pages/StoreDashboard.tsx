@@ -66,17 +66,22 @@ export default function StoreDashboard() {
     enabled: isAuthenticated && !!shopProfile?.id,
   });
 
-  const { data: pendingTransactions = [] } = useQuery({
-    queryKey: ["pending-transactions", shopProfile?.id],
+  // Fetch pending transactions for this shop
+  const pendingTransactionsQuery = useQuery({
+    queryKey: ['/api/transactions', shopProfile?.id],
     queryFn: async () => {
-      const allTransactions = await getTransactions();
-      return allTransactions.filter(
-        (t: any) => t.status === "pending" &&
-        campaigns.some((c: any) => c.id === t.campaignId)
-      );
+      if (!shopProfile?.id) return [];
+      const response = await fetch(`/api/transactions?shopProfileId=${shopProfile.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      const allTransactions = await response.json();
+      return allTransactions.filter((t: any) => t.status === 'pending');
     },
-    enabled: isAuthenticated && campaigns.length > 0,
+    enabled: !!shopProfile?.id,
   });
+  const pendingTransactions = pendingTransactionsQuery.data || [];
+
 
   // Customers query
   const { data: customers = [], refetch: refetchCustomers } = useQuery({
