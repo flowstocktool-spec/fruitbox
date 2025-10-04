@@ -525,10 +525,25 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (shopProfileId) {
-        const txs = await db.select()
+        // Get all campaigns for this shop
+        const shopCampaigns = await db.select()
+          .from(campaigns)
+          .where(eq(campaigns.storeId, shopProfileId as string));
+        
+        const campaignIds = shopCampaigns.map(c => c.id);
+        
+        if (campaignIds.length === 0) {
+          return res.json([]);
+        }
+        
+        // Get all transactions for these campaigns
+        const allTxs = await db.select()
           .from(transactions)
-          .where(eq(transactions.shopName, shopProfileId as string))
           .orderBy(desc(transactions.createdAt));
+        
+        // Filter to only include transactions for this shop's campaigns
+        const txs = allTxs.filter(tx => campaignIds.includes(tx.campaignId));
+        
         return res.json(txs);
       }
       

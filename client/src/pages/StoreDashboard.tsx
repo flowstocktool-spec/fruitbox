@@ -313,9 +313,19 @@ export default function StoreDashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                pendingTransactions.map((transaction: any) => (
-                  <BillApprovalCard key={transaction.id} transaction={transaction} />
-                ))
+                pendingTransactions.map((transaction: any) => {
+                  // Find customer name from the customers list
+                  const customer = customers.find((c: any) => c.id === transaction.customerId);
+                  const customerName = customer?.name || "Unknown Customer";
+                  
+                  return (
+                    <BillApprovalCard 
+                      key={transaction.id} 
+                      transaction={transaction}
+                      customerName={customerName}
+                    />
+                  );
+                })
               )}
             </div>
           </TabsContent>
