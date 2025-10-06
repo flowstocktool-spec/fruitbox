@@ -85,7 +85,7 @@ export default function CustomerPWA() {
         const res = await fetch('/api/customers/me', {
           credentials: "include",
         });
-        
+
         if (res.ok) {
           const data = await res.json();
           setCustomer(data);
@@ -101,7 +101,7 @@ export default function CustomerPWA() {
         setIsLoggedIn(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -565,6 +565,7 @@ export default function CustomerPWA() {
     </div>
   );
 
+  // Main dashboard - only shown when authenticated
   const totalPoints = customerData?.totalPoints || customer?.totalPoints || 0;
   const totalRedeemed = customerData?.redeemedPoints || customer?.redeemedPoints || 0;
 

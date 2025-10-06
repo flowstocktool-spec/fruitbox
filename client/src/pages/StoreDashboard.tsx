@@ -28,6 +28,8 @@ export default function StoreDashboard() {
   const queryClient = useQueryClient();
 
   // Check if shop is logged in
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -45,6 +47,8 @@ export default function StoreDashboard() {
       } catch (error) {
         console.error("Shop auth check failed:", error);
         setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
 
@@ -126,6 +130,18 @@ export default function StoreDashboard() {
     enabled: !!shopProfile,
     refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your shop...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
