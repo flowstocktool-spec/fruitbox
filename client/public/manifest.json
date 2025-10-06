@@ -1,6 +1,6 @@
 {
-  "name": "Loyalty Rewards",
-  "short_name": "Loyalty",
+  "name": "Fruitbox",
+  "short_name": "Fruitbox",
   "description": "Multi-store loyalty rewards platform",
   "start_url": "/",
   "scope": "/",
