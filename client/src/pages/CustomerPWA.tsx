@@ -24,6 +24,7 @@ import { useLocation } from "wouter";
 export default function CustomerPWA() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [customer, setCustomer] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
@@ -99,6 +100,8 @@ export default function CustomerPWA() {
         console.error("Auth check failed:", error);
         setCustomer(null);
         setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
 
@@ -214,8 +217,6 @@ export default function CustomerPWA() {
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
-      // Store a flag indicating successful login
-      localStorage.setItem('hasLoggedIn', 'true');
       toast({
         title: "Welcome back!",
         description: "You're now logged in. Next time you'll be automatically signed in.",
@@ -323,11 +324,10 @@ export default function CustomerPWA() {
   const handleLogout = () => {
     // Call logout API to destroy session
     logoutMutation.mutate();
-    localStorage.removeItem('hasLoggedIn');
   };
 
-  // Show loading while checking authentication
-  if (!isLoggedIn && customer === null && localStorage.getItem('hasLoggedIn') === 'true') {
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -498,9 +498,10 @@ export default function CustomerPWA() {
     );
   }
 
-  // Show login form
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+  // Show login form only if not authenticated
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
           <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
@@ -563,7 +564,8 @@ export default function CustomerPWA() {
         </CardContent>
       </Card>
     </div>
-  );
+    );
+  }
 
   // Main dashboard - only shown when authenticated
   const totalPoints = customerData?.totalPoints || customer?.totalPoints || 0;
