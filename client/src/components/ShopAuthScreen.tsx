@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Store } from "lucide-react";
-import { loginShopOwner, registerShopOwner } from "@/lib/api";
+import { loginShopOwner, registerShopOwner, resetShopPassword } from "@/lib/api";
 
 interface ShopAuthScreenProps {
   onSuccess: (profile: any) => void;
@@ -18,6 +18,12 @@ interface ShopAuthScreenProps {
 
 export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
   const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetData, setResetData] = useState({
+    username: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [registerData, setRegisterData] = useState({
     shopName: "",
     shopCode: "",
@@ -65,6 +71,27 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ username, newPassword }: { username: string; newPassword: string }) => {
+      return resetShopPassword(username, newPassword);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password reset successful",
+        description: "You can now login with your new password",
+      });
+      setShowPasswordReset(false);
+      setResetData({ username: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Password reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginData.username || !loginData.password) {
@@ -90,6 +117,102 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
     }
     registerMutation.mutate(registerData);
   };
+
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetData.username || !resetData.newPassword) {
+      toast({
+        title: "Error",
+        description: "Please enter username and new password",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (resetData.newPassword !== resetData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+    resetPasswordMutation.mutate({
+      username: resetData.username,
+      newPassword: resetData.newPassword,
+    });
+  };
+
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
+              <Store className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="font-heading text-center">Reset Shop Password</CardTitle>
+            <CardDescription className="text-center">
+              Enter your username and new password
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div>
+                <Label htmlFor="reset-username">Username</Label>
+                <Input
+                  id="reset-username"
+                  value={resetData.username}
+                  onChange={(e) => setResetData({ ...resetData, username: e.target.value })}
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={resetData.newPassword}
+                  onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={resetData.confirmPassword}
+                  onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={resetPasswordMutation.isPending}
+              >
+                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowPasswordReset(false);
+                  setResetData({ username: "", newPassword: "", confirmPassword: "" });
+                }}
+              >
+                Back to Login
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -139,6 +262,14 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? "Logging in..." : "Login"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowPasswordReset(true)}
+                >
+                  Forgot Password?
                 </Button>
               </form>
             </TabsContent>

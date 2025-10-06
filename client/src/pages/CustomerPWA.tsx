@@ -26,6 +26,7 @@ export default function CustomerPWA() {
   const [customer, setCustomer] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
   const [selectedCouponForShare, setSelectedCouponForShare] = useState<any>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -45,6 +46,12 @@ export default function CustomerPWA() {
     email: "",
     username: "",
     password: ""
+  });
+
+  const [resetData, setResetData] = useState({
+    username: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const { toast } = useToast();
@@ -94,7 +101,7 @@ export default function CustomerPWA() {
 
   // Customer query
   const customerId = customer?.id;
-  const { data: customerData, isLoading: isLoadingCustomer, error: customerError } = useQuery({
+  const { data: customerData, isLoading: isLoadingCustomer, error: customerError, refetch } = useQuery({
     queryKey: ['/api/customers', customerId],
     queryFn: () => getCustomer(customerId ?? ''),
     enabled: !!customerId,
@@ -215,6 +222,28 @@ export default function CustomerPWA() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ username, newPassword }: { username: string; newPassword: string }) => {
+      const { resetCustomerPassword } = await import("@/lib/api");
+      return resetCustomerPassword(username, newPassword);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password reset successful",
+        description: "You can now login with your new password",
+      });
+      setShowPasswordReset(false);
+      setResetData({ username: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Password reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const createCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
       const newCode = await generateReferralCode();
@@ -270,6 +299,19 @@ export default function CustomerPWA() {
     createCustomerMutation.mutate(registrationData);
   };
 
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetData.newPassword || !resetData.confirmPassword || resetData.newPassword !== resetData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match or are empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+    resetPasswordMutation.mutate({ username: resetData.username, newPassword: resetData.newPassword });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('customerId');
     setCustomer(null);
@@ -281,145 +323,68 @@ export default function CustomerPWA() {
     });
   };
 
-  if (!isLoggedIn) {
-    if (showRegistration) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-                <UserPlus className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
-              <CardDescription className="text-center">
-                Join the referral program and start earning points!
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleRegistration} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={registrationData.name}
-                    onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={registrationData.phone}
-                    onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
-                    placeholder="Enter your phone number"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email (Optional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={registrationData.email}
-                    onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
-                    placeholder="Enter your email"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="username">Username *</Label>
-                  <Input
-                    id="username"
-                    value={registrationData.username}
-                    onChange={(e) => setRegistrationData({ ...registrationData, username: e.target.value })}
-                    placeholder="Choose a username"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={registrationData.password}
-                    onChange={(e) => setRegistrationData({ ...registrationData, password: e.target.value })}
-                    placeholder="Choose a password"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createCustomerMutation.isPending}
-                >
-                  {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowRegistration(false)}
-                >
-                  Back to Login
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
+  // Show password reset form
+  if (showPasswordReset) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="font-heading text-center">Welcome Back</CardTitle>
+            <CardTitle className="font-heading text-center">Reset Password</CardTitle>
             <CardDescription className="text-center">
-              Login to access your referral rewards
+              Enter your username and new password
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handlePasswordReset} className="space-y-4">
               <div>
-                <Label htmlFor="login-username">Username</Label>
+                <Label htmlFor="reset-username">Username</Label>
                 <Input
-                  id="login-username"
-                  value={loginData.username}
-                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                  id="reset-username"
+                  value={resetData.username}
+                  onChange={(e) => setResetData({ ...resetData, username: e.target.value })}
                   placeholder="Enter your username"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="login-password">Password</Label>
+                <Label htmlFor="new-password">New Password</Label>
                 <Input
-                  id="login-password"
+                  id="new-password"
                   type="password"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  placeholder="Enter your password"
+                  value={resetData.newPassword}
+                  onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={resetData.confirmPassword}
+                  onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password"
                   required
                 />
               </div>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={resetPasswordMutation.isPending}
               >
-                {loginMutation.isPending ? "Logging in..." : "Login"}
+                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => setShowRegistration(true)}
+                onClick={() => {
+                  setShowPasswordReset(false);
+                  setResetData({ username: "", newPassword: "", confirmPassword: "" });
+                }}
               >
-                Create New Account
+                Back to Login
               </Button>
             </form>
           </CardContent>
@@ -427,6 +392,163 @@ export default function CustomerPWA() {
       </div>
     );
   }
+
+  // Show registration form
+  if (showRegistration) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
+            <CardDescription className="text-center">
+              Join the referral program and start earning points!
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegistration} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={registrationData.name}
+                  onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={registrationData.phone}
+                  onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
+                  placeholder="Enter your phone number"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email (Optional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={registrationData.email}
+                  onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  value={registrationData.username}
+                  onChange={(e) => setRegistrationData({ ...registrationData, username: e.target.value })}
+                  placeholder="Choose a username"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={registrationData.password}
+                  onChange={(e) => setRegistrationData({ ...registrationData, password: e.target.value })}
+                  placeholder="Choose a password"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={createCustomerMutation.isPending}
+              >
+                {createCustomerMutation.isPending ? "Creating Account..." : "Create Account"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowRegistration(false)}
+              >
+                Back to Login
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show login form
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="max-w-md w-full">
+        <CardHeader>
+          <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
+            <User className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="font-heading text-center">Welcome Back</CardTitle>
+          <CardDescription className="text-center">
+            Login to access your referral rewards
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="login-username">Username</Label>
+              <Input
+                id="login-username"
+                value={loginData.username}
+                onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                placeholder="Enter your username"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="login-password">Password</Label>
+              <Input
+                id="login-password"
+                type="password"
+                value={loginData.password}
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? "Logging in..." : "Login"}
+            </Button>
+            <div className="flex justify-between items-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mr-2"
+                onClick={() => setShowRegistration(true)}
+              >
+                Create New Account
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full ml-2"
+                onClick={() => setShowPasswordReset(true)}
+              >
+                Forgot Password?
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const totalPoints = customerData?.totalPoints || customer?.totalPoints || 0;
   const totalRedeemed = customerData?.redeemedPoints || customer?.redeemedPoints || 0;

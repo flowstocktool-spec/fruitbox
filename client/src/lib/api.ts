@@ -297,3 +297,29 @@ export async function updateCustomerDevice(customerId: string, deviceId: string,
   }
   return response.json();
 }
+
+export async function resetCustomerPassword(username: string, newPassword: string) {
+  const res = await fetch("/api/customers/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, newPassword }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to reset password");
+  }
+  return res.json();
+}
+
+export async function resetShopPassword(username: string, newPassword: string) {
+  const res = await fetch("/api/shops/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, newPassword }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to reset password");
+  }
+  return res.json();
+}

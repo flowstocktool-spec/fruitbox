@@ -63,7 +63,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Invalid username or password" });
       }
 
-      // Update device info if provided
+      // Just track device info for security purposes, don't restrict login
       if (deviceId && deviceFingerprint) {
         await db.update(customers)
           .set({ 
@@ -84,6 +84,64 @@ export function registerRoutes(app: Express): Server {
       });
       
       res.json(customer);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Password Reset Request
+  app.post("/api/customers/reset-password", async (req, res) => {
+    try {
+      const { username, newPassword } = req.body;
+      
+      if (!username || !newPassword) {
+        return res.status(400).json({ error: "Username and new password are required" });
+      }
+
+      const [customer] = await db.select()
+        .from(customers)
+        .where(eq(customers.username, username))
+        .limit(1);
+
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      // Update password
+      await db.update(customers)
+        .set({ password: newPassword })
+        .where(eq(customers.id, customer.id));
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Shop Owner Password Reset
+  app.post("/api/shops/reset-password", async (req, res) => {
+    try {
+      const { username, newPassword } = req.body;
+      
+      if (!username || !newPassword) {
+        return res.status(400).json({ error: "Username and new password are required" });
+      }
+
+      const [shop] = await db.select()
+        .from(shopProfiles)
+        .where(eq(shopProfiles.username, username))
+        .limit(1);
+
+      if (!shop) {
+        return res.status(404).json({ error: "Shop not found" });
+      }
+
+      // Update password
+      await db.update(shopProfiles)
+        .set({ password: newPassword })
+        .where(eq(shopProfiles.id, shop.id));
+
+      res.json({ message: "Password reset successfully" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
