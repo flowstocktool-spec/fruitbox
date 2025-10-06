@@ -80,23 +80,29 @@ export default function CustomerPWA() {
 
   // Check if user is already logged in via session
   useEffect(() => {
-    fetch('/api/customers/me', {
-      credentials: "include",
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error("Not authenticated");
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/customers/me', {
+          credentials: "include",
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setCustomer(data);
+          setIsLoggedIn(true);
+        } else {
+          // Session expired or not found - stay on login screen
+          setCustomer(null);
+          setIsLoggedIn(false);
         }
-        return res.json();
-      })
-      .then(data => {
-        setCustomer(data);
-        setIsLoggedIn(true);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Auth check failed:", error);
         setCustomer(null);
         setIsLoggedIn(false);
-      });
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   // Customer query
@@ -208,9 +214,11 @@ export default function CustomerPWA() {
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
+      // Store a flag indicating successful login
+      localStorage.setItem('hasLoggedIn', 'true');
       toast({
         title: "Welcome back!",
-        description: "You've successfully logged in.",
+        description: "You're now logged in. Next time you'll be automatically signed in.",
       });
     },
     onError: (error: Error) => {
@@ -313,15 +321,22 @@ export default function CustomerPWA() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('customerId');
-    setCustomer(null);
-    setIsLoggedIn(false);
-    setShowLogin(true);
-    toast({
-      title: "Logged out",
-      description: "You've been successfully logged out.",
-    });
+    // Call logout API to destroy session
+    logoutMutation.mutate();
+    localStorage.removeItem('hasLoggedIn');
   };
+
+  // Show loading while checking authentication
+  if (!isLoggedIn && customer === null && localStorage.getItem('hasLoggedIn') === 'true') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show password reset form
   if (showPasswordReset) {

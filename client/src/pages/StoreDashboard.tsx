@@ -27,19 +27,28 @@ export default function StoreDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check if already logged in
+  // Check if shop is logged in
   useEffect(() => {
-    const savedShopId = localStorage.getItem("shopOwnerId");
-    if (savedShopId) {
-      getShopProfile(savedShopId)
-        .then((profile) => {
-          setShopProfile(profile);
-          setIsAuthenticated(true);
-        })
-        .catch(() => {
-          localStorage.removeItem("shopOwnerId");
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/shops/me', {
+          credentials: 'include',
         });
-    }
+
+        if (res.ok) {
+          const data = await res.json();
+          setShopProfile(data);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Shop auth check failed:", error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const handleLogout = () => {

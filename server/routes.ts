@@ -40,9 +40,10 @@ export function registerRoutes(app: Express): Server {
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         httpOnly: true,
-        secure: false, // Changed to false - iOS has issues with secure in development
+        secure: false,
         sameSite: 'lax',
         path: '/',
+        domain: undefined, // Let browser handle domain
       },
     })
   );

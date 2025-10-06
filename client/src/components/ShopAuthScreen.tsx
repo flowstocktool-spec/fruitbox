@@ -44,6 +44,7 @@ export function ShopAuthScreen({ onSuccess }: ShopAuthScreenProps) {
       return loginShopOwner(username, password);
     },
     onSuccess: (data) => {
+      localStorage.setItem('hasShopLoggedIn', 'true');
       onSuccess(data);
     },
     onError: (error: Error) => {
