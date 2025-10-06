@@ -23,7 +23,7 @@ declare module 'express-session' {
 }
 
 export function registerRoutes(app: Express): Server {
-  // Session middleware - persistent across restarts
+  // Session middleware - persistent across restarts with iOS compatibility
   app.use(
     session({
       store: new PgSession({
@@ -34,13 +34,15 @@ export function registerRoutes(app: Express): Server {
       }),
       secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true, // Changed to true for better iOS compatibility
       rolling: true, // Extend session on each request
+      name: 'loyalty.sid', // Custom name helps with iOS
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Changed to false - iOS has issues with secure in development
         sameSite: 'lax',
+        path: '/',
       },
     })
   );

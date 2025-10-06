@@ -140,6 +140,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
           ? `Your bill is submitted with referral code ${affiliateCode}. You'll earn ${earnedPoints} points and get ${discountPercentage}% welcome discount on approval!`
           : `Your bill is pending approval. You'll earn ${earnedPoints} points once approved.`,
       });
+      // Force refresh customer data
+      customerQuery.refetch();
       onSuccess?.();
     },
     onError: (error) => {

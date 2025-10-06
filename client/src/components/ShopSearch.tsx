@@ -55,7 +55,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/customer-coupons', customerId] });
       queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId, 'shops'] });
       queryClient.invalidateQueries({ queryKey: ['/api/shop-profiles'] });
-      
+
       toast({
         title: "✅ Successfully Registered!",
         description: `You're now an affiliate! Check the "Share" tab to see your coupon code: ${newCoupon.referralCode}`,

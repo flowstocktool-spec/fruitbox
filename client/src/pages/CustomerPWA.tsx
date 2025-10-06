@@ -122,19 +122,33 @@ export default function CustomerPWA() {
   }, [transactions, customer?.id]);
 
 
-  // Customer coupons query
-  const { data: customerCoupons = [] } = useQuery({
+  // Fetch customer coupons with auto-refresh
+  const customerCouponsQuery = useQuery({
     queryKey: ['/api/customer-coupons', customer?.id],
-    queryFn: () => getCustomerCoupons(customer?.id ?? ''),
-    enabled: !!customer,
+    queryFn: async () => {
+      if (!customer?.id) return [];
+      return getCustomerCoupons(customer.id);
+    },
+    enabled: !!customer?.id,
+    refetchInterval: 15000, // Auto-refresh every 15 seconds
+    refetchIntervalInBackground: true,
   });
+  const customerCoupons = customerCouponsQuery.data || [];
 
-  // Customer shops query
-  const { data: customerShops = [] } = useQuery({
+
+  // Fetch customer's shops with auto-refresh
+  const customerShopsQuery = useQuery({
     queryKey: ['/api/customers', customer?.id, 'shops'],
-    queryFn: () => getCustomerShops(customer?.id ?? ''),
-    enabled: !!customer,
+    queryFn: async () => {
+      if (!customer?.id) return [];
+      return getCustomerShops(customer.id);
+    },
+    enabled: !!customer?.id,
+    refetchInterval: 15000, // Auto-refresh every 15 seconds
+    refetchIntervalInBackground: true,
   });
+  const customerShops = customerShopsQuery.data || [];
+
 
   // Automatically select first shop and coupon when data loads
   useEffect(() => {

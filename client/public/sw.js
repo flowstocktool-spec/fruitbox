@@ -1,40 +1,73 @@
+const CACHE_NAME = 'loyalty-pwa-v2';
+const urlsToCache = [
+  '/',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+];
 
-const CACHE_NAME = 'fruitbox-v3';
-
+// Install event - cache essential resources
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.');
-  self.skipWaiting();
+  self.skipWaiting(); // Activate immediately
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+      .catch(err => console.log('Cache installation failed:', err))
+  );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
       );
     }).then(() => self.clients.claim())
   );
 });
 
+// Fetch event - network first strategy for API calls, cache for static assets
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  const { request } = event;
+  const url = new URL(request.url);
 
+  // Network-first strategy for API calls (important for real-time data)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          return new Response(JSON.stringify({ error: 'Network error, please check connection' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first strategy for static assets
   event.respondWith(
-    fetch(event.request)
+    caches.match(request)
       .then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
+        if (response) {
+          return response;
+        }
+        return fetch(request).then((response) => {
+          // Don't cache if not a success response
+          if (!response || response.status !== 200 || response.type === 'error') {
+            return response;
+          }
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+            cache.put(request, responseToCache);
           });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
+          return response;
+        });
       })
   );
 });

@@ -66,7 +66,7 @@ export default function StoreDashboard() {
     enabled: isAuthenticated && !!shopProfile?.id,
   });
 
-  // Fetch all transactions for this shop (pending and approved)
+  // Fetch transactions for the logged-in shop with auto-refresh for real-time updates
   const transactionsQuery = useQuery({
     queryKey: ['/api/transactions', shopProfile?.id],
     queryFn: async () => {
@@ -335,7 +335,7 @@ export default function StoreDashboard() {
                     // Find customer name from the customers list
                     const customer = customers.find((c: any) => c.id === transaction.customerId);
                     const customerName = customer?.name || "Unknown Customer";
-                    
+
                     return (
                       <BillApprovalCard 
                         key={transaction.id} 
@@ -369,7 +369,7 @@ export default function StoreDashboard() {
                         // Find customer name from the customers list
                         const customer = customers.find((c: any) => c.id === transaction.customerId);
                         const customerName = customer?.name || "Unknown Customer";
-                        
+
                         return (
                           <BillApprovalCard 
                             key={transaction.id} 
