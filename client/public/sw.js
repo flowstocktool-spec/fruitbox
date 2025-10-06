@@ -1,4 +1,4 @@
-const CACHE_NAME = 'loyalty-pwa-v2';
+const CACHE_NAME = 'fruitbox-pwa-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',
