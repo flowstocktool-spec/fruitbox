@@ -91,16 +91,17 @@ export default function CustomerPWA() {
           const data = await res.json();
           setCustomer(data);
           setIsLoggedIn(true);
+          setIsCheckingAuth(false);
         } else {
           // Session expired or not found - stay on login screen
           setCustomer(null);
           setIsLoggedIn(false);
+          setIsCheckingAuth(false);
         }
       } catch (error) {
         console.error("Auth check failed:", error);
         setCustomer(null);
         setIsLoggedIn(false);
-      } finally {
         setIsCheckingAuth(false);
       }
     };
@@ -217,6 +218,7 @@ export default function CustomerPWA() {
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
+      setIsCheckingAuth(false);
       toast({
         title: "Welcome back!",
         description: "You're now logged in. Next time you'll be automatically signed in.",
