@@ -596,7 +596,7 @@ export default function CustomerPWA() {
 
       <main className="max-w-md mx-auto px-4 py-6">
         <Tabs defaultValue="upload" value={activeTab} onValueChange={(value) => setActiveTab(value as string)} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="upload" data-testid="tab-upload">
               <Receipt className="h-4 w-4 mr-1" />
               Upload
@@ -612,6 +612,10 @@ export default function CustomerPWA() {
             <TabsTrigger value="history" data-testid="tab-history">
               <History className="h-4 w-4 mr-1" />
               History
+            </TabsTrigger>
+            <TabsTrigger value="account" data-testid="tab-account">
+              <User className="h-4 w-4 mr-1" />
+              Account
             </TabsTrigger>
           </TabsList>
 
@@ -933,6 +937,68 @@ export default function CustomerPWA() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="account" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Account Information</CardTitle>
+                <CardDescription>Your personal details and login credentials</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Full Name</Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md">{customer?.name}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Phone</Label>
+                      <div className="mt-1 p-3 bg-muted rounded-md">{customer?.phone}</div>
+                    </div>
+                    {customer?.email && (
+                      <div>
+                        <Label className="text-sm font-medium">Email</Label>
+                        <div className="mt-1 p-3 bg-muted rounded-md">{customer?.email}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="text-sm font-semibold mb-4">Login Credentials</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Username</Label>
+                      <div className="mt-1 p-3 bg-background border rounded-md font-mono">
+                        {customer?.username}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Password</Label>
+                      <div className="mt-1 p-3 bg-background border rounded-md font-mono">
+                        {customer?.password}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
+                    ⚠️ Keep these credentials secure. Use them to login to your account.
+                  </p>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="text-sm font-semibold mb-2">Your Referral Code</h3>
+                  <div className="p-4 bg-primary/10 border-2 border-primary/30 rounded-lg text-center">
+                    <code className="text-2xl font-mono font-bold text-primary">
+                      {customer?.referralCode}
+                    </code>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Share this code with friends to earn points
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

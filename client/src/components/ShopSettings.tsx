@@ -71,6 +71,34 @@ export function ShopSettings({ shopProfile, onSuccess, onUpdate }: ShopSettingsP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {isEdit && shopProfile && (
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle className="text-sm">Login Credentials</CardTitle>
+            <CardDescription>Your shop account details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Username</Label>
+                <div className="mt-1 p-2 bg-background border rounded-md font-mono text-sm">
+                  {shopProfile.username}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Password</Label>
+                <div className="mt-1 p-2 bg-background border rounded-md font-mono text-sm">
+                  {shopProfile.password}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⚠️ Keep these credentials secure. Use them to login to your shop dashboard.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="shopName">Shop Name *</Label>
