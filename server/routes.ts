@@ -24,6 +24,8 @@ declare module 'express-session' {
 
 export function registerRoutes(app: Express): Server {
   // Session middleware - persistent across restarts with iOS compatibility
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   app.use(
     session({
       store: new PgSession({
@@ -37,16 +39,32 @@ export function registerRoutes(app: Express): Server {
       saveUninitialized: true, // Changed to true for better iOS compatibility
       rolling: true, // Extend session on each request
       name: 'loyalty.sid', // Custom name helps with iOS
+      proxy: true, // Trust proxy for secure cookies behind reverse proxy
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        httpOnly: true, // Secure cookie, not accessible to JavaScript
+        secure: false, // Set to true in production with HTTPS
+        sameSite: 'lax', // Same-site for same-domain PWA
         path: '/',
         domain: undefined, // Let browser handle domain
       },
     })
   );
+
+  // Debug middleware to log session/cookie info for troubleshooting mobile auth
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      const sessionId = req.session?.id;
+      const customerId = req.session?.customerId;
+      const shopProfileId = req.session?.shopProfileId;
+      const cookies = req.headers.cookie;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[${req.method}] ${req.path} - Session:${sessionId ? 'exists' : 'none'} Customer:${customerId || 'none'} Shop:${shopProfileId || 'none'} Cookies:${cookies ? 'present' : 'none'}`);
+      }
+    }
+    next();
+  });
 
   // ========== CUSTOMER AUTHENTICATION ==========
   
