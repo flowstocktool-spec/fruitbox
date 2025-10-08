@@ -77,11 +77,16 @@ export function registerRoutes(app: Express): Server {
 
       req.session.customerId = customer.id;
       
-      // Save session explicitly
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-        }
+      // Save session explicitly and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
       });
       
       res.json(customer);
@@ -209,6 +214,19 @@ export function registerRoutes(app: Express): Server {
       
       const [newShop] = await db.insert(shopProfiles).values(validatedData).returning();
       req.session.shopProfileId = newShop.id;
+      
+      // Save session explicitly and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
       res.status(201).json(newShop);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -231,11 +249,16 @@ export function registerRoutes(app: Express): Server {
 
       req.session.shopProfileId = shop.id;
       
-      // Save session explicitly
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-        }
+      // Save session explicitly and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
       });
       
       res.json(shop);
@@ -291,6 +314,19 @@ export function registerRoutes(app: Express): Server {
       }
 
       req.session.shopProfileId = shop.id;
+      
+      // Save session explicitly and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
       res.json(shop);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -410,6 +446,19 @@ export function registerRoutes(app: Express): Server {
       const validatedData = insertCustomerSchema.parse(req.body);
       const [customer] = await db.insert(customers).values(validatedData).returning();
       req.session.customerId = customer.id;
+      
+      // Save session explicitly and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
       res.status(201).json(customer);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
