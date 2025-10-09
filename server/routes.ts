@@ -705,15 +705,131 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("=== Transaction Creation Request ===");
       console.log("Request body:", JSON.stringify(req.body, null, 2));
-      console.log("campaignId received:", req.body.campaignId);
       
-      const validatedData = insertTransactionSchema.parse(req.body);
-      console.log("Validated transaction data:", JSON.stringify(validatedData, null, 2));
-      console.log("campaignId after validation:", validatedData.campaignId);
+      const { customerId, couponId, campaignId, amount, referralCode, pointsRedeemed: requestedPointsRedeemed } = req.body;
       
+      // Validate mutual exclusivity: either referral code OR points redemption, not both
+      if (referralCode && requestedPointsRedeemed > 0) {
+        return res.status(400).json({ 
+          error: "Cannot use referral code and points redemption together. Choose one discount type." 
+        });
+      }
+      
+      let discountType = null;
+      let discountAmount = 0;
+      let pointsRedeemed = 0;
+      let earnedPoints = 0;
+      
+      // Get campaign for discount rules
+      let campaign = null;
+      if (campaignId) {
+        const [campaignData] = await db.select()
+          .from(campaigns)
+          .where(eq(campaigns.id, campaignId))
+          .limit(1);
+        campaign = campaignData;
+      }
+      
+      // Handle REFERRAL DISCOUNT (for new customers)
+      if (referralCode) {
+        // Check if this is customer's first transaction at this shop
+        const existingTransactions = await db.select()
+          .from(transactions)
+          .where(eq(transactions.customerId, customerId));
+        
+        const firstPurchaseAtShop = !existingTransactions.some(tx => tx.couponId === couponId);
+        
+        if (!firstPurchaseAtShop) {
+          return res.status(400).json({ 
+            error: "Referral discount is only valid for your first purchase at this shop." 
+          });
+        }
+        
+        discountType = "referral";
+        const referralDiscountPercentage = campaign?.referralDiscountPercentage || 10;
+        discountAmount = Math.round((amount * referralDiscountPercentage) / 100);
+        
+        // Calculate earned points based on point rules
+        if (campaign?.pointRules) {
+          for (const rule of campaign.pointRules) {
+            if (amount >= rule.minAmount && amount <= rule.maxAmount) {
+              earnedPoints = rule.points;
+              break;
+            }
+          }
+        }
+      }
+      // Handle POINTS REDEMPTION (for existing customers)
+      else if (requestedPointsRedeemed && requestedPointsRedeemed > 0) {
+        // Get customer's available points
+        const [coupon] = await db.select()
+          .from(customerCoupons)
+          .where(eq(customerCoupons.id, couponId as string))
+          .limit(1);
+        
+        if (!coupon) {
+          return res.status(400).json({ error: "Coupon not found" });
+        }
+        
+        const availablePoints = coupon.totalPoints - coupon.redeemedPoints;
+        
+        if (requestedPointsRedeemed > availablePoints) {
+          return res.status(400).json({ 
+            error: `Insufficient points. You have ${availablePoints} points available.` 
+          });
+        }
+        
+        discountType = "points";
+        pointsRedeemed = requestedPointsRedeemed;
+        
+        // Calculate discount based on points redemption rules
+        const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
+        const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
+        const redemptionUnits = Math.floor(requestedPointsRedeemed / pointsRedemptionValue);
+        const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+        discountAmount = Math.round((amount * discountPercentage) / 100);
+        
+        // Calculate earned points from this purchase
+        if (campaign?.pointRules) {
+          for (const rule of campaign.pointRules) {
+            if (amount >= rule.minAmount && amount <= rule.maxAmount) {
+              earnedPoints = rule.points;
+              break;
+            }
+          }
+        }
+      }
+      // No discount - just calculate earned points
+      else {
+        if (campaign?.pointRules) {
+          for (const rule of campaign.pointRules) {
+            if (amount >= rule.minAmount && amount <= rule.maxAmount) {
+              earnedPoints = rule.points;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Create transaction with calculated values
+      const transactionData = {
+        ...req.body,
+        points: earnedPoints,
+        discountType,
+        discountAmount,
+        pointsRedeemed,
+      };
+      
+      const validatedData = insertTransactionSchema.parse(transactionData);
       const [transaction] = await db.insert(transactions).values(validatedData).returning();
-      console.log("Created transaction:", JSON.stringify(transaction, null, 2));
-      console.log("Transaction campaignId:", transaction.campaignId);
+      
+      console.log("Created transaction with discount:", {
+        id: transaction.id,
+        discountType,
+        discountAmount,
+        pointsRedeemed,
+        earnedPoints
+      });
       
       res.status(201).json(transaction);
     } catch (error: any) {
@@ -749,7 +865,6 @@ export function registerRoutes(app: Express): Server {
 
       // Update points - ONLY in the coupon table, customer table will aggregate from coupons
       if (transaction.type === "purchase") {
-        // For purchases, we may earn points AND redeem points simultaneously
         if (transaction.couponId) {
           const [coupon] = await db.select()
             .from(customerCoupons)
@@ -757,10 +872,9 @@ export function registerRoutes(app: Express): Server {
             .limit(1);
 
           if (coupon) {
-            // If points are positive, add earned points
-            // If points are negative, it was a redemption - update redeemed points
-            const earnedPoints = transaction.points > 0 ? transaction.points : 0;
-            const redeemedPointsFromTx = transaction.points < 0 ? Math.abs(transaction.points) : 0;
+            // Add earned points and redeemed points separately
+            const earnedPoints = transaction.points || 0;
+            const redeemedPointsFromTx = transaction.pointsRedeemed || 0;
             
             await db.update(customerCoupons)
               .set({ 
