@@ -1,19 +1,30 @@
 import type { Campaign, Customer, Transaction } from "@shared/schema";
 
+// Use relative URLs to work with both preview and HTTPS deployment
+const API_BASE = '/api';
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function getCampaigns(storeId: string): Promise<Campaign[]> {
-  const res = await fetch(`/api/campaigns?storeId=${storeId}`);
+  const res = await fetch(`${API_BASE}/campaigns?storeId=${storeId}`);
   if (!res.ok) throw new Error("Failed to fetch campaigns");
   return res.json();
 }
 
 export async function getCampaign(id: string): Promise<Campaign> {
-  const res = await fetch(`/api/campaigns/${id}`);
+  const res = await fetch(`${API_BASE}/campaigns/${id}`);
   if (!res.ok) throw new Error("Failed to fetch campaign");
   return res.json();
 }
 
 export async function createCampaign(data: any): Promise<Campaign> {
-  const res = await fetch("/api/campaigns", {
+  const res = await fetch(`${API_BASE}/campaigns`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -23,21 +34,21 @@ export async function createCampaign(data: any): Promise<Campaign> {
 }
 
 export async function getCustomer(id: string): Promise<Customer> {
-  const res = await fetch(`/api/customers/${id}`);
+  const res = await fetch(`${API_BASE}/customers/${id}`);
   if (!res.ok) throw new Error("Failed to fetch customer");
   return res.json();
 }
 
 export async function getCustomerByCode(code: string): Promise<Customer> {
-  const res = await fetch(`/api/customers/code/${code}`);
+  const res = await fetch(`${API_BASE}/customers/code/${code}`);
   if (!res.ok) throw new Error("Failed to fetch customer");
   return res.json();
 }
 
 export async function createCustomer(data: any): Promise<Customer> {
   const { getDeviceId, getDeviceFingerprint } = await import('./deviceAuth');
-  
-  const res = await fetch("/api/customers", {
+
+  const res = await fetch(`${API_BASE}/customers`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -56,7 +67,7 @@ export async function getTransactions(customerId?: string, campaignId?: string):
   if (customerId) params.append("customerId", customerId);
   if (campaignId) params.append("campaignId", campaignId);
 
-  const res = await fetch(`/api/transactions?${params}`);
+  const res = await fetch(`${API_BASE}/transactions?${params}`);
   if (!res.ok) throw new Error("Failed to fetch transactions");
   return res.json();
 }
@@ -69,7 +80,7 @@ export async function createTransaction(data: any, billFile?: File): Promise<Tra
       formData.append(key, data[key]);
     });
 
-    const res = await fetch("/api/transactions", {
+    const res = await fetch(`${API_BASE}/transactions`, {
       method: "POST",
       body: formData,
     });
@@ -77,7 +88,7 @@ export async function createTransaction(data: any, billFile?: File): Promise<Tra
     return res.json();
   }
 
-  const res = await fetch("/api/transactions", {
+  const res = await fetch(`${API_BASE}/transactions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -87,7 +98,7 @@ export async function createTransaction(data: any, billFile?: File): Promise<Tra
 }
 
 export async function updateTransactionStatus(id: string, status: string): Promise<Transaction> {
-  const res = await fetch(`/api/transactions/${id}`, {
+  const res = await fetch(`${API_BASE}/transactions/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
@@ -97,32 +108,32 @@ export async function updateTransactionStatus(id: string, status: string): Promi
 }
 
 export async function getCampaignStats(campaignId: string) {
-  const res = await fetch(`/api/stats/campaign/${campaignId}`);
+  const res = await fetch(`${API_BASE}/stats/campaign/${campaignId}`);
   if (!res.ok) throw new Error("Failed to fetch stats");
   return res.json();
 }
 
 export async function generateReferralCode(): Promise<string> {
-  const res = await fetch("/api/generate-code");
+  const res = await fetch(`${API_BASE}/generate-code`);
   if (!res.ok) throw new Error("Failed to generate code");
   const data = await res.json();
   return data.code;
 }
 
 export async function getCustomerCoupons(customerId: string) {
-  const res = await fetch(`/api/customer-coupons/${customerId}`);
+  const res = await fetch(`${API_BASE}/customer-coupons/${customerId}`);
   if (!res.ok) throw new Error("Failed to fetch customer coupons");
   return res.json();
 }
 
 export async function getCustomerCouponByCode(code: string) {
-  const res = await fetch(`/api/customer-coupons/code/${code}`);
+  const res = await fetch(`${API_BASE}/customer-coupons/code/${code}`);
   if (!res.ok) throw new Error("Failed to fetch customer coupon");
   return res.json();
 }
 
 export async function createCustomerCoupon(data: any) {
-  const res = await fetch("/api/customer-coupons", {
+  const res = await fetch(`${API_BASE}/customer-coupons`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -132,7 +143,7 @@ export async function createCustomerCoupon(data: any) {
 }
 
 export async function createSharedCoupon(data: any) {
-  const res = await fetch("/api/shared-coupons", {
+  const res = await fetch(`${API_BASE}/shared-coupons`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -142,7 +153,7 @@ export async function createSharedCoupon(data: any) {
 }
 
 export async function approveTransaction(transactionId: string) {
-  const response = await fetch(`/api/transactions/${transactionId}/approve`, {
+  const response = await fetch(`${API_BASE}/transactions/${transactionId}/approve`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
   });
@@ -151,7 +162,7 @@ export async function approveTransaction(transactionId: string) {
 }
 
 export async function rejectTransaction(transactionId: string) {
-  const response = await fetch(`/api/transactions/${transactionId}/reject`, {
+  const response = await fetch(`${API_BASE}/transactions/${transactionId}/reject`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
   });
@@ -160,13 +171,13 @@ export async function rejectTransaction(transactionId: string) {
 }
 
 export async function getSharedCouponByToken(token: string) {
-  const res = await fetch(`/api/shared-coupons/token/${token}`);
+  const res = await fetch(`${API_BASE}/shared-coupons/token/${token}`);
   if (!res.ok) throw new Error("Failed to fetch shared coupon");
   return res.json();
 }
 
 export async function claimSharedCoupon(id: string, customerId: string) {
-  const res = await fetch(`/api/shared-coupons/${id}/claim`, {
+  const res = await fetch(`${API_BASE}/shared-coupons/${id}/claim`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ customerId }),
@@ -179,13 +190,13 @@ export async function claimSharedCoupon(id: string, customerId: string) {
 }
 
 export async function getShopProfiles() {
-  const res = await fetch("/api/shop-profiles");
+  const res = await fetch(`${API_BASE}/shop-profiles`);
   if (!res.ok) throw new Error("Failed to fetch shop profiles");
   return res.json();
 }
 
 export async function getCustomerShops(customerId: string) {
-  const res = await fetch(`/api/customers/${customerId}/shops`);
+  const res = await fetch(`${API_BASE}/customers/${customerId}/shops`);
   if (!res.ok) {
     const errorText = await res.text();
     console.error("Failed to fetch customer shops:", errorText);
@@ -197,13 +208,13 @@ export async function getCustomerShops(customerId: string) {
 }
 
 export async function getShopProfile(id: string) {
-  const res = await fetch(`/api/shop-profiles/${id}`);
+  const res = await fetch(`${API_BASE}/shop-profiles/${id}`);
   if (!res.ok) throw new Error("Failed to fetch shop profile");
   return res.json();
 }
 
 export async function createShopProfile(data: any) {
-  const res = await fetch("/api/shop-profiles", {
+  const res = await fetch(`${API_BASE}/shop-profiles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -213,7 +224,7 @@ export async function createShopProfile(data: any) {
 }
 
 export async function updateShopProfile(id: string, data: any) {
-  const res = await fetch(`/api/shop-profiles/${id}`, {
+  const res = await fetch(`${API_BASE}/shop-profiles/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -223,7 +234,7 @@ export async function updateShopProfile(id: string, data: any) {
 }
 
 export async function registerShopOwner(data: any) {
-  const res = await fetch("/api/shops/register", {
+  const res = await fetch(`${API_BASE}/shops/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -236,7 +247,7 @@ export async function registerShopOwner(data: any) {
 }
 
 export async function loginShopOwner(username: string, password: string) {
-  const res = await fetch("/api/shops/login", {
+  const res = await fetch(`${API_BASE}/shops/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -250,7 +261,7 @@ export async function loginShopOwner(username: string, password: string) {
 }
 
 export async function getShopCustomers(shopProfileId: string) {
-  const response = await fetch(`/api/shop-profiles/${shopProfileId}/customers`);
+  const response = await fetch(`${API_BASE}/shop-profiles/${shopProfileId}/customers`);
   if (!response.ok) {
     throw new Error('Failed to fetch shop customers');
   }
@@ -259,8 +270,8 @@ export async function getShopCustomers(shopProfileId: string) {
 
 export async function loginCustomer(username: string, password: string): Promise<Customer> {
   const { getDeviceId, getDeviceFingerprint } = await import('./deviceAuth');
-  
-  const res = await fetch("/api/customers/login", {
+
+  const res = await fetch(`${API_BASE}/customers/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ 
@@ -279,7 +290,7 @@ export async function loginCustomer(username: string, password: string): Promise
 }
 
 export async function getCustomerByDeviceId(deviceId: string) {
-  const response = await fetch(`/api/customers/device/${deviceId}`);
+  const response = await fetch(`${API_BASE}/customers/device/${deviceId}`);
   if (!response.ok) {
     throw new Error('Customer not found for this device');
   }
@@ -287,7 +298,7 @@ export async function getCustomerByDeviceId(deviceId: string) {
 }
 
 export async function updateCustomerDevice(customerId: string, deviceId: string, deviceFingerprint: string) {
-  const response = await fetch(`/api/customers/${customerId}/device`, {
+  const response = await fetch(`${API_BASE}/customers/${customerId}/device`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ deviceId, deviceFingerprint }),
@@ -299,7 +310,7 @@ export async function updateCustomerDevice(customerId: string, deviceId: string,
 }
 
 export async function resetCustomerPassword(username: string, newPassword: string) {
-  const res = await fetch("/api/customers/reset-password", {
+  const res = await fetch(`${API_BASE}/customers/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, newPassword }),
@@ -312,7 +323,7 @@ export async function resetCustomerPassword(username: string, newPassword: strin
 }
 
 export async function resetShopPassword(username: string, newPassword: string) {
-  const res = await fetch("/api/shops/reset-password", {
+  const res = await fetch(`${API_BASE}/shops/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, newPassword }),
