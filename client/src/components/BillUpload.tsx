@@ -326,6 +326,40 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               </div>
             </div>
 
+            {/* Explanation Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 space-y-3">
+                <h3 className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">📋 How to Submit Your Bill</h3>
+
+                <div className="space-y-2">
+                  <div className="bg-blue-100 dark:bg-blue-900/30 rounded p-2">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">🎁 NEW CUSTOMER? Use Referral Code</p>
+                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                      If this is your first purchase, enter a friend's referral code above to get a welcome discount. Your friend will also earn points!
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-100 dark:bg-purple-900/30 rounded p-2">
+                    <p className="font-semibold text-purple-900 dark:text-purple-100 text-sm mb-1">💎 EXISTING CUSTOMER? Redeem Points</p>
+                    <p className="text-xs text-purple-800 dark:text-purple-200">
+                      Already have points? Use the "Redeem Your Points" section below to get a discount on this purchase.
+                    </p>
+                  </div>
+                </div>
+
+                <ol className="text-sm text-gray-800 dark:text-gray-200 space-y-1 list-decimal list-inside mt-3">
+                  <li>Enter purchase amount (must match your bill)</li>
+                  <li>Upload clear photo of original bill</li>
+                  <li>Apply referral code OR redeem points (if applicable)</li>
+                  <li>Submit for approval</li>
+                </ol>
+
+                <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                    ⚠️ <strong>Important:</strong> Upload only original, clear bills from the shop. Duplicate or fake bills will be rejected and may result in account suspension.
+                  </p>
+                </div>
+              </div>
+
             {/* Referral Code Section */}
             {!referralCode && (
               <div className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
