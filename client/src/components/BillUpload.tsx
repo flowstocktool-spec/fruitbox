@@ -285,10 +285,9 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
   const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
   const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
 
-  // Calculate points redemption discount
-  const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
-  const pointsDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
+  // Calculate points redemption discount (proportional)
   const billAmount = parseFloat(form.getValues('amount')?.toString() || '0');
+  const pointsDiscountPercentage = (pointsToRedeem / pointsRedemptionValue) * pointsRedemptionDiscount;
   const pointsCalculatedDiscount = (billAmount * pointsDiscountPercentage) / 100;
   const remainingPoints = Math.max(0, (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0) - pointsToRedeem);
   

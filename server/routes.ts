@@ -782,11 +782,11 @@ export function registerRoutes(app: Express): Server {
         discountType = "points";
         pointsRedeemed = requestedPointsRedeemed;
         
-        // Calculate discount based on points redemption rules
+        // Calculate discount based on points redemption rules (proportional)
         const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
         const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
-        const redemptionUnits = Math.floor(requestedPointsRedeemed / pointsRedemptionValue);
-        const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+        // Make it proportional: if 100 points = 10% off, then 10 points = 1% off
+        const discountPercentage = (requestedPointsRedeemed / pointsRedemptionValue) * pointsRedemptionDiscount;
         discountAmount = Math.round((amount * discountPercentage) / 100);
         
         // Calculate earned points from this purchase
