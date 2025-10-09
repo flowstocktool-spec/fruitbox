@@ -872,14 +872,24 @@ export function registerRoutes(app: Express): Server {
             .limit(1);
 
           if (coupon) {
-            // Add earned points and redeemed points separately
+            // Earned points from this purchase
             const earnedPoints = transaction.points || 0;
+            // Points redeemed/used for discount in this transaction
             const redeemedPointsFromTx = transaction.pointsRedeemed || 0;
+            
+            console.log(`Approving transaction: Earned ${earnedPoints} points, Redeemed ${redeemedPointsFromTx} points`);
+            console.log(`Current coupon state: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}`);
+            
+            // Update coupon: add earned points to total, add redeemed points to redeemed
+            const newTotalPoints = coupon.totalPoints + earnedPoints;
+            const newRedeemedPoints = coupon.redeemedPoints + redeemedPointsFromTx;
+            
+            console.log(`New coupon state: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newTotalPoints - newRedeemedPoints}`);
             
             await db.update(customerCoupons)
               .set({ 
-                totalPoints: coupon.totalPoints + earnedPoints,
-                redeemedPoints: coupon.redeemedPoints + redeemedPointsFromTx
+                totalPoints: newTotalPoints,
+                redeemedPoints: newRedeemedPoints
               })
               .where(eq(customerCoupons.id, transaction.couponId));
           }
