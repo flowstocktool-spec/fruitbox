@@ -117,16 +117,16 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
         }
       }
 
-      // Calculate discount based on campaign's redemption rules
+      // Calculate points redemption discount
       const campaign = campaignQuery.data;
       const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
       const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
 
       // Calculate how many redemption units the customer is using
       const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
-      const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+      const pointsDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
       const billAmount = parseFloat(data.amount.toString());
-      const calculatedDiscount = (billAmount * discountPercentage) / 100;
+      const pointsCalculatedDiscount = (billAmount * pointsDiscountPercentage) / 100;
 
       // Calculate net points (earned points minus redeemed points)
       const netPoints = showRedemption && pointsToRedeem > 0
@@ -177,7 +177,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       toast({
         title: "Bill uploaded successfully!",
         description: affiliateCode
-          ? `Your bill is submitted with referral code ${affiliateCode}. You'll earn ${earnedPoints} points and get ${discountPercentage}% welcome discount on approval!`
+          ? `Your bill is submitted with referral code ${affiliateCode}. You'll earn ${earnedPoints} points and get ${referralDiscountPercentage}% welcome discount on approval!`
           : `Your bill is pending approval. You'll earn ${earnedPoints} points once approved.`,
       });
       // Force refresh customer data
@@ -213,7 +213,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
           setAffiliateDetails(customer);
           toast({
             title: "Referral Code Valid!",
-            description: `You'll use ${customer.name}'s referral code and get ${discountPercentage}% welcome discount!`,
+            description: `You'll use ${customer.name}'s referral code and get ${referralDiscountPercentage}% welcome discount!`,
           });
           return;
         }
@@ -226,7 +226,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
         setAffiliateDetails(customer);
         toast({
           title: "Referral Code Valid!",
-          description: `You'll use ${customer.name}'s referral code and get ${discountPercentage}% welcome discount!`,
+          description: `You'll use ${customer.name}'s referral code and get ${referralDiscountPercentage}% welcome discount!`,
         });
       } else {
         setAffiliateDetails(null);
@@ -286,17 +286,21 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
     uploadMutation.mutate(data);
   };
 
-  // Calculate discount based on campaign's redemption rules
+  // Get campaign data
   const campaign = campaignQuery.data;
+  const referralDiscountPercentage = campaign?.referralDiscountPercentage || 10;
   const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
   const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
 
-  // Calculate how many redemption units the customer is using
+  // Calculate points redemption discount
   const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
-  const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+  const pointsDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
   const billAmount = parseFloat(form.getValues('amount')?.toString() || '0');
-  const calculatedDiscount = (billAmount * discountPercentage) / 100;
+  const pointsCalculatedDiscount = (billAmount * pointsDiscountPercentage) / 100;
   const remainingPoints = Math.max(0, (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0) - pointsToRedeem);
+  
+  // Calculate referral/welcome discount (only if referral code is verified)
+  const welcomeDiscountAmount = affiliateDetails && affiliateCode ? (billAmount * referralDiscountPercentage) / 100 : 0;
 
 
   return (
@@ -316,8 +320,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-card rounded-md p-3 border border-card-border">
-                  <p className="text-xs text-muted-foreground mb-1">Welcome Discount</p>
-                  <p className="text-lg font-bold text-primary">{discountPercentage}% OFF</p>
+                  <p className="text-xs text-muted-foreground mb-1">Referral Welcome Discount</p>
+                  <p className="text-lg font-bold text-primary">{referralDiscountPercentage}% OFF</p>
                 </div>
                 <div className="bg-card rounded-md p-3 border border-card-border">
                   <p className="text-xs text-muted-foreground mb-1">Min. Purchase</p>
@@ -395,7 +399,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                         ✓ Referred by {affiliateDetails.name}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {discountPercentage}% discount will be applied on approval
+                        {referralDiscountPercentage}% welcome discount will be applied on approval
                       </p>
                     </div>
                   )}
@@ -417,18 +421,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                       {...field}
                       onChange={(e) => {
                         field.onChange(Number(e.target.value));
-                        // Update preview amount when amount changes
-                        const amountValue = parseFloat(e.target.value);
-                        if (!isNaN(amountValue)) {
-                          // Recalculate discount and final amount when amount changes
-                          const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
-                          const currentDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
-                          const currentCalculatedDiscount = (amountValue * currentDiscountPercentage) / 100;
-                          const currentFinalAmount = Math.max(0, amountValue - currentCalculatedDiscount);
-                          // This is a bit of a hack to trigger a re-render for the preview amount
-                          // A more robust solution would involve lifting state or using a state management library
-                          setPointsToRedeem(pointsToRedeem); // No change, but forces re-render
-                        }
+                        // Trigger re-render to update calculated amounts
+                        setPointsToRedeem(pointsToRedeem); // No change, but forces re-render
                       }}
                       data-testid="input-bill-amount"
                     />
@@ -542,12 +536,12 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                           <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Discount</span>
-                          <span className="font-medium text-chart-2">-${calculatedDiscount.toFixed(2)}</span>
+                          <span className="text-muted-foreground">Points Discount ({pointsDiscountPercentage}%)</span>
+                          <span className="font-medium text-chart-2">-${pointsCalculatedDiscount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base font-bold border-t border-border pt-2">
                           <span>Final Amount</span>
-                          <span className="text-primary">${Math.max(0, billAmount - calculatedDiscount).toFixed(2)}</span>
+                          <span className="text-primary">${Math.max(0, billAmount - pointsCalculatedDiscount).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
                           <span>Points After</span>
