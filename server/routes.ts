@@ -872,19 +872,24 @@ export function registerRoutes(app: Express): Server {
             .limit(1);
 
           if (coupon) {
-            // Earned points from this purchase
+            // Points earned from this purchase
             const earnedPoints = transaction.points || 0;
             // Points redeemed/used for discount in this transaction
             const redeemedPointsFromTx = transaction.pointsRedeemed || 0;
             
-            console.log(`Approving transaction: Earned ${earnedPoints} points, Redeemed ${redeemedPointsFromTx} points`);
-            console.log(`Current coupon state: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}`);
+            console.log(`Approving transaction for coupon ${transaction.couponId}:`);
+            console.log(`- Current state: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}, Available=${coupon.totalPoints - coupon.redeemedPoints}`);
+            console.log(`- Transaction: Earned ${earnedPoints} points, Used ${redeemedPointsFromTx} points for discount`);
             
-            // Update coupon: add earned points to total, add redeemed points to redeemed
+            // Calculate new values
+            // Total points increases by earned points from this purchase
             const newTotalPoints = coupon.totalPoints + earnedPoints;
+            // Redeemed points increases by points used for discount
             const newRedeemedPoints = coupon.redeemedPoints + redeemedPointsFromTx;
+            // Available = Total - Redeemed
+            const newAvailablePoints = newTotalPoints - newRedeemedPoints;
             
-            console.log(`New coupon state: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newTotalPoints - newRedeemedPoints}`);
+            console.log(`- New state: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newAvailablePoints}`);
             
             await db.update(customerCoupons)
               .set({ 
