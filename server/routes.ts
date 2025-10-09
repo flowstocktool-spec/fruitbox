@@ -886,7 +886,7 @@ export function registerRoutes(app: Express): Server {
 
         if (coupon) {
           if (transaction.type === "purchase") {
-            // Points earned from this purchase
+            // Points earned from this purchase (based on amount spent)
             const earnedPoints = transaction.points || 0;
             // Points redeemed/used for discount in this transaction
             const pointsUsedForDiscount = transaction.pointsRedeemed || 0;
@@ -895,9 +895,10 @@ export function registerRoutes(app: Express): Server {
             console.log(`- Current: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}, Available=${coupon.totalPoints - coupon.redeemedPoints}`);
             console.log(`- Transaction: +${earnedPoints} earned, -${pointsUsedForDiscount} used for discount`);
 
-            // Total points ONLY increases by earned points
+            // ONLY add earned points to total (from the purchase itself)
+            // Do NOT add redeemed points to total - those are being spent!
             const newTotalPoints = coupon.totalPoints + earnedPoints;
-            // Redeemed points increases by points used for discount (reducing available balance)
+            // Increase redeemed counter by points used (this reduces available balance)
             const newRedeemedPoints = coupon.redeemedPoints + pointsUsedForDiscount;
 
             console.log(`- New: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newTotalPoints - newRedeemedPoints}`);
