@@ -300,69 +300,54 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
 
 
   return (
-    <Card data-testid="card-bill-upload">
-      <CardHeader>
-        <CardTitle className="font-heading">Upload Purchase Bill</CardTitle>
-        <CardDescription>Submit your bill with a referral code for discount</CardDescription>
+    <Card data-testid="card-bill-upload" className="border-card-border">
+      <CardHeader className="space-y-1">
+        <CardTitle className="font-heading text-2xl">Upload Bill</CardTitle>
+        <CardDescription className="text-base">Submit your purchase for verification</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="space-y-3">
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">📋 Campaign Benefits</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="bg-white dark:bg-blue-900/20 rounded p-2">
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        💝 Your welcome discount: <span className="font-bold">{discountPercentage}% OFF</span>
-                      </p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        📦 Minimum purchase: <span className="font-bold">${minPurchaseAmount}</span>
-                      </p>
-                    </div>
-                  </div>
+            {/* Campaign Benefits Card */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Campaign Benefits</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-card rounded-md p-3 border border-card-border">
+                  <p className="text-xs text-muted-foreground mb-1">Welcome Discount</p>
+                  <p className="text-lg font-bold text-primary">{discountPercentage}% OFF</p>
                 </div>
-
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Upload a Bill</h3>
-                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                    <li>Enter the referral code you received from a friend</li>
-                    <li>Take a photo or select your purchase bill (clear, original photo only)</li>
-                    <li>Enter the purchase amount (must match your bill)</li>
-                    <li>Submit for approval</li>
-                    <li>On approval, you get the welcome discount and your friend earns points!</li>
-                  </ol>
-                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                      ⚠️ <strong>Important:</strong> Upload only original, clear bills from the shop. Duplicate or fake bills will be rejected and may result in account suspension.
-                    </p>
-                  </div>
+                <div className="bg-card rounded-md p-3 border border-card-border">
+                  <p className="text-xs text-muted-foreground mb-1">Min. Purchase</p>
+                  <p className="text-lg font-bold text-foreground">${minPurchaseAmount}</p>
                 </div>
               </div>
+            </div>
 
+            {/* Referral Code Section */}
             {!referralCode && (
-              <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">New Customer? Get a Welcome Discount!</h3>
+              <div className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Have a Referral Code?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter a friend's code to get your welcome discount
+                  </p>
                 </div>
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  If a friend referred you to this shop, enter their referral code below to get a discount on this purchase.
-                </p>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-blue-900 dark:text-blue-100">Referral Code from Friend (Optional)</label>
+                <div className="space-y-3">
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="Enter referral code"
+                      placeholder="Enter code"
                       value={affiliateCode}
                       onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
                       data-testid="input-affiliate-code"
-                      className="bg-white dark:bg-gray-900"
+                      className="flex-1"
                     />
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => fetchAffiliateDetails(affiliateCode)}
                       disabled={loadingAffiliate || !affiliateCode.trim()}
                       data-testid="button-verify-code"
@@ -371,12 +356,12 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                     </Button>
                   </div>
                   {affiliateDetails && (
-                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        ✓ Using <strong>{affiliateDetails.name}</strong>'s referral code
+                    <div className="bg-chart-2/10 border border-chart-2/30 rounded-md p-3">
+                      <p className="text-sm font-medium text-foreground">
+                        ✓ Referred by {affiliateDetails.name}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                        You'll get {discountPercentage}% welcome discount! They'll earn points when your purchase is approved.
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {discountPercentage}% discount will be applied on approval
                       </p>
                     </div>
                   )}
@@ -419,97 +404,92 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               )}
             />
 
-            <div className="space-y-4">
-              <label className="text-sm font-medium">Bill Image (Optional)</label>
-              <div className="flex flex-col gap-4">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('bill-file')?.click()}
-                    className="flex-1"
-                    data-testid="button-upload-bill"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const input = document.getElementById('bill-camera') as HTMLInputElement;
-                      input?.click();
-                    }}
-                    className="flex-1"
-                    data-testid="button-camera-bill"
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Take Photo
-                  </Button>
-                </div>
-
-                <input
-                  id="bill-file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <input
-                  id="bill-camera"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
-                {previewUrl && (
-                  <div className="mt-4">
-                    <img
-                      src={previewUrl}
-                      alt="Bill preview"
-                      className="w-full h-48 object-cover rounded-lg border"
-                      data-testid="img-bill-preview"
-                    />
-                  </div>
-                )}
+            {/* File Upload */}
+            <div className="space-y-3">
+              <Label className="text-base">Bill Image (Optional)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('bill-file')?.click()}
+                  className="h-auto py-4"
+                  data-testid="button-upload-bill"
+                >
+                  <Upload className="h-5 w-5 mr-2" />
+                  Choose File
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.getElementById('bill-camera') as HTMLInputElement;
+                    input?.click();
+                  }}
+                  className="h-auto py-4"
+                  data-testid="button-camera-bill"
+                >
+                  <Camera className="h-5 w-5 mr-2" />
+                  Take Photo
+                </Button>
               </div>
+
+              <input
+                id="bill-file"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <input
+                id="bill-camera"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
+              {previewUrl && (
+                <div className="border border-card-border rounded-lg overflow-hidden">
+                  <img
+                    src={previewUrl}
+                    alt="Bill preview"
+                    className="w-full h-48 object-cover"
+                    data-testid="img-bill-preview"
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="border-t pt-4 mt-6">
-              <div className="border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
+            {/* Points Redemption Section */}
+            <div className="border-t border-border pt-6">
+              <div className="border border-card-border bg-accent/30 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 text-purple-600" />
-                    <Label className="text-base font-semibold text-purple-900 dark:text-purple-100">Existing Customer? Redeem Your Points!</Label>
+                    <Gift className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">Redeem Points</h3>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowRedemption(!showRedemption)}
-                    className="text-purple-700 dark:text-purple-300"
                   >
                     {showRedemption ? "Hide" : "Show"}
                   </Button>
                 </div>
 
-                <p className="text-sm text-purple-800 dark:text-purple-200 mb-3">
-                  Already have points? Use them to get a discount on this purchase!
-                </p>
-
                 {showRedemption && (
-                  <div className="space-y-4 p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Your Available Points</span>
-                        <span className="font-bold text-green-600">
-                          {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
-                        </span>
-                      </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-card rounded-md border border-card-border">
+                      <span className="text-sm text-muted-foreground">Available Points</span>
+                      <span className="text-lg font-bold text-primary">
+                        {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
+                      </span>
+                    </div>
 
-                      <Label htmlFor="pointsToRedeem">Points to Redeem</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="pointsToRedeem">Points to Use</Label>
                       <Input
                         id="pointsToRedeem"
                         type="number"
@@ -517,37 +497,30 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                         max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
                         value={pointsToRedeem}
                         onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
-                        placeholder="Enter points to redeem"
-                        className="bg-white dark:bg-gray-900"
+                        placeholder="Enter points"
                       />
-
-                      {pointsToRedeem > 0 && (
-                        <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border-2 border-green-300 dark:border-green-700">
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span>Original Amount:</span>
-                              <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
-                            </div>
-                            <div className="flex justify-between text-green-600 dark:text-green-400">
-                              <span>Discount (approx):</span>
-                              <span className="font-medium">-${calculatedDiscount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-lg border-t pt-1">
-                              <span>Final Amount:</span>
-                              <span className="text-blue-600 dark:text-blue-400">
-                                ${finalAmount.toFixed(2)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-xs text-muted-foreground border-t pt-1">
-                              <span>Remaining Points:</span>
-                              <span className="font-medium">
-                                {remainingPoints.toLocaleString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
+
+                    {pointsToRedeem > 0 && (
+                      <div className="p-4 bg-card rounded-md border border-card-border space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Bill Amount</span>
+                          <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Discount</span>
+                          <span className="font-medium text-chart-2">-${calculatedDiscount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-base font-bold border-t border-border pt-2">
+                          <span>Final Amount</span>
+                          <span className="text-primary">${Math.max(0, billAmount - calculatedDiscount).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
+                          <span>Points After</span>
+                          <span>{remainingPoints.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -555,11 +528,11 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-12 text-base font-semibold"
               disabled={uploadMutation.isPending || customerQuery.isLoading || campaignQuery.isLoading}
               data-testid="button-submit-bill"
             >
-              {uploadMutation.isPending ? "Uploading..." : "Submit Bill"}
+              {uploadMutation.isPending ? "Uploading..." : "Submit Bill for Approval"}
             </Button>
           </form>
         </Form>
