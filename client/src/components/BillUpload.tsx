@@ -341,36 +341,46 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               </div>
 
             {!referralCode && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Referral Code from Friend (Required for Discount)</label>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Enter referral code"
-                    value={affiliateCode}
-                    onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
-                    data-testid="input-affiliate-code"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fetchAffiliateDetails(affiliateCode)}
-                    disabled={loadingAffiliate || !affiliateCode.trim()}
-                    data-testid="button-verify-code"
-                  >
-                    {loadingAffiliate ? "Verifying..." : "Verify"}
-                  </Button>
+              <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">New Customer? Get a Welcome Discount!</h3>
                 </div>
-                {affiliateDetails && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
-                    <p className="text-sm text-green-800">
-                      ✓ Using <strong>{affiliateDetails.name}</strong>'s referral code
-                    </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      You'll get {discountPercentage}% welcome discount! They'll earn points when your purchase is approved.
-                    </p>
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  If a friend referred you to this shop, enter their referral code below to get a discount on this purchase.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-blue-900 dark:text-blue-100">Referral Code from Friend (Optional)</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter referral code"
+                      value={affiliateCode}
+                      onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                      data-testid="input-affiliate-code"
+                      className="bg-white dark:bg-gray-900"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fetchAffiliateDetails(affiliateCode)}
+                      disabled={loadingAffiliate || !affiliateCode.trim()}
+                      data-testid="button-verify-code"
+                    >
+                      {loadingAffiliate ? "Verifying..." : "Verify"}
+                    </Button>
                   </div>
-                )}
+                  {affiliateDetails && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        ✓ Using <strong>{affiliateDetails.name}</strong>'s referral code
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        You'll get {discountPercentage}% welcome discount! They'll earn points when your purchase is approved.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -467,69 +477,80 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               </div>
             </div>
 
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-base font-semibold">Redeem Points for Discount</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowRedemption(!showRedemption)}
-                >
-                  {showRedemption ? "Hide" : "Show"}
-                </Button>
-              </div>
+            <div className="border-t pt-4 mt-6">
+              <div className="border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-purple-600" />
+                    <Label className="text-base font-semibold text-purple-900 dark:text-purple-100">Existing Customer? Redeem Your Points!</Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowRedemption(!showRedemption)}
+                    className="text-purple-700 dark:text-purple-300"
+                  >
+                    {showRedemption ? "Hide" : "Show"}
+                  </Button>
+                </div>
 
-              {showRedemption && (
-                <div className="space-y-4 p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Your Available Points</span>
-                      <span className="font-bold text-green-600">
-                        {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
-                      </span>
-                    </div>
+                <p className="text-sm text-purple-800 dark:text-purple-200 mb-3">
+                  Already have points? Use them to get a discount on this purchase!
+                </p>
 
-                    <Label htmlFor="pointsToRedeem">Points to Redeem</Label>
-                    <Input
-                      id="pointsToRedeem"
-                      type="number"
-                      min="0"
-                      max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
-                      value={pointsToRedeem}
-                      onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder="Enter points to redeem"
-                    />
+                {showRedemption && (
+                  <div className="space-y-4 p-4 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 rounded-lg border">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Your Available Points</span>
+                        <span className="font-bold text-green-600">
+                          {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
+                        </span>
+                      </div>
 
-                    {pointsToRedeem > 0 && (
-                      <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border-2 border-green-300 dark:border-green-700">
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span>Original Amount:</span>
-                            <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
-                          </div>
-                          <div className="flex justify-between text-green-600 dark:text-green-400">
-                            <span>Discount (approx):</span>
-                            <span className="font-medium">-${calculatedDiscount.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between font-bold text-lg border-t pt-1">
-                            <span>Final Amount:</span>
-                            <span className="text-blue-600 dark:text-blue-400">
-                              ${finalAmount.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground border-t pt-1">
-                            <span>Remaining Points:</span>
-                            <span className="font-medium">
-                              {remainingPoints.toLocaleString()}
-                            </span>
+                      <Label htmlFor="pointsToRedeem">Points to Redeem</Label>
+                      <Input
+                        id="pointsToRedeem"
+                        type="number"
+                        min="0"
+                        max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
+                        value={pointsToRedeem}
+                        onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
+                        placeholder="Enter points to redeem"
+                        className="bg-white dark:bg-gray-900"
+                      />
+
+                      {pointsToRedeem > 0 && (
+                        <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border-2 border-green-300 dark:border-green-700">
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Original Amount:</span>
+                              <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
+                            </div>
+                            <div className="flex justify-between text-green-600 dark:text-green-400">
+                              <span>Discount (approx):</span>
+                              <span className="font-medium">-${calculatedDiscount.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-bold text-lg border-t pt-1">
+                              <span>Final Amount:</span>
+                              <span className="text-blue-600 dark:text-blue-400">
+                                ${finalAmount.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground border-t pt-1">
+                              <span>Remaining Points:</span>
+                              <span className="font-medium">
+                                {remainingPoints.toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <Button
