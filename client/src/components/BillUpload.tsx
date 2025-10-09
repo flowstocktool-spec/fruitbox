@@ -484,7 +484,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                     <div className="flex items-center justify-between p-3 bg-card rounded-md border border-card-border">
                       <span className="text-sm text-muted-foreground">Available Points</span>
                       <span className="text-lg font-bold text-primary">
-                        {(customerQuery.data?.totalPoints || 0 - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
+                        {((customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
                       </span>
                     </div>
 
