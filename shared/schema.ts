@@ -98,6 +98,9 @@ export const transactions = pgTable("transactions", {
   billImageUrl: text("bill_image_url"),
   referralCode: text("referral_code"),
   shopName: text("shop_name"),
+  discountType: text("discount_type"), // "referral" or "points"
+  discountAmount: integer("discount_amount").default(0),
+  pointsRedeemed: integer("points_redeemed").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
