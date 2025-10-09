@@ -878,32 +878,29 @@ export function registerRoutes(app: Express): Server {
         .returning();
 
       // Update points - ONLY in the coupon table, customer table will aggregate from coupons
-      if (transaction.type === "purchase") {
-        if (transaction.couponId) {
-          const [coupon] = await db.select()
-            .from(customerCoupons)
-            .where(eq(customerCoupons.id, transaction.couponId))
-            .limit(1);
+      if (transaction.couponId) {
+        const [coupon] = await db.select()
+          .from(customerCoupons)
+          .where(eq(customerCoupons.id, transaction.couponId))
+          .limit(1);
 
-          if (coupon) {
+        if (coupon) {
+          if (transaction.type === "purchase") {
             // Points earned from this purchase
             const earnedPoints = transaction.points || 0;
             // Points redeemed/used for discount in this transaction
-            const redeemedPointsFromTx = transaction.pointsRedeemed || 0;
+            const pointsUsedForDiscount = transaction.pointsRedeemed || 0;
 
-            console.log(`Approving transaction for coupon ${transaction.couponId}:`);
-            console.log(`- Current state: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}, Available=${coupon.totalPoints - coupon.redeemedPoints}`);
-            console.log(`- Transaction: Earned ${earnedPoints} points, Used ${redeemedPointsFromTx} points for discount`);
+            console.log(`Approving purchase transaction for coupon ${transaction.couponId}:`);
+            console.log(`- Current: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}, Available=${coupon.totalPoints - coupon.redeemedPoints}`);
+            console.log(`- Transaction: +${earnedPoints} earned, -${pointsUsedForDiscount} used for discount`);
 
-            // Calculate new values
-            // Total points increases by earned points from this purchase
+            // Total points ONLY increases by earned points
             const newTotalPoints = coupon.totalPoints + earnedPoints;
-            // Redeemed points increases by points used for discount
-            const newRedeemedPoints = coupon.redeemedPoints + redeemedPointsFromTx;
-            // Available = Total - Redeemed
-            const newAvailablePoints = newTotalPoints - newRedeemedPoints;
+            // Redeemed points increases by points used for discount (reducing available balance)
+            const newRedeemedPoints = coupon.redeemedPoints + pointsUsedForDiscount;
 
-            console.log(`- New state: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newAvailablePoints}`);
+            console.log(`- New: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newTotalPoints - newRedeemedPoints}`);
 
             await db.update(customerCoupons)
               .set({ 
@@ -911,33 +908,22 @@ export function registerRoutes(app: Express): Server {
                 redeemedPoints: newRedeemedPoints
               })
               .where(eq(customerCoupons.id, transaction.couponId));
-          }
-        }
-      } else if (transaction.type === "referral") {
-        // Add points for referral
-        if (transaction.couponId) {
-          const [coupon] = await db.select()
-            .from(customerCoupons)
-            .where(eq(customerCoupons.id, transaction.couponId))
-            .limit(1);
 
-          if (coupon) {
+          } else if (transaction.type === "referral") {
+            // Referral: ONLY add earned points to total
+            console.log(`Approving referral for coupon ${transaction.couponId}: +${transaction.points} points`);
+            
             await db.update(customerCoupons)
               .set({ totalPoints: coupon.totalPoints + transaction.points })
               .where(eq(customerCoupons.id, transaction.couponId));
-          }
-        }
-      } else if (transaction.type === "redemption") {
-        // Pure redemption transaction (points used without purchase)
-        if (transaction.couponId) {
-          const [coupon] = await db.select()
-            .from(customerCoupons)
-            .where(eq(customerCoupons.id, transaction.couponId))
-            .limit(1);
 
-          if (coupon) {
+          } else if (transaction.type === "redemption") {
+            // Pure redemption: ONLY increase redeemed points (reduces available)
+            const pointsToRedeem = Math.abs(transaction.points);
+            console.log(`Approving redemption for coupon ${transaction.couponId}: -${pointsToRedeem} available`);
+            
             await db.update(customerCoupons)
-              .set({ redeemedPoints: coupon.redeemedPoints + Math.abs(transaction.points) })
+              .set({ redeemedPoints: coupon.redeemedPoints + pointsToRedeem })
               .where(eq(customerCoupons.id, transaction.couponId));
           }
         }
