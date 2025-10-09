@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Store, Tag, TrendingUp } from "lucide-react";
 import { getCustomerShops, getCustomerCoupons } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { BillUpload } from "@/components/BillUpload"; // Assuming BillUpload is imported from here
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MyShopsProps {
   customerId: string;
@@ -12,6 +14,7 @@ interface MyShopsProps {
 
 export function MyShops({ customerId }: MyShopsProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: shops = [], isLoading, isError, error } = useQuery({
     queryKey: ['/api/customers', customerId, 'shops'],
     queryFn: () => getCustomerShops(customerId),
@@ -182,6 +185,23 @@ export function MyShops({ customerId }: MyShopsProps) {
                 </div>
               </div>
             </div>
+
+            {/* BillUpload Component Integration */}
+            {shopCoupon && shop.campaigns && shop.campaigns.length > 0 && (
+              <BillUpload
+                customerId={customerId}
+                couponId={shopCoupon.id}
+                campaignId={shop.campaigns?.[0]?.id}
+                pointRules={shop.campaigns[0]?.pointRules || []}
+                minPurchaseAmount={shop.campaigns[0]?.minPurchaseAmount || 0}
+                referralCode={shopCoupon.referralCode}
+                shopName={shop.shopName}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+                }}
+              />
+            )}
           </CardContent>
         </Card>
         );
