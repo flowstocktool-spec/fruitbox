@@ -182,7 +182,7 @@ export function CampaignBuilder({ onSubmit, defaultValues, storeId }: CampaignBu
                     Add Range
                   </Button>
                 </div>
-                
+
                 <div className="space-y-3">
                   {pointRules.map((rule, index) => (
                     <div key={index} className="border rounded-lg p-3 bg-muted/30">

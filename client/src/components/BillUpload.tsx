@@ -160,7 +160,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
 
       // Show appropriate message based on discount type
       let description = "Your bill is pending approval.";
-      
+
       if (response.discountType === "referral") {
         description = `Referral code applied! You'll get ${response.discountAmount}% off and earn points on approval.`;
       } else if (response.discountType === "points" && response.pointsRedeemed > 0) {
@@ -168,7 +168,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       } else if (response.points > 0) {
         description = `You'll earn ${response.points} points once approved.`;
       }
-      
+
       toast({
         title: "Bill uploaded successfully!",
         description,
@@ -289,15 +289,15 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
   const billAmount = parseFloat(form.getValues('amount')?.toString() || '0');
   let pointsDiscountPercentage = 0;
   let pointsCalculatedDiscount = 0;
-  
+
   if (pointsRedemptionValue > 0 && pointsRedemptionDiscount > 0) {
     // Proportional: if shop sets 100 points = 10% off, then 50 points = 5% off
     pointsDiscountPercentage = (pointsToRedeem / pointsRedemptionValue) * pointsRedemptionDiscount;
     pointsCalculatedDiscount = (billAmount * pointsDiscountPercentage) / 100;
   }
-  
+
   const remainingPoints = Math.max(0, (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0) - pointsToRedeem);
-  
+
   // Calculate referral/welcome discount (only if referral code is verified)
   const welcomeDiscountAmount = affiliateDetails && affiliateCode ? (billAmount * referralDiscountPercentage) / 100 : 0;
 
@@ -325,8 +325,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                 <div className="bg-card rounded-md p-3 border border-card-border">
                   <p className="text-xs text-muted-foreground mb-1">Points Redemption</p>
                   <p className="text-xs font-bold text-foreground">
-                    {pointsRedemptionValue > 0 && pointsRedemptionDiscount > 0 
-                      ? `${pointsRedemptionValue} pts = ${pointsRedemptionDiscount}%` 
+                    {pointsRedemptionValue > 0 && pointsRedemptionDiscount > 0
+                      ? `${pointsRedemptionValue} pts = ${pointsRedemptionDiscount}%`
                       : 'Not set'}
                   </p>
                 </div>

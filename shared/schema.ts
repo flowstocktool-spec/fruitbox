@@ -39,9 +39,9 @@ export const campaigns = pgTable("campaigns", {
   spendAmount: integer("spend_amount").default(100),
   earnPoints: integer("earn_points").default(5),
   minPurchaseAmount: integer("min_purchase_amount").notNull().default(0),
-  referralDiscountPercentage: integer("referral_discount_percentage").notNull().default(10), // Discount for new customers using referral
-  pointsRedemptionValue: integer("points_redemption_value").notNull().default(100), // How many points needed
-  pointsRedemptionDiscount: integer("points_redemption_discount").notNull().default(10), // Discount % for those points
+  referralDiscountPercentage: integer("referral_discount_percentage").default(10).notNull(),
+  pointsRedemptionValue: integer("points_redemption_value").notNull(), // e.g., 100 points
+  pointsRedemptionDiscount: integer("points_redemption_discount").notNull(), // e.g., 10% discount
   termsAndConditions: text("terms_and_conditions"),
   couponColor: text("coupon_color").notNull().default("#2563eb"),
   couponTextColor: text("coupon_text_color").notNull().default("#ffffff"),

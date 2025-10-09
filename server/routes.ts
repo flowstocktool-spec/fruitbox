@@ -1,4 +1,3 @@
-
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
@@ -25,7 +24,7 @@ declare module 'express-session' {
 export function registerRoutes(app: Express): Server {
   // Session middleware - persistent across restarts with iOS compatibility
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   app.use(
     session({
       store: new PgSession({
@@ -58,7 +57,7 @@ export function registerRoutes(app: Express): Server {
       const customerId = req.session?.customerId;
       const shopProfileId = req.session?.shopProfileId;
       const cookies = req.headers.cookie;
-      
+
       if (process.env.NODE_ENV === 'development') {
         console.log(`[${req.method}] ${req.path} - Session:${sessionId ? 'exists' : 'none'} Customer:${customerId || 'none'} Shop:${shopProfileId || 'none'} Cookies:${cookies ? 'present' : 'none'}`);
       }
@@ -67,12 +66,12 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ========== CUSTOMER AUTHENTICATION ==========
-  
+
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
     try {
       const { username, password, deviceId, deviceFingerprint } = req.body;
-      
+
       const [customer] = await db.select()
         .from(customers)
         .where(eq(customers.username, username))
@@ -94,7 +93,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       req.session.customerId = customer.id;
-      
+
       // Save session explicitly and wait for it to complete
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -106,7 +105,7 @@ export function registerRoutes(app: Express): Server {
           }
         });
       });
-      
+
       res.json(customer);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -117,7 +116,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/customers/reset-password", async (req, res) => {
     try {
       const { username, newPassword } = req.body;
-      
+
       if (!username || !newPassword) {
         return res.status(400).json({ error: "Username and new password are required" });
       }
@@ -146,7 +145,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/shops/reset-password", async (req, res) => {
     try {
       const { username, newPassword } = req.body;
-      
+
       if (!username || !newPassword) {
         return res.status(400).json({ error: "Username and new password are required" });
       }
@@ -204,35 +203,35 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ========== SHOP OWNER AUTHENTICATION ==========
-  
+
   // Shop Owner Registration
   app.post("/api/shops/register", async (req, res) => {
     try {
       const validatedData = insertShopProfileSchema.parse(req.body);
-      
+
       // Check if username already exists
       const [existingByUsername] = await db.select()
         .from(shopProfiles)
         .where(eq(shopProfiles.username, validatedData.username))
         .limit(1);
-      
+
       if (existingByUsername) {
         return res.status(400).json({ error: "Username already exists" });
       }
-      
+
       // Check if shop code already exists
       const [existingByCode] = await db.select()
         .from(shopProfiles)
         .where(eq(shopProfiles.shopCode, validatedData.shopCode))
         .limit(1);
-      
+
       if (existingByCode) {
         return res.status(400).json({ error: "Shop code already exists" });
       }
-      
+
       const [newShop] = await db.insert(shopProfiles).values(validatedData).returning();
       req.session.shopProfileId = newShop.id;
-      
+
       // Save session explicitly and wait for it to complete
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -244,18 +243,18 @@ export function registerRoutes(app: Express): Server {
           }
         });
       });
-      
+
       res.status(201).json(newShop);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
-  
+
   // Shop Owner Login
   app.post("/api/shops/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       const [shop] = await db.select()
         .from(shopProfiles)
         .where(eq(shopProfiles.username, username))
@@ -266,7 +265,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       req.session.shopProfileId = shop.id;
-      
+
       // Save session explicitly and wait for it to complete
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -278,7 +277,7 @@ export function registerRoutes(app: Express): Server {
           }
         });
       });
-      
+
       res.json(shop);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -321,7 +320,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/shops/switch/:shopId", async (req, res) => {
     try {
       const { shopId } = req.params;
-      
+
       const [shop] = await db.select()
         .from(shopProfiles)
         .where(eq(shopProfiles.id, shopId))
@@ -332,7 +331,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       req.session.shopProfileId = shop.id;
-      
+
       // Save session explicitly and wait for it to complete
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -344,7 +343,7 @@ export function registerRoutes(app: Express): Server {
           }
         });
       });
-      
+
       res.json(shop);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -381,7 +380,7 @@ export function registerRoutes(app: Express): Server {
         .from(shopProfiles)
         .where(eq(shopProfiles.id, req.params.id))
         .limit(1);
-      
+
       if (!shop) {
         return res.status(404).json({ error: "Shop not found" });
       }
@@ -398,7 +397,7 @@ export function registerRoutes(app: Express): Server {
         .set(req.body)
         .where(eq(shopProfiles.id, req.params.id))
         .returning();
-      
+
       if (!updated) {
         return res.status(404).json({ error: "Shop not found" });
       }
@@ -412,34 +411,34 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/shop-profiles/:shopId/customers", async (req, res) => {
     try {
       const { shopId } = req.params;
-      
+
       // Get all coupons for this shop
       const coupons = await db.select()
         .from(customerCoupons)
         .where(eq(customerCoupons.shopProfileId, shopId));
-      
+
       console.log(`Found ${coupons.length} coupons for shop ${shopId}`);
-      
+
       if (coupons.length === 0) {
         return res.json([]);
       }
-      
+
       const customerIds = Array.from(new Set(coupons.map(c => c.customerId)));
       console.log(`Unique customer IDs: ${customerIds.length}`, customerIds);
-      
+
       // Fetch all customers
       const allCustomers = await db.select()
         .from(customers);
-      
+
       console.log(`Total customers in database: ${allCustomers.length}`);
-      
+
       // Filter to only include customers with coupons for this shop
       const filteredCustomers = allCustomers.filter(customer => 
         customerIds.includes(customer.id)
       );
-      
+
       console.log(`Filtered customers for this shop: ${filteredCustomers.length}`);
-      
+
       // Enrich with coupon data
       const customersWithCoupons = filteredCustomers.map(customer => {
         const coupon = coupons.find(c => c.customerId === customer.id);
@@ -450,7 +449,7 @@ export function registerRoutes(app: Express): Server {
           couponRedeemedPoints: coupon?.redeemedPoints || 0,
         };
       });
-      
+
       res.json(customersWithCoupons);
     } catch (error: any) {
       console.error("Error fetching shop customers:", error);
@@ -464,7 +463,7 @@ export function registerRoutes(app: Express): Server {
       const validatedData = insertCustomerSchema.parse(req.body);
       const [customer] = await db.insert(customers).values(validatedData).returning();
       req.session.customerId = customer.id;
-      
+
       // Save session explicitly and wait for it to complete
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -476,7 +475,7 @@ export function registerRoutes(app: Express): Server {
           }
         });
       });
-      
+
       res.status(201).json(customer);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -491,7 +490,7 @@ export function registerRoutes(app: Express): Server {
         .from(customers)
         .where(eq(customers.referralCode, code))
         .limit(1);
-      
+
       if (!customer) {
         return res.status(404).json({ error: "Customer not found" });
       }
@@ -509,7 +508,7 @@ export function registerRoutes(app: Express): Server {
         .from(customers)
         .where(eq(customers.id, req.params.id))
         .limit(1);
-      
+
       if (!customer) {
         return res.status(404).json({ error: "Customer not found" });
       }
@@ -539,45 +538,45 @@ export function registerRoutes(app: Express): Server {
       const coupons = await db.select()
         .from(customerCoupons)
         .where(eq(customerCoupons.customerId, req.params.customerId));
-      
+
       console.log(`Found ${coupons.length} coupons for customer ${req.params.customerId}`);
-      
+
       const shopIds = Array.from(new Set(coupons.map(c => c.shopProfileId)));
       if (shopIds.length === 0) {
         return res.json([]);
       }
-      
+
       console.log(`Fetching data for ${shopIds.length} shops:`, shopIds);
-      
+
       // Fetch all shops and filter by IDs
       const allShops = await db.select()
         .from(shopProfiles);
-      
+
       const customerShopsData = allShops.filter(shop => 
         shopIds.includes(shop.id)
       );
-      
+
       console.log(`Found ${customerShopsData.length} matching shops`);
-      
+
       // Fetch campaigns for each shop
       const shopsWithCampaigns = await Promise.all(
         customerShopsData.map(async (shop) => {
           const shopCampaigns = await db.select()
             .from(campaigns)
             .where(eq(campaigns.storeId, shop.id));
-          
+
           console.log(`Shop ${shop.shopName} (${shop.id}) has ${shopCampaigns.length} campaigns`);
           if (shopCampaigns.length > 0) {
             console.log(`Campaign data:`, JSON.stringify(shopCampaigns[0], null, 2));
           }
-          
+
           return {
             ...shop,
             campaigns: shopCampaigns,
           };
         })
       );
-      
+
       console.log(`Returning ${shopsWithCampaigns.length} shops with campaign data`);
       res.json(shopsWithCampaigns);
     } catch (error: any) {
@@ -605,11 +604,11 @@ export function registerRoutes(app: Express): Server {
         .from(customerCoupons)
         .where(eq(customerCoupons.referralCode, code))
         .limit(1);
-      
+
       if (!coupon) {
         return res.status(404).json({ error: "Coupon not found" });
       }
-      
+
       res.json(coupon);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -632,9 +631,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/transactions", async (req, res) => {
     try {
       const { customerId, campaignId, shopProfileId } = req.query;
-      
+
       let query = db.select().from(transactions);
-      
+
       if (customerId) {
         const txs = await db.select()
           .from(transactions)
@@ -642,7 +641,7 @@ export function registerRoutes(app: Express): Server {
           .orderBy(desc(transactions.createdAt));
         return res.json(txs);
       }
-      
+
       if (campaignId) {
         const txs = await db.select()
           .from(transactions)
@@ -650,31 +649,31 @@ export function registerRoutes(app: Express): Server {
           .orderBy(desc(transactions.createdAt));
         return res.json(txs);
       }
-      
+
       if (shopProfileId) {
         // Get all customer coupons for this shop
         const shopCoupons = await db.select()
           .from(customerCoupons)
           .where(eq(customerCoupons.shopProfileId, shopProfileId as string));
-        
+
         console.log(`Shop ${shopProfileId} has ${shopCoupons.length} coupons`);
-        
+
         if (shopCoupons.length === 0) {
           console.log(`No coupons found for shop ${shopProfileId}`);
           return res.json([]);
         }
-        
+
         const couponIds = shopCoupons.map(c => c.id);
         console.log(`Coupon IDs for shop:`, couponIds);
-        
+
         // Get all transactions for these coupons
         const allTxs = await db.select()
           .from(transactions)
           .orderBy(desc(transactions.createdAt));
-        
+
         console.log(`Total transactions in database: ${allTxs.length}`);
         console.log(`Sample transaction couponIds:`, allTxs.slice(0, 3).map(tx => ({ id: tx.id, couponId: tx.couponId })));
-        
+
         // Filter to only include transactions for this shop's coupons
         const txs = allTxs.filter(tx => {
           const matches = tx.couponId && couponIds.includes(tx.couponId);
@@ -687,14 +686,14 @@ export function registerRoutes(app: Express): Server {
           }
           return matches;
         });
-        
+
         console.log(`Filtered ${txs.length} transactions for shop ${shopProfileId}`);
         console.log(`Shop coupon IDs:`, couponIds);
         console.log(`Transaction coupon IDs:`, allTxs.map(t => t.couponId).filter(Boolean));
-        
+
         return res.json(txs);
       }
-      
+
       return res.status(400).json({ error: "customerId, campaignId, or shopProfileId is required" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -705,21 +704,21 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("=== Transaction Creation Request ===");
       console.log("Request body:", JSON.stringify(req.body, null, 2));
-      
+
       const { customerId, couponId, campaignId, amount, referralCode, pointsRedeemed: requestedPointsRedeemed } = req.body;
-      
+
       // Validate mutual exclusivity: either referral code OR points redemption, not both
       if (referralCode && requestedPointsRedeemed > 0) {
         return res.status(400).json({ 
           error: "Cannot use referral code and points redemption together. Choose one discount type." 
         });
       }
-      
+
       let discountType = null;
       let discountAmount = 0;
       let pointsRedeemed = 0;
       let earnedPoints = 0;
-      
+
       // Get campaign for discount rules
       let campaign = null;
       if (campaignId) {
@@ -729,35 +728,35 @@ export function registerRoutes(app: Express): Server {
           .limit(1);
         campaign = campaignData;
       }
-      
+
       if (!campaign) {
         return res.status(400).json({ error: "Campaign not found" });
       }
-      
+
       // Handle REFERRAL DISCOUNT (for new customers)
       if (referralCode) {
         // Check if this is customer's first transaction at this shop
         const existingTransactions = await db.select()
           .from(transactions)
           .where(eq(transactions.customerId, customerId));
-        
+
         const firstPurchaseAtShop = !existingTransactions.some(tx => tx.couponId === couponId);
-        
+
         if (!firstPurchaseAtShop) {
           return res.status(400).json({ 
             error: "Referral discount is only valid for your first purchase at this shop." 
           });
         }
-        
+
         if (!campaign.referralDiscountPercentage || campaign.referralDiscountPercentage <= 0) {
           return res.status(400).json({ 
             error: "Shop owner hasn't configured referral discount yet." 
           });
         }
-        
+
         discountType = "referral";
         discountAmount = Math.round((amount * campaign.referralDiscountPercentage) / 100);
-        
+
         // Calculate earned points based on point rules
         if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
@@ -775,33 +774,35 @@ export function registerRoutes(app: Express): Server {
           .from(customerCoupons)
           .where(eq(customerCoupons.id, couponId as string))
           .limit(1);
-        
+
         if (!coupon) {
           return res.status(400).json({ error: "Coupon not found" });
         }
-        
+
         const availablePoints = coupon.totalPoints - coupon.redeemedPoints;
-        
+
         if (requestedPointsRedeemed > availablePoints) {
           return res.status(400).json({ 
             error: `Insufficient points. You have ${availablePoints} points available.` 
           });
         }
-        
+
         if (!campaign.pointsRedemptionValue || campaign.pointsRedemptionValue <= 0 || 
             !campaign.pointsRedemptionDiscount || campaign.pointsRedemptionDiscount <= 0) {
           return res.status(400).json({ 
             error: "Shop owner hasn't configured points redemption rules yet." 
           });
         }
-        
+
         discountType = "points";
         pointsRedeemed = requestedPointsRedeemed;
-        
-        // Calculate discount based on shop's redemption rules (proportional)
-        const discountPercentage = (requestedPointsRedeemed / campaign.pointsRedemptionValue) * campaign.pointsRedemptionDiscount;
+
+        // Calculate discount based on campaign's redemption settings
+        const { pointsRedemptionValue, pointsRedemptionDiscount } = campaign;
+        const redemptionUnits = pointsRedeemed / pointsRedemptionValue;
+        const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
         discountAmount = Math.round((amount * discountPercentage) / 100);
-        
+
         // Calculate earned points from this purchase
         if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
@@ -823,7 +824,7 @@ export function registerRoutes(app: Express): Server {
           }
         }
       }
-      
+
       // Create transaction with calculated values
       const transactionData = {
         ...req.body,
@@ -832,10 +833,10 @@ export function registerRoutes(app: Express): Server {
         discountAmount,
         pointsRedeemed,
       };
-      
+
       const validatedData = insertTransactionSchema.parse(transactionData);
       const [transaction] = await db.insert(transactions).values(validatedData).returning();
-      
+
       console.log("Created transaction with discount:", {
         id: transaction.id,
         discountType,
@@ -843,7 +844,7 @@ export function registerRoutes(app: Express): Server {
         pointsRedeemed,
         earnedPoints
       });
-      
+
       res.status(201).json(transaction);
     } catch (error: any) {
       console.error("Transaction creation error:", error);
@@ -855,7 +856,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/transactions/:id/approve", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       // Get the transaction
       const [transaction] = await db.select()
         .from(transactions)
@@ -889,11 +890,11 @@ export function registerRoutes(app: Express): Server {
             const earnedPoints = transaction.points || 0;
             // Points redeemed/used for discount in this transaction
             const redeemedPointsFromTx = transaction.pointsRedeemed || 0;
-            
+
             console.log(`Approving transaction for coupon ${transaction.couponId}:`);
             console.log(`- Current state: Total=${coupon.totalPoints}, Redeemed=${coupon.redeemedPoints}, Available=${coupon.totalPoints - coupon.redeemedPoints}`);
             console.log(`- Transaction: Earned ${earnedPoints} points, Used ${redeemedPointsFromTx} points for discount`);
-            
+
             // Calculate new values
             // Total points increases by earned points from this purchase
             const newTotalPoints = coupon.totalPoints + earnedPoints;
@@ -901,9 +902,9 @@ export function registerRoutes(app: Express): Server {
             const newRedeemedPoints = coupon.redeemedPoints + redeemedPointsFromTx;
             // Available = Total - Redeemed
             const newAvailablePoints = newTotalPoints - newRedeemedPoints;
-            
+
             console.log(`- New state: Total=${newTotalPoints}, Redeemed=${newRedeemedPoints}, Available=${newAvailablePoints}`);
-            
+
             await db.update(customerCoupons)
               .set({ 
                 totalPoints: newTotalPoints,
@@ -952,7 +953,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/transactions/:id/reject", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       const [transaction] = await db.select()
         .from(transactions)
         .where(eq(transactions.id, id))
@@ -981,7 +982,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/campaigns", async (req, res) => {
     try {
       const { storeId } = req.query;
-      
+
       if (storeId) {
         // Filter by storeId if provided
         const storeCampaigns = await db.select()
@@ -1001,11 +1002,11 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/campaigns", async (req, res) => {
     try {
       const validatedData = insertCampaignSchema.parse(req.body);
-      
+
       const [campaign] = await db.insert(campaigns)
         .values(validatedData)
         .returning();
-      
+
       res.status(201).json(campaign);
     } catch (error: any) {
       if (error.name === "ZodError") {
