@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fruitbox-pwa-v2'; // Updated for mobile auth fix
+const CACHE_NAME = 'fruitbox-pwa-v3'; // Fixed service worker fetch issue
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -38,13 +38,13 @@ self.addEventListener('fetch', (event) => {
 
   // Network-first strategy for API calls (important for real-time data)
   if (url.pathname.startsWith('/api/')) {
+    // Clone the request to ensure credentials are included
+    const modifiedRequest = new Request(request, {
+      credentials: 'include'
+    });
+    
     event.respondWith(
-      fetch(request, {
-        credentials: 'include', // Explicitly include credentials for mobile PWA
-        headers: request.headers,
-        method: request.method,
-        body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined
-      })
+      fetch(modifiedRequest)
         .catch(() => {
           return new Response(JSON.stringify({ error: 'Network error, please check connection' }), {
             status: 503,
