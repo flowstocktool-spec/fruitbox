@@ -117,32 +117,16 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
         }
       }
 
-      // Calculate points redemption discount
-      const campaign = campaignQuery.data;
-      const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
-      const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
-
-      // Calculate how many redemption units the customer is using
-      const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
-      const pointsDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
-      const billAmount = parseFloat(data.amount.toString());
-      const pointsCalculatedDiscount = (billAmount * pointsDiscountPercentage) / 100;
-
-      // Calculate net points (earned points minus redeemed points)
-      const netPoints = showRedemption && pointsToRedeem > 0
-        ? earnedPoints - pointsToRedeem
-        : earnedPoints;
-
       const transactionData = {
         customerId,
         couponId: couponId,
         campaignId: campaignId || undefined,
         type: "purchase" as const,
         amount: data.amount,
-        points: netPoints, // This will be negative if redemption > earned
         status: "pending" as const,
         billImageUrl,
         referralCode: affiliateCode || undefined,
+        pointsRedeemed: pointsToRedeem || 0,
         shopName: shopName || "",
       };
 
@@ -174,11 +158,20 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
 
       const earnedPoints = response.points || 0;
 
+      // Show appropriate message based on discount type
+      let description = "Your bill is pending approval.";
+      
+      if (response.discountType === "referral") {
+        description = `Referral code applied! You'll get ${response.discountAmount}% off and earn points on approval.`;
+      } else if (response.discountType === "points" && response.pointsRedeemed > 0) {
+        description = `${response.pointsRedeemed} points redeemed for $${response.discountAmount} discount! You'll earn points from this purchase too.`;
+      } else if (response.points > 0) {
+        description = `You'll earn ${response.points} points once approved.`;
+      }
+      
       toast({
         title: "Bill uploaded successfully!",
-        description: affiliateCode
-          ? `Your bill is submitted with referral code ${affiliateCode}. You'll earn ${earnedPoints} points and get ${referralDiscountPercentage}% welcome discount on approval!`
-          : `Your bill is pending approval. You'll earn ${earnedPoints} points once approved.`,
+        description,
       });
       // Force refresh customer data
       customerQuery.refetch();
@@ -364,13 +357,13 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                 </div>
               </div>
 
-            {/* Referral Code Section */}
-            {!referralCode && (
+            {/* Referral Code Section - Only show if NOT using points redemption */}
+            {!referralCode && !showRedemption && (
               <div className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Have a Referral Code?</h3>
+                  <h3 className="font-semibold text-foreground mb-1">New Customer? Use Referral Code</h3>
                   <p className="text-sm text-muted-foreground">
-                    Enter a friend's code to get your welcome discount
+                    Enter a friend's code to get {referralDiscountPercentage}% welcome discount on your first purchase
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -489,13 +482,14 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               )}
             </div>
 
-            {/* Points Redemption Section */}
+            {/* Points Redemption Section - Only show if NOT using referral code */}
+            {!affiliateDetails && (
             <div className="border-t border-border pt-6">
               <div className="border border-card-border bg-accent/30 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Gift className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-foreground">Redeem Points</h3>
+                    <h3 className="font-semibold text-foreground">Already a Customer? Redeem Points</h3>
                   </div>
                   <Button
                     type="button"
@@ -553,6 +547,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                 )}
               </div>
             </div>
+            )}
 
             <Button
               type="submit"
