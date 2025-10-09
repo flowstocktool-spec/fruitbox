@@ -87,6 +87,11 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
     enabled: !!campaignId,
   });
 
+  // Get campaign redemption settings
+  const campaign = campaignQuery.data;
+  const pointsRedemptionValue = campaign?.pointsRedemptionValue || 0;
+  const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 0;
+  const referralDiscountPercentage = campaign?.referralDiscountPercentage || 0;
 
   const uploadMutation = useMutation({
     mutationFn: async (data: BillUploadData) => {
@@ -278,12 +283,6 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
 
     uploadMutation.mutate(data);
   };
-
-  // Get campaign data - no defaults, use actual campaign values
-  const campaign = campaignQuery.data;
-  const referralDiscountPercentage = campaign?.referralDiscountPercentage || 0;
-  const pointsRedemptionValue = campaign?.pointsRedemptionValue || 0;
-  const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 0;
 
   // Calculate points redemption discount (proportional based on shop's settings)
   const billAmount = parseFloat(form.getValues('amount')?.toString() || '0');
@@ -595,26 +594,18 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                         <span className="text-muted-foreground">Bill Amount</span>
                         <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
                       </div>
-                      {pointsRedemptionValue > 0 && pointsRedemptionDiscount > 0 ? (
-                        <>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Points Discount ({pointsDiscountPercentage.toFixed(1)}%)</span>
-                            <span className="font-medium text-chart-2">-${pointsCalculatedDiscount.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-base font-bold border-t border-border pt-2">
-                            <span>Final Amount</span>
-                            <span className="text-primary">${Math.max(0, billAmount - pointsCalculatedDiscount).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
-                            <span>Points After</span>
-                            <span>{remainingPoints.toLocaleString()}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-sm text-amber-600 dark:text-amber-400">
-                          ⚠️ Shop owner hasn't configured points redemption rules yet.
-                        </div>
-                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Points Discount ({pointsDiscountPercentage.toFixed(1)}%)</span>
+                        <span className="font-medium text-chart-2">-${pointsCalculatedDiscount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-bold border-t border-border pt-2">
+                        <span>Final Amount</span>
+                        <span className="text-primary">${Math.max(0, billAmount - pointsCalculatedDiscount).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
+                        <span>Points After</span>
+                        <span>{remainingPoints.toLocaleString()}</span>
+                      </div>
                     </div>
                   )}
                 </div>
