@@ -75,6 +75,19 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
     enabled: !!customerId,
   });
 
+  // Fetch campaign data for redemption rules
+  const campaignQuery = useQuery({
+    queryKey: ['/api/campaigns', campaignId],
+    queryFn: async () => {
+      if (!campaignId) return null;
+      const response = await fetch(`/api/campaigns/${campaignId}`, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch campaign');
+      return response.json();
+    },
+    enabled: !!campaignId,
+  });
+
+
   const uploadMutation = useMutation({
     mutationFn: async (data: BillUploadData) => {
       // Validate couponId is present
@@ -93,13 +106,40 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
         });
       }
 
+      // Calculate points based on amount and point rules
+      let earnedPoints = 0;
+      if (pointRules && pointRules.length > 0) {
+        for (const rule of pointRules) {
+          if (data.amount >= rule.minAmount && data.amount <= rule.maxAmount) {
+            earnedPoints = rule.points;
+            break;
+          }
+        }
+      }
+
+      // Calculate discount based on campaign's redemption rules
+      const campaign = campaignQuery.data;
+      const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
+      const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
+
+      // Calculate how many redemption units the customer is using
+      const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
+      const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+      const billAmount = parseFloat(data.amount.toString());
+      const calculatedDiscount = (billAmount * discountPercentage) / 100;
+
+      // Calculate net points (earned points minus redeemed points)
+      const netPoints = showRedemption && pointsToRedeem > 0
+        ? earnedPoints - pointsToRedeem
+        : earnedPoints;
+
       const transactionData = {
         customerId,
         couponId: couponId,
         campaignId: campaignId || undefined,
         type: "purchase" as const,
         amount: data.amount,
-        points: calculatePointsFromRules(data.amount, pointRules),
+        points: netPoints, // This will be negative if redemption > earned
         status: "pending" as const,
         billImageUrl,
         referralCode: affiliateCode || undefined,
@@ -243,25 +283,21 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       }
     }
 
-    // Calculate points based on amount and point rules
-    let earnedPoints = 0;
-    if (pointRules && pointRules.length > 0) {
-      for (const rule of pointRules) {
-        if (purchaseAmount >= rule.minAmount && purchaseAmount <= rule.maxAmount) {
-          earnedPoints = rule.points;
-          break;
-        }
-      }
-    }
-
-    console.log("Submitting transaction with campaignId:", campaignId);
-
     uploadMutation.mutate(data);
   };
 
-  const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
-  const finalAmount = Math.max(0, parseFloat(form.getValues('amount').toString() || '0') - calculatedDiscount);
+  // Calculate discount based on campaign's redemption rules
+  const campaign = campaignQuery.data;
+  const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
+  const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
+
+  // Calculate how many redemption units the customer is using
+  const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
+  const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
+  const billAmount = parseFloat(form.getValues('amount')?.toString() || '0');
+  const calculatedDiscount = (billAmount * discountPercentage) / 100;
   const remainingPoints = Math.max(0, (customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0) - pointsToRedeem);
+
 
   return (
     <Card data-testid="card-bill-upload">
@@ -355,8 +391,11 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                         // Update preview amount when amount changes
                         const amountValue = parseFloat(e.target.value);
                         if (!isNaN(amountValue)) {
-                          const calculatedDiscount = (pointsToRedeem / 100) * (discountPercentage || 10);
-                          const finalAmount = Math.max(0, amountValue - calculatedDiscount);
+                          // Recalculate discount and final amount when amount changes
+                          const redemptionUnits = Math.floor(pointsToRedeem / pointsRedemptionValue);
+                          const currentDiscountPercentage = redemptionUnits * pointsRedemptionDiscount;
+                          const currentCalculatedDiscount = (amountValue * currentDiscountPercentage) / 100;
+                          const currentFinalAmount = Math.max(0, amountValue - currentCalculatedDiscount);
                           // This is a bit of a hack to trigger a re-render for the preview amount
                           // A more robust solution would involve lifting state or using a state management library
                           setPointsToRedeem(pointsToRedeem); // No change, but forces re-render
@@ -496,7 +535,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
             <Button
               type="submit"
               className="w-full"
-              disabled={uploadMutation.isPending || customerQuery.isLoading}
+              disabled={uploadMutation.isPending || customerQuery.isLoading || campaignQuery.isLoading}
               data-testid="button-submit-bill"
             >
               {uploadMutation.isPending ? "Uploading..." : "Submit Bill"}

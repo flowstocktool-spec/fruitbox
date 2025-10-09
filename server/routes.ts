@@ -748,8 +748,30 @@ export function registerRoutes(app: Express): Server {
         .returning();
 
       // Update points - ONLY in the coupon table, customer table will aggregate from coupons
-      if (transaction.type === "purchase" || transaction.type === "referral") {
-        // Add points for purchase/referral
+      if (transaction.type === "purchase") {
+        // For purchases, we may earn points AND redeem points simultaneously
+        if (transaction.couponId) {
+          const [coupon] = await db.select()
+            .from(customerCoupons)
+            .where(eq(customerCoupons.id, transaction.couponId))
+            .limit(1);
+
+          if (coupon) {
+            // If points are positive, add earned points
+            // If points are negative, it was a redemption - update redeemed points
+            const earnedPoints = transaction.points > 0 ? transaction.points : 0;
+            const redeemedPointsFromTx = transaction.points < 0 ? Math.abs(transaction.points) : 0;
+            
+            await db.update(customerCoupons)
+              .set({ 
+                totalPoints: coupon.totalPoints + earnedPoints,
+                redeemedPoints: coupon.redeemedPoints + redeemedPointsFromTx
+              })
+              .where(eq(customerCoupons.id, transaction.couponId));
+          }
+        }
+      } else if (transaction.type === "referral") {
+        // Add points for referral
         if (transaction.couponId) {
           const [coupon] = await db.select()
             .from(customerCoupons)
@@ -763,7 +785,7 @@ export function registerRoutes(app: Express): Server {
           }
         }
       } else if (transaction.type === "redemption") {
-        // Deduct points for redemption
+        // Pure redemption transaction (points used without purchase)
         if (transaction.couponId) {
           const [coupon] = await db.select()
             .from(customerCoupons)
