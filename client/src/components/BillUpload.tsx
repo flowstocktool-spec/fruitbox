@@ -357,20 +357,74 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                 </div>
               </div>
 
-            {/* Referral Code Section - Only show if NOT using points redemption */}
+            {/* Submission Type Selection */}
+            {!referralCode && !affiliateDetails && !showRedemption && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground mb-4">Choose how to submit your bill:</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5"
+                    onClick={() => {
+                      // Show referral code input
+                      const section = document.getElementById('referral-section');
+                      if (section) section.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <Gift className="h-6 w-6 text-primary" />
+                    <div className="text-center">
+                      <p className="font-semibold">New Customer</p>
+                      <p className="text-xs text-muted-foreground">Use friend's referral code</p>
+                    </div>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5"
+                    onClick={() => setShowRedemption(true)}
+                  >
+                    <Gift className="h-6 w-6 text-chart-2" />
+                    <div className="text-center">
+                      <p className="font-semibold">Existing Customer</p>
+                      <p className="text-xs text-muted-foreground">Redeem your points</p>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Referral Code Section - Only show if selected and NOT using points redemption */}
             {!referralCode && !showRedemption && (
-              <div className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">New Customer? Use Referral Code</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enter a friend's code to get {referralDiscountPercentage}% welcome discount on your first purchase
-                  </p>
+              <div id="referral-section" className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">New Customer - Use Referral Code</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter a friend's code to get {referralDiscountPercentage}% welcome discount
+                    </p>
+                  </div>
+                  {affiliateDetails && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setAffiliateCode("");
+                        setAffiliateDetails(null);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="Enter code"
+                      placeholder="Enter friend's code"
                       value={affiliateCode}
                       onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
                       data-testid="input-affiliate-code"
@@ -482,69 +536,70 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               )}
             </div>
 
-            {/* Points Redemption Section - Only show if NOT using referral code */}
-            {!affiliateDetails && (
+            {/* Points Redemption Section - Only show if selected and NOT using referral code */}
+            {!affiliateDetails && showRedemption && (
             <div className="border-t border-border pt-6">
               <div className="border border-card-border bg-accent/30 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-foreground">Already a Customer? Redeem Points</h3>
+                    <Gift className="h-5 w-5 text-chart-2" />
+                    <h3 className="font-semibold text-foreground">Existing Customer - Redeem Points</h3>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowRedemption(!showRedemption)}
+                    onClick={() => {
+                      setShowRedemption(false);
+                      setPointsToRedeem(0);
+                    }}
                   >
-                    {showRedemption ? "Hide" : "Show"}
+                    Cancel
                   </Button>
                 </div>
 
-                {showRedemption && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-card rounded-md border border-card-border">
-                      <span className="text-sm text-muted-foreground">Available Points</span>
-                      <span className="text-lg font-bold text-primary">
-                        {((customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="pointsToRedeem">Points to Use</Label>
-                      <Input
-                        id="pointsToRedeem"
-                        type="number"
-                        min="0"
-                        max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
-                        value={pointsToRedeem}
-                        onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
-                        placeholder="Enter points"
-                      />
-                    </div>
-
-                    {pointsToRedeem > 0 && (
-                      <div className="p-4 bg-card rounded-md border border-card-border space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Bill Amount</span>
-                          <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Points Discount ({pointsDiscountPercentage}%)</span>
-                          <span className="font-medium text-chart-2">-${pointsCalculatedDiscount.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-base font-bold border-t border-border pt-2">
-                          <span>Final Amount</span>
-                          <span className="text-primary">${Math.max(0, billAmount - pointsCalculatedDiscount).toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
-                          <span>Points After</span>
-                          <span>{remainingPoints.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    )}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-card rounded-md border border-card-border">
+                    <span className="text-sm text-muted-foreground">Available Points</span>
+                    <span className="text-lg font-bold text-primary">
+                      {((customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)).toLocaleString()}
+                    </span>
                   </div>
-                )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pointsToRedeem">Points to Use</Label>
+                    <Input
+                      id="pointsToRedeem"
+                      type="number"
+                      min="0"
+                      max={(customerQuery.data?.totalPoints || 0) - (customerQuery.data?.redeemedPoints || 0)}
+                      value={pointsToRedeem}
+                      onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
+                      placeholder="Enter points"
+                    />
+                  </div>
+
+                  {pointsToRedeem > 0 && (
+                    <div className="p-4 bg-card rounded-md border border-card-border space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Bill Amount</span>
+                        <span className="font-medium">${form.getValues('amount').toString() || '0'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Points Discount ({pointsDiscountPercentage}%)</span>
+                        <span className="font-medium text-chart-2">-${pointsCalculatedDiscount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-bold border-t border-border pt-2">
+                        <span>Final Amount</span>
+                        <span className="text-primary">${Math.max(0, billAmount - pointsCalculatedDiscount).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
+                        <span>Points After</span>
+                        <span>{remainingPoints.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             )}
