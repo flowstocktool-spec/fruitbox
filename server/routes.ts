@@ -730,6 +730,10 @@ export function registerRoutes(app: Express): Server {
         campaign = campaignData;
       }
       
+      if (!campaign) {
+        return res.status(400).json({ error: "Campaign not found" });
+      }
+      
       // Handle REFERRAL DISCOUNT (for new customers)
       if (referralCode) {
         // Check if this is customer's first transaction at this shop
@@ -745,12 +749,17 @@ export function registerRoutes(app: Express): Server {
           });
         }
         
+        if (!campaign.referralDiscountPercentage || campaign.referralDiscountPercentage <= 0) {
+          return res.status(400).json({ 
+            error: "Shop owner hasn't configured referral discount yet." 
+          });
+        }
+        
         discountType = "referral";
-        const referralDiscountPercentage = campaign?.referralDiscountPercentage || 10;
-        discountAmount = Math.round((amount * referralDiscountPercentage) / 100);
+        discountAmount = Math.round((amount * campaign.referralDiscountPercentage) / 100);
         
         // Calculate earned points based on point rules
-        if (campaign?.pointRules) {
+        if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
             if (amount >= rule.minAmount && amount <= rule.maxAmount) {
               earnedPoints = rule.points;
@@ -779,18 +788,22 @@ export function registerRoutes(app: Express): Server {
           });
         }
         
+        if (!campaign.pointsRedemptionValue || campaign.pointsRedemptionValue <= 0 || 
+            !campaign.pointsRedemptionDiscount || campaign.pointsRedemptionDiscount <= 0) {
+          return res.status(400).json({ 
+            error: "Shop owner hasn't configured points redemption rules yet." 
+          });
+        }
+        
         discountType = "points";
         pointsRedeemed = requestedPointsRedeemed;
         
-        // Calculate discount based on points redemption rules (proportional)
-        const pointsRedemptionValue = campaign?.pointsRedemptionValue || 100;
-        const pointsRedemptionDiscount = campaign?.pointsRedemptionDiscount || 10;
-        // Make it proportional: if 100 points = 10% off, then 10 points = 1% off
-        const discountPercentage = (requestedPointsRedeemed / pointsRedemptionValue) * pointsRedemptionDiscount;
+        // Calculate discount based on shop's redemption rules (proportional)
+        const discountPercentage = (requestedPointsRedeemed / campaign.pointsRedemptionValue) * campaign.pointsRedemptionDiscount;
         discountAmount = Math.round((amount * discountPercentage) / 100);
         
         // Calculate earned points from this purchase
-        if (campaign?.pointRules) {
+        if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
             if (amount >= rule.minAmount && amount <= rule.maxAmount) {
               earnedPoints = rule.points;
@@ -801,7 +814,7 @@ export function registerRoutes(app: Express): Server {
       }
       // No discount - just calculate earned points
       else {
-        if (campaign?.pointRules) {
+        if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
             if (amount >= rule.minAmount && amount <= rule.maxAmount) {
               earnedPoints = rule.points;
