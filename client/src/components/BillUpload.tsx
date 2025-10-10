@@ -145,7 +145,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload bill");
+        const errorData = await response.json().catch(() => ({ error: "Failed to upload bill" }));
+        throw new Error(errorData.error || "Failed to upload bill");
       }
 
       return response.json();
@@ -182,11 +183,11 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       customerQuery.refetch();
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Upload error:", error);
       toast({
         title: "Upload failed",
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
