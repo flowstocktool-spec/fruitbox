@@ -31,21 +31,22 @@ export function registerRoutes(app: Express): Server {
         pool: pool,
         tableName: 'user_sessions',
         createTableIfMissing: true,
-        pruneSessionInterval: false, // Disable automatic pruning to avoid auth errors
+        pruneSessionInterval: 60 * 60, // Prune every hour instead of every minute
+        errorLog: (err: Error) => {
+          // Silently handle pruning errors to prevent console spam
+          if (!err.message.includes('password authentication failed')) {
+            console.error('Session store error:', err);
+          }
+        }
       }),
       secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
-      saveUninitialized: true, // Changed to true for better iOS compatibility
-      rolling: true, // Extend session on each request
-      name: 'loyalty.sid', // Custom name helps with iOS
-      proxy: true, // Trust proxy for secure cookies behind reverse proxy
+      saveUninitialized: false,
       cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        httpOnly: true, // Secure cookie, not accessible to JavaScript
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax', // Same-site for same-domain PWA
-        path: '/',
-        domain: undefined, // Let browser handle domain
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       },
     })
   );
@@ -793,10 +794,10 @@ export function registerRoutes(app: Express): Server {
             discountAmount: 0,
             pointsRedeemed: 0,
           };
-          
+
           const validatedReferralData = insertTransactionSchema.parse(referralTransactionData);
           const [referralTx] = await db.insert(transactions).values(validatedReferralData).returning();
-          
+
           // Immediately update referrer's points
           await db.update(customerCoupons)
             .set({ totalPoints: referrerCoupon.totalPoints + earnedPoints })
@@ -947,7 +948,7 @@ export function registerRoutes(app: Express): Server {
           } else if (transaction.type === "referral") {
             // Referral: ONLY add earned points to total
             console.log(`Approving referral for coupon ${transaction.couponId}: +${transaction.points} points`);
-            
+
             await db.update(customerCoupons)
               .set({ totalPoints: coupon.totalPoints + transaction.points })
               .where(eq(customerCoupons.id, transaction.couponId));
@@ -956,7 +957,7 @@ export function registerRoutes(app: Express): Server {
             // Pure redemption: ONLY increase redeemed points (reduces available)
             const pointsToRedeem = Math.abs(transaction.points);
             console.log(`Approving redemption for coupon ${transaction.couponId}: -${pointsToRedeem} available`);
-            
+
             await db.update(customerCoupons)
               .set({ redeemedPoints: coupon.redeemedPoints + pointsToRedeem })
               .where(eq(customerCoupons.id, transaction.couponId));
