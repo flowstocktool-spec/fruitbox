@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
@@ -8,22 +9,22 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// Neon serverless for main database operations (better for mobile/external access)
+const sql = neon(process.env.DATABASE_URL);
+export const db = drizzle(sql, { schema });
+
+// Small connection pool for session store only
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
-  // Optimized pool settings for smooth performance
-  max: 20, // Maximum number of clients in the pool
-  min: 2, // Minimum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Return an error if connection takes longer than 10 seconds
-  allowExitOnIdle: true, // Allow the pool to exit when all clients are idle
+  max: 5, // Small pool just for sessions
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Handle pool errors gracefully
 pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
+  console.error('Session pool error:', err);
 });
-
-export const db = drizzle(pool, { schema });
