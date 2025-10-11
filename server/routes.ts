@@ -754,10 +754,22 @@ export function registerRoutes(app: Express): Server {
           });
         }
 
+        // Find the referrer's coupon by referral code
+        const [referrerCoupon] = await db.select()
+          .from(customerCoupons)
+          .where(eq(customerCoupons.referralCode, referralCode))
+          .limit(1);
+
+        if (!referrerCoupon) {
+          return res.status(400).json({ 
+            error: "Invalid referral code." 
+          });
+        }
+
         discountType = "referral";
         discountAmount = Math.round((amount * campaign.referralDiscountPercentage) / 100);
 
-        // Calculate earned points based on point rules
+        // Calculate earned points based on point rules - these will go to the REFERRER
         if (campaign.pointRules) {
           for (const rule of campaign.pointRules) {
             if (amount >= rule.minAmount && amount <= rule.maxAmount) {
@@ -766,6 +778,35 @@ export function registerRoutes(app: Express): Server {
             }
           }
         }
+
+        // Create a separate referral transaction for the referrer to get points
+        if (earnedPoints > 0) {
+          const referralTransactionData = {
+            customerId: referrerCoupon.customerId,
+            couponId: referrerCoupon.id,
+            campaignId: campaignId,
+            type: "referral" as const,
+            amount: amount,
+            status: "approved" as const, // Auto-approve referral rewards
+            points: earnedPoints,
+            discountType: null,
+            discountAmount: 0,
+            pointsRedeemed: 0,
+          };
+          
+          const validatedReferralData = insertTransactionSchema.parse(referralTransactionData);
+          const [referralTx] = await db.insert(transactions).values(validatedReferralData).returning();
+          
+          // Immediately update referrer's points
+          await db.update(customerCoupons)
+            .set({ totalPoints: referrerCoupon.totalPoints + earnedPoints })
+            .where(eq(customerCoupons.id, referrerCoupon.id));
+
+          console.log(`Created referral reward transaction for referrer ${referrerCoupon.customerId}: +${earnedPoints} points`);
+        }
+
+        // Reset earnedPoints to 0 for the new customer's transaction (they only get discount, not points)
+        earnedPoints = 0;
       }
       // Handle POINTS REDEMPTION (for existing customers)
       else if (requestedPointsRedeemed && requestedPointsRedeemed > 0) {
