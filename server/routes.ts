@@ -31,13 +31,7 @@ export function registerRoutes(app: Express): Server {
         pool: pool,
         tableName: 'user_sessions',
         createTableIfMissing: true,
-        pruneSessionInterval: 60 * 60, // Prune every hour instead of every minute
-        errorLog: (err: Error) => {
-          // Silently handle pruning errors to prevent console spam
-          if (!err.message.includes('password authentication failed')) {
-            console.error('Session store error:', err);
-          }
-        }
+        pruneSessionInterval: false, // Disable automatic pruning completely
       }),
       secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
