@@ -844,15 +844,8 @@ export function registerRoutes(app: Express): Server {
         const discountPercentage = redemptionUnits * pointsRedemptionDiscount;
         discountAmount = Math.round((amount * discountPercentage) / 100);
 
-        // Calculate earned points from this purchase
-        if (campaign.pointRules) {
-          for (const rule of campaign.pointRules) {
-            if (amount >= rule.minAmount && amount <= rule.maxAmount) {
-              earnedPoints = rule.points;
-              break;
-            }
-          }
-        }
+        // When redeeming points, customer does NOT earn new points from this purchase
+        // earnedPoints remains 0
       }
       // No discount - just calculate earned points
       else {
