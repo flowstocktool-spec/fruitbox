@@ -311,28 +311,6 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       <CardContent className="space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Campaign Benefits Card */}
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">Campaign Benefits</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-card rounded-md p-3 border border-card-border">
-                  <p className="text-xs text-muted-foreground mb-1">Referral Welcome Discount</p>
-                  <p className="text-lg font-bold text-primary">{referralDiscountPercentage > 0 ? `${referralDiscountPercentage}% OFF` : 'Not set'}</p>
-                </div>
-                <div className="bg-card rounded-md p-3 border border-card-border">
-                  <p className="text-xs text-muted-foreground mb-1">Points Redemption</p>
-                  <p className="text-xs font-bold text-foreground">
-                    {pointsRedemptionValue > 0 && pointsRedemptionDiscount > 0
-                      ? `${pointsRedemptionValue} pts = ${pointsRedemptionDiscount}%`
-                      : 'Not set'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Explanation Banner */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 space-y-3">
                 <h3 className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">📋 How to Submit Your Bill</h3>
