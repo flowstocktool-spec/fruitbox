@@ -22,8 +22,12 @@ declare module 'express-session' {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Trust proxy for Replit infrastructure
+  app.set('trust proxy', 1);
+  
   // Session middleware - persistent across restarts with iOS compatibility
   const isProduction = process.env.NODE_ENV === 'production';
+  const isReplit = !!process.env.REPLIT_DOMAINS;
 
   app.use(
     session({
@@ -32,15 +36,18 @@ export function registerRoutes(app: Express): Server {
         tableName: 'user_sessions',
         createTableIfMissing: true,
         pruneSessionInterval: false, // Disable automatic pruning completely
+        errorLog: (error) => {
+          console.error('Session store error:', error);
+        }
       }),
       secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: isReplit || isProduction, // Enable secure cookies on Replit (HTTPS)
         httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+        sameSite: 'lax', // Use 'lax' for better mobile compatibility
       },
     })
   );
