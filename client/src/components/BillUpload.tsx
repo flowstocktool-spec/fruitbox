@@ -13,6 +13,47 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
+// Utility function to compress image
+const compressImage = async (file: File, maxWidth = 1024, quality = 0.7): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 const billUploadSchema = z.object({
   amount: z.number().min(1, "Amount must be greater than 0"),
   billImage: z.any().optional(),
@@ -100,15 +141,23 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
         throw new Error("Coupon ID is required. Please make sure you're registered at this shop.");
       }
 
-      // Convert file to base64 if exists
+      // Compress and convert file to base64 if exists
       let billImageUrl = undefined;
       if (selectedFile) {
-        const reader = new FileReader();
-        billImageUrl = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(selectedFile);
-        });
+        try {
+          // Compress image to max 1024px width and 70% quality
+          billImageUrl = await compressImage(selectedFile, 1024, 0.7);
+          console.log('Original file size:', (selectedFile.size / 1024).toFixed(2), 'KB');
+          console.log('Compressed size:', (billImageUrl.length / 1024).toFixed(2), 'KB');
+        } catch (error) {
+          console.error('Image compression failed:', error);
+          toast({
+            title: "Image compression failed",
+            description: "Please try a different image",
+            variant: "destructive",
+          });
+          throw error;
+        }
       }
 
       // Calculate points based on amount and point rules
@@ -247,12 +296,29 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check file size and show warning if very large
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > 5) {
+        toast({
+          title: "Large image detected",
+          description: `Image is ${fileSizeMB.toFixed(1)}MB. It will be compressed for upload.`,
+        });
+      }
+
       setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      
+      // Create compressed preview
+      try {
+        const compressedUrl = await compressImage(file, 800, 0.8);
+        setPreviewUrl(compressedUrl);
+      } catch (error) {
+        // Fallback to original if compression fails
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
     }
   };
 
