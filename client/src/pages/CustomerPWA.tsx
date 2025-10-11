@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Gift, History, User, Receipt, UserPlus, Share2, LogOut, Store } from "lucide-react";
+import { Gift, History, User, Receipt, UserPlus, Share2, LogOut, Store, Award } from "lucide-react";
 import { PointsDashboard } from "@/components/PointsDashboard";
 import { TransactionItem } from "@/components/TransactionItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -34,7 +34,7 @@ export default function CustomerPWA() {
   const [isCreatingShareToken, setIsCreatingShareToken] = useState(false);
   const [selectedShop, setSelectedShop] = useState<any>(null);
   const [activeCoupon, setActiveCoupon] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("upload"); // State to manage active tab
+  const [activeTab, setActiveTab] = useState("points");
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -93,7 +93,6 @@ export default function CustomerPWA() {
           setIsLoggedIn(true);
           setIsCheckingAuth(false);
         } else {
-          // Session expired or not found - stay on login screen
           setCustomer(null);
           setIsLoggedIn(false);
           setIsCheckingAuth(false);
@@ -117,89 +116,28 @@ export default function CustomerPWA() {
     enabled: !!customerId,
   });
 
-  // If customer not found, redirect to login
   if (customerError && !isLoadingCustomer) {
     setLocation('/');
     return null;
   }
 
-  // Transactions query
+  const { data: customerCoupons = [] } = useQuery({
+    queryKey: ['/api/customer-coupons', customerId],
+    queryFn: () => getCustomerCoupons(customerId),
+    enabled: !!customerId,
+  });
+
+  const { data: customerShops = [] } = useQuery({
+    queryKey: ['/api/customers/shops', customerId],
+    queryFn: () => getCustomerShops(customerId),
+    enabled: !!customerId,
+  });
+
   const { data: transactions = [] } = useQuery({
-    queryKey: ['/api/transactions', customer?.id],
-    queryFn: () => getTransactions(customer?.id ?? '', undefined),
-    enabled: !!customer,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds to get updated points
+    queryKey: ['/api/transactions', customerId],
+    queryFn: () => getTransactions(customerId),
+    enabled: !!customerId,
   });
-
-  // Refetch customer data when transactions change
-  useEffect(() => {
-    if (customer?.id) {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers', customer.id] });
-    }
-  }, [transactions, customer?.id]);
-
-
-  // Fetch customer coupons with auto-refresh
-  const customerCouponsQuery = useQuery({
-    queryKey: ['/api/customer-coupons', customer?.id],
-    queryFn: async () => {
-      if (!customer?.id) return [];
-      return getCustomerCoupons(customer.id);
-    },
-    enabled: !!customer?.id,
-    refetchInterval: 15000, // Auto-refresh every 15 seconds
-    refetchIntervalInBackground: true,
-  });
-  const customerCoupons = customerCouponsQuery.data || [];
-
-
-  // Fetch customer's shops with auto-refresh
-  const customerShopsQuery = useQuery({
-    queryKey: ['/api/customers', customer?.id, 'shops'],
-    queryFn: async () => {
-      if (!customer?.id) return [];
-      return getCustomerShops(customer.id);
-    },
-    enabled: !!customer?.id,
-    refetchInterval: 15000, // Auto-refresh every 15 seconds
-    refetchIntervalInBackground: true,
-  });
-  const customerShops = customerShopsQuery.data || [];
-
-
-  // Automatically select first shop and coupon when data loads
-  useEffect(() => {
-    if (customerCoupons.length > 0 && customerShops.length > 0) {
-      // Auto-select first coupon if none selected
-      if (!activeCoupon) {
-        const firstCoupon = customerCoupons[0];
-        setActiveCoupon(firstCoupon);
-
-        // Find the corresponding shop
-        const shop = customerShops.find((s: any) => s.id === firstCoupon.shopProfileId);
-        if (shop) {
-          setSelectedShop(shop);
-        }
-      }
-      // If coupon is selected but shop is not, find the shop
-      else if (!selectedShop && activeCoupon) {
-        const shop = customerShops.find((s: any) => s.id === activeCoupon.shopProfileId);
-        if (shop) {
-          setSelectedShop(shop);
-        }
-      }
-    }
-  }, [customerCoupons, customerShops, activeCoupon, selectedShop]);
-
-  // Sync activeCoupon when selectedShop changes
-  useEffect(() => {
-    if (selectedShop && customerCoupons.length > 0) {
-      const matchingCoupon = customerCoupons.find((c: any) => c.shopProfileId === selectedShop.id);
-      if (matchingCoupon && matchingCoupon.id !== activeCoupon?.id) {
-        setActiveCoupon(matchingCoupon);
-      }
-    }
-  }, [selectedShop, customerCoupons]);
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
@@ -218,10 +156,9 @@ export default function CustomerPWA() {
     onSuccess: (data) => {
       setCustomer(data);
       setIsLoggedIn(true);
-      setIsCheckingAuth(false);
       toast({
         title: "Welcome back!",
-        description: "You're now logged in. Next time you'll be automatically signed in.",
+        description: `Logged in as ${data.name}`,
       });
     },
     onError: (error: Error) => {
@@ -235,20 +172,32 @@ export default function CustomerPWA() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ username, newPassword }: { username: string; newPassword: string }) => {
-      const { resetCustomerPassword } = await import("@/lib/api");
+      const resetCustomerPassword = async (username: string, newPassword: string) => {
+        const response = await fetch('/api/customers/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, newPassword }),
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Password reset failed');
+        }
+        return response.json();
+      };
       return resetCustomerPassword(username, newPassword);
     },
     onSuccess: () => {
-      toast({
-        title: "Password reset successful",
-        description: "You can now login with your new password",
-      });
       setShowPasswordReset(false);
+      toast({
+        title: "Password Reset Successful",
+        description: "You can now login with your new password.",
+      });
       setResetData({ username: "", newPassword: "", confirmPassword: "" });
     },
     onError: (error: Error) => {
       toast({
-        title: "Password reset failed",
+        title: "Reset failed",
         description: error.message,
         variant: "destructive",
       });
@@ -256,29 +205,23 @@ export default function CustomerPWA() {
   });
 
   const createCustomerMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const newCode = await generateReferralCode();
-      return createCustomer({
-        ...data,
-        campaignId: null,
-        referralCode: newCode,
-        totalPoints: 0,
-        redeemedPoints: 0,
-      });
-    },
-    onSuccess: (newCustomer) => {
-      setCustomer(newCustomer);
+    mutationFn: createCustomer,
+    onSuccess: async (data) => {
+      setCustomer(data);
       setIsLoggedIn(true);
       setShowRegistration(false);
+      
       toast({
-        title: "Welcome!",
-        description: "Your account has been created successfully.",
+        title: "Account created!",
+        description: `Welcome ${data.name}! Your account has been created successfully.`,
       });
+      
+      await queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: "Failed to create account. Username might already exist.",
+        title: "Registration failed",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -288,7 +231,7 @@ export default function CustomerPWA() {
     e.preventDefault();
     if (!loginData.username || !loginData.password) {
       toast({
-        title: "Error",
+        title: "Missing information",
         description: "Please enter username and password.",
         variant: "destructive",
       });
@@ -297,25 +240,30 @@ export default function CustomerPWA() {
     loginMutation.mutate(loginData);
   };
 
-  const handleRegistration = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!registrationData.name || !registrationData.phone || !registrationData.username || !registrationData.password) {
       toast({
-        title: "Error",
+        title: "Missing information",
         description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
     }
-    createCustomerMutation.mutate(registrationData);
+
+    const referralCode = await generateReferralCode();
+    createCustomerMutation.mutate({
+      ...registrationData,
+      referralCode: referralCode,
+    });
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetData.newPassword || !resetData.confirmPassword || resetData.newPassword !== resetData.confirmPassword) {
+    if (resetData.newPassword !== resetData.confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match or are empty.",
+        title: "Passwords don't match",
+        description: "Please make sure both passwords are the same.",
         variant: "destructive",
       });
       return;
@@ -324,30 +272,28 @@ export default function CustomerPWA() {
   };
 
   const handleLogout = () => {
-    // Call logout API to destroy session
     logoutMutation.mutate();
   };
 
-  // Show loading screen while checking authentication
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your account...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show password reset form
+  // Password reset form
   if (showPasswordReset) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="font-heading text-center">Reset Password</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="font-heading">Reset Password</CardTitle>
+            <CardDescription>
               Enter your username and new password
             </CardDescription>
           </CardHeader>
@@ -357,6 +303,7 @@ export default function CustomerPWA() {
                 <Label htmlFor="reset-username">Username</Label>
                 <Input
                   id="reset-username"
+                  data-testid="input-reset-username"
                   value={resetData.username}
                   onChange={(e) => setResetData({ ...resetData, username: e.target.value })}
                   placeholder="Enter your username"
@@ -364,9 +311,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="reset-new-password">New Password</Label>
                 <Input
-                  id="new-password"
+                  id="reset-new-password"
+                  data-testid="input-reset-new-password"
                   type="password"
                   value={resetData.newPassword}
                   onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
@@ -375,9 +323,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Label htmlFor="reset-confirm-password">Confirm New Password</Label>
                 <Input
-                  id="confirm-password"
+                  id="reset-confirm-password"
+                  data-testid="input-reset-confirm-password"
                   type="password"
                   value={resetData.confirmPassword}
                   onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
@@ -387,6 +336,7 @@ export default function CustomerPWA() {
               </div>
               <Button
                 type="submit"
+                data-testid="button-reset-password"
                 className="w-full"
                 disabled={resetPasswordMutation.isPending}
               >
@@ -410,26 +360,24 @@ export default function CustomerPWA() {
     );
   }
 
-  // Show registration form
+  // Registration form
   if (showRegistration) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <UserPlus className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="font-heading text-center">Create Your Account</CardTitle>
-            <CardDescription className="text-center">
-              Join the referral program and start earning points!
+            <CardTitle className="font-heading">Create Account</CardTitle>
+            <CardDescription>
+              Join the referral rewards program
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleRegistration} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="reg-name">Full Name</Label>
                 <Input
-                  id="name"
+                  id="reg-name"
+                  data-testid="input-name"
                   value={registrationData.name}
                   onChange={(e) => setRegistrationData({ ...registrationData, name: e.target.value })}
                   placeholder="Enter your full name"
@@ -437,10 +385,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="reg-phone">Phone Number</Label>
                 <Input
-                  id="phone"
-                  type="tel"
+                  id="reg-phone"
+                  data-testid="input-phone"
                   value={registrationData.phone}
                   onChange={(e) => setRegistrationData({ ...registrationData, phone: e.target.value })}
                   placeholder="Enter your phone number"
@@ -448,9 +396,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email (Optional)</Label>
+                <Label htmlFor="reg-email">Email (optional)</Label>
                 <Input
-                  id="email"
+                  id="reg-email"
+                  data-testid="input-email"
                   type="email"
                   value={registrationData.email}
                   onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
@@ -458,9 +407,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="username">Username *</Label>
+                <Label htmlFor="reg-username">Username</Label>
                 <Input
-                  id="username"
+                  id="reg-username"
+                  data-testid="input-username"
                   value={registrationData.username}
                   onChange={(e) => setRegistrationData({ ...registrationData, username: e.target.value })}
                   placeholder="Choose a username"
@@ -468,9 +418,10 @@ export default function CustomerPWA() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">Password *</Label>
+                <Label htmlFor="reg-password">Password</Label>
                 <Input
-                  id="password"
+                  id="reg-password"
+                  data-testid="input-password"
                   type="password"
                   value={registrationData.password}
                   onChange={(e) => setRegistrationData({ ...registrationData, password: e.target.value })}
@@ -480,6 +431,7 @@ export default function CustomerPWA() {
               </div>
               <Button
                 type="submit"
+                data-testid="button-register"
                 className="w-full"
                 disabled={createCustomerMutation.isPending}
               >
@@ -500,18 +452,18 @@ export default function CustomerPWA() {
     );
   }
 
-  // Show login form only if not authenticated
+  // Login form
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
           <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mx-auto mb-4">
-            <User className="h-6 w-6 text-primary" />
+            <Award className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="font-heading text-center">Welcome Back</CardTitle>
           <CardDescription className="text-center">
-            Login to access your referral rewards
+            Login to your rewards account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -520,6 +472,7 @@ export default function CustomerPWA() {
               <Label htmlFor="login-username">Username</Label>
               <Input
                 id="login-username"
+                data-testid="input-login-username"
                 value={loginData.username}
                 onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                 placeholder="Enter your username"
@@ -530,6 +483,7 @@ export default function CustomerPWA() {
               <Label htmlFor="login-password">Password</Label>
               <Input
                 id="login-password"
+                data-testid="input-login-password"
                 type="password"
                 value={loginData.password}
                 onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
@@ -539,25 +493,28 @@ export default function CustomerPWA() {
             </div>
             <Button
               type="submit"
+              data-testid="button-login"
               className="w-full"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? "Logging in..." : "Login"}
             </Button>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full mr-2"
+                className="flex-1"
                 onClick={() => setShowRegistration(true)}
+                data-testid="button-show-register"
               >
-                Create New Account
+                Create Account
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full ml-2"
+                className="flex-1"
                 onClick={() => setShowPasswordReset(true)}
+                data-testid="button-forgot-password"
               >
                 Forgot Password?
               </Button>
@@ -569,9 +526,10 @@ export default function CustomerPWA() {
     );
   }
 
-  // Main dashboard - only shown when authenticated
+  // Main dashboard
   const totalPoints = customerData?.totalPoints || customer?.totalPoints || 0;
   const totalRedeemed = customerData?.redeemedPoints || customer?.redeemedPoints || 0;
+  const availablePoints = totalPoints - totalRedeemed;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -579,14 +537,14 @@ export default function CustomerPWA() {
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold font-heading">
+              <h1 className="text-xl font-bold font-heading" data-testid="text-customer-name">
                 {customer?.name}
               </h1>
-              <p className="text-sm text-muted-foreground">Referral Rewards</p>
+              <p className="text-sm text-muted-foreground">Rewards Member</p>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
@@ -595,8 +553,12 @@ export default function CustomerPWA() {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
-        <Tabs defaultValue="upload" value={activeTab} onValueChange={(value) => setActiveTab(value as string)} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="points" value={activeTab} onValueChange={(value) => setActiveTab(value as string)} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="points" data-testid="tab-points">
+              <Award className="h-4 w-4 mr-1" />
+              Points
+            </TabsTrigger>
             <TabsTrigger value="upload" data-testid="tab-upload">
               <Receipt className="h-4 w-4 mr-1" />
               Upload
@@ -605,33 +567,85 @@ export default function CustomerPWA() {
               <Store className="h-4 w-4 mr-1" />
               Shops
             </TabsTrigger>
-            <TabsTrigger value="share" data-testid="tab-share">
-              <User className="h-4 w-4 mr-1" />
-              Share
-            </TabsTrigger>
             <TabsTrigger value="history" data-testid="tab-history">
               <History className="h-4 w-4 mr-1" />
               History
             </TabsTrigger>
-            <TabsTrigger value="account" data-testid="tab-account">
-              <User className="h-4 w-4 mr-1" />
-              Account
-            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload" className="space-y-4">
-            <PointsDashboard
-              totalPoints={totalPoints}
-              redeemedPoints={totalRedeemed}
-              pointsToNextReward={2000}
-            />
+          {/* Points Tab */}
+          <TabsContent value="points" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Your Points</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center py-6">
+                  <div className="text-5xl font-bold text-primary mb-2" data-testid="text-available-points">
+                    {availablePoints.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Available Points</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-total-earned">
+                      {totalPoints.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">Total Earned</p>
+                  </div>
+                  <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400" data-testid="text-total-redeemed">
+                      {totalRedeemed.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">Redeemed</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="space-y-4">
-              {customerCoupons.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading flex items-center gap-2">
+                  <Share2 className="h-5 w-5" />
+                  Your Referral Code
+                </CardTitle>
+                <CardDescription>Share this code to earn points when friends shop</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-6 bg-primary/10 border-2 border-primary/30 rounded-lg text-center">
+                  <code className="text-3xl font-mono font-bold text-primary" data-testid="text-referral-code">
+                    {customer?.referralCode}
+                  </code>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Upload Tab */}
+          <TabsContent value="upload" className="space-y-4">
+            {customerCoupons.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-semibold text-lg mb-2">No Shops Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Register at a shop first to start earning points
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("shops")}
+                    data-testid="button-go-to-shops"
+                  >
+                    Browse Shops
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
                 <Card>
                   <CardHeader>
                     <CardTitle className="font-heading text-sm">Select Shop</CardTitle>
-                    <CardDescription>Choose which shop you're uploading a bill for</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -645,10 +659,10 @@ export default function CustomerPWA() {
                             variant={activeCoupon?.id === coupon.id ? "default" : "outline"}
                             className="w-full justify-start"
                             onClick={() => {
-                              console.log('Selecting shop:', shop.shopName, 'with campaignId:', shop.campaigns?.[0]?.id);
                               setActiveCoupon(coupon);
                               setSelectedShop(shop);
                             }}
+                            data-testid={`button-select-shop-${shop.id}`}
                           >
                             <Store className="h-4 w-4 mr-2" />
                             {shop.shopName}
@@ -659,346 +673,62 @@ export default function CustomerPWA() {
                     </div>
                   </CardContent>
                 </Card>
-              )}
 
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
-                  <Gift className="h-4 w-4" />
-                  💡 Understanding Your Points
-                </h3>
-                <div className="text-sm text-purple-800 dark:text-purple-200 space-y-2">
-                  <div className="flex justify-between items-center bg-white dark:bg-purple-900/30 rounded p-2">
-                    <span className="font-medium">Total Earned:</span>
-                    <span className="font-bold text-green-600 dark:text-green-400">{totalPoints.toLocaleString()} pts</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-white dark:bg-purple-900/30 rounded p-2">
-                    <span className="font-medium">Already Used:</span>
-                    <span className="font-bold text-red-600 dark:text-red-400">-{totalRedeemed.toLocaleString()} pts</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded p-2 border-2 border-green-300 dark:border-green-700">
-                    <span className="font-bold">Available to Use:</span>
-                    <span className="font-bold text-lg text-green-700 dark:text-green-300">{(totalPoints - totalRedeemed).toLocaleString()} pts</span>
-                  </div>
-                  <p className="text-xs mt-2 italic">
-                    ℹ️ Available points = Total Earned - Already Used. You can redeem available points for discounts on your next purchase!
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How to Upload a Bill</h3>
-                <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                  <li>Enter the referral code you received from a friend</li>
-                  <li>Take a photo or select your purchase bill (clear, original photo only)</li>
-                  <li>Enter the purchase amount (must match your bill)</li>
-                  <li>Submit for approval</li>
-                  <li>On approval, you get a welcome discount and your friend earns points!</li>
-                </ol>
-                <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                    ⚠️ <strong>Important:</strong> Upload only original, clear bills from the shop. Duplicate or fake bills will be rejected and may result in account suspension.
-                  </p>
-                </div>
-              </div>
-
-              {customerCoupons.length === 0 ? (
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
-                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="font-medium text-muted-foreground mb-2">No Shops Registered</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    You need to register as an affiliate at a shop first before uploading bills
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const tabsList = document.querySelector('[data-testid="tab-shops"]') as HTMLElement;
-                      if (tabsList) tabsList.click();
+                {selectedShop && activeCoupon && (
+                  <BillUpload
+                    customerId={customerId!}
+                    couponId={activeCoupon.id}
+                    campaignId={selectedShop.campaigns?.[0]?.id || ''}
+                    pointRules={selectedShop.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
+                    minPurchaseAmount={selectedShop.campaigns?.[0]?.minPurchaseAmount || 0}
+                    shopName={selectedShop.shopName}
+                    onSuccess={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/transactions', customerId] });
+                      setActiveTab("history");
                     }}
-                  >
-                    Go to Shops Tab
-                  </Button>
-                </div>
-              ) : !selectedShop || !activeCoupon ? (
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
-                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="font-medium text-muted-foreground mb-2">Select a Shop</p>
-                  <p className="text-sm text-muted-foreground">
-                    Please select a shop above to upload your bill
-                  </p>
-                </div>
-              ) : (
-                <BillUpload
-                  customerId={customer.id}
-                  couponId={activeCoupon?.id || null}
-                  campaignId={selectedShop?.campaigns?.[0]?.id || ""}
-                  pointRules={selectedShop?.campaigns?.[0]?.pointRules || [{ minAmount: 0, maxAmount: 999999, points: 10 }]}
-                  minPurchaseAmount={selectedShop?.campaigns?.[0]?.minPurchaseAmount || 0}
-                  discountPercentage={selectedShop?.campaigns?.[0]?.referralDiscountPercentage || 10}
-                  shopName={selectedShop?.shopName}
-                  onSuccess={() => {
-                    setActiveTab("history");
-                    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-                  }}
-                />
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="shops" className="space-y-4">
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                Become a Shop Affiliate
-              </h3>
-              <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                Register as an affiliate for any shop to get your unique referral code!
-              </p>
-              <ul className="text-xs text-green-700 dark:text-green-300 space-y-1 list-disc list-inside">
-                <li>Each shop gives you a unique referral code</li>
-                <li>Share your code with friends and family</li>
-                <li>Earn {customer.totalPoints > 0 ? '10%' : 'bonus'} points when they make purchases</li>
-                <li>Track all your affiliate shops in one place</li>
-              </ul>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Find & Register</CardTitle>
-                <CardDescription>Search for shops and become an affiliate</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ShopSearch
-                  customerId={customer.id}
-                  existingShopIds={customerCoupons.map((c: any) => c.shopProfileId)}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">My Affiliate Shops</CardTitle>
-                <CardDescription>Shops where you're registered as an affiliate</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MyShops customerId={customer.id} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="share" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">My Affiliate Coupons</CardTitle>
-                <CardDescription>Your unique referral codes for each shop</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                    <Gift className="h-4 w-4" />
-                    How Referrals Work
-                  </h3>
-                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-2 list-decimal list-inside">
-                    <li>Each shop gives you a unique coupon code below</li>
-                    <li>Share the code or QR link with friends</li>
-                    <li>They get a discount on their first purchase (varies by shop)</li>
-                    <li>You earn points based on their purchase amount (see each shop's point rules)</li>
-                    <li>Redeem your accumulated points for discounts on future purchases</li>
-                  </ol>
-                </div>
-
-                {customerCoupons.length === 0 ? (
-                  <div className="text-center py-8 bg-muted/50 rounded-lg">
-                    <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="font-medium text-muted-foreground mb-2">No Affiliate Coupons Yet</p>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Register as an affiliate at any shop to get your unique coupon code
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const tabsList = document.querySelector('[data-testid="tab-shops"]') as HTMLElement;
-                        if (tabsList) tabsList.click();
-                      }}
-                    >
-                      Go to Shops Tab
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {customerCoupons.map((coupon: any) => {
-                      const shop = customerShops.find((s: any) => s.id === coupon.shopProfileId);
-                      if (!shop) return null;
-
-                      return (
-                        <Card key={coupon.id} className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5" data-testid={`share-coupon-${shop.id}`}>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-2">
-                                <Store className="h-5 w-5 text-primary" />
-                                <div>
-                                  <p className="font-bold text-lg">{shop.shopName}</p>
-                                  <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
-                                </div>
-                              </div>
-                              <Badge variant="default" className="bg-green-600">{shop.discountPercentage}% Off</Badge>
-                            </div>
-
-                            <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-primary/50 rounded-lg p-4 mb-3">
-                              <div className="text-center mb-2">
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                                  Your Unique Coupon Code
-                                </p>
-                                <code className="text-2xl font-mono font-bold text-primary tracking-wider block my-2">
-                                  {coupon.referralCode}
-                                </code>
-                                <div className="flex gap-2 justify-center mt-3">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(coupon.referralCode);
-                                      toast({
-                                        title: "✅ Copied!",
-                                        description: "Referral code copied to clipboard",
-                                      });
-                                    }}
-                                  >
-                                    📋 Copy Code
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="text-center text-xs text-muted-foreground mt-3 pt-3 border-t">
-                                <p>💰 Earn {shop.pointsPerDollar || 1} pts per {shop.currencySymbol || '$'}1 spent</p>
-                                <p className="mt-1">Points: {coupon.totalPoints || 0} | Redeemed: {coupon.redeemedPoints || 0}</p>
-                              </div>
-                            </div>
-
-                            <Button
-                              className="w-full"
-                              onClick={async () => {
-                                if (!coupon) {
-                                  toast({
-                                    title: "Error",
-                                    description: "No coupon found for this shop",
-                                    variant: "destructive",
-                                  });
-                                  return;
-                                }
-
-                                setSelectedCouponForShare({ shop, coupon });
-                                setShareSheetOpen(true);
-                                setIsCreatingShareToken(true);
-
-                                try {
-                                  const sharedCoupon = await createSharedCoupon({
-                                    couponId: coupon.id,
-                                    sharedByCustomerId: customer.id,
-                                  });
-                                  setShareToken(sharedCoupon.shareToken);
-                                } catch (error) {
-                                  toast({
-                                    title: "Error",
-                                    description: "Failed to create share link",
-                                    variant: "destructive",
-                                  });
-                                  setShareSheetOpen(false);
-                                } finally {
-                                  setIsCreatingShareToken(false);
-                                }
-                              }}
-                              data-testid={`button-share-${shop.id}`}
-                            >
-                              <Share2 className="h-4 w-4 mr-2" />
-                              Share this Coupon
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                  />
                 )}
-              </CardContent>
-            </Card>
+
+                {!selectedShop && (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <p className="text-sm text-muted-foreground">Select a shop above to upload a bill</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
           </TabsContent>
 
+          {/* Shops Tab */}
+          <TabsContent value="shops" className="space-y-4">
+            <MyShops customerId={customerId!} />
+            <ShopSearch 
+              customerId={customerId!} 
+              existingShopIds={customerCoupons.map((c: any) => c.shopProfileId)}
+            />
+          </TabsContent>
+
+          {/* History Tab */}
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading">Transaction History</CardTitle>
-                <CardDescription>Your recent activity and points</CardDescription>
               </CardHeader>
               <CardContent>
                 {transactions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No transactions yet</p>
+                  <div className="text-center py-8">
+                    <History className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground">No transactions yet</p>
+                  </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-3">
                     {transactions.map((txn) => (
                       <TransactionItem key={txn.id} transaction={txn} />
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="account" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Account Information</CardTitle>
-                <CardDescription>Your personal details and login credentials</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium">Full Name</Label>
-                    <div className="mt-1 p-3 bg-muted rounded-md">{customer?.name}</div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Phone</Label>
-                      <div className="mt-1 p-3 bg-muted rounded-md">{customer?.phone}</div>
-                    </div>
-                    {customer?.email && (
-                      <div>
-                        <Label className="text-sm font-medium">Email</Label>
-                        <div className="mt-1 p-3 bg-muted rounded-md">{customer?.email}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-sm font-semibold mb-4">Login Credentials</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Username</Label>
-                      <div className="mt-1 p-3 bg-background border rounded-md font-mono">
-                        {customer?.username}
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Password</Label>
-                      <div className="mt-1 p-3 bg-background border rounded-md font-mono">
-                        {customer?.password}
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-                    ⚠️ Keep these credentials secure. Use them to login to your account.
-                  </p>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-sm font-semibold mb-2">Your Referral Code</h3>
-                  <div className="p-4 bg-primary/10 border-2 border-primary/30 rounded-lg text-center">
-                    <code className="text-2xl font-mono font-bold text-primary">
-                      {customer?.referralCode}
-                    </code>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Share this code with friends to earn points
-                  </p>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
