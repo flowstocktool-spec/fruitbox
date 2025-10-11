@@ -15,6 +15,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**October 11, 2025 - Customer UI Redesign - Simplified and Streamlined**
+- Completely redesigned customer PWA interface to be cleaner, simpler, and more intuitive
+- Removed excessive explanatory text and confusing instruction sections
+- Reorganized tabs from 5 to 4: Points, Upload, Shops, History (merged Account into Points tab)
+- Simplified points display with prominent "Available Points" shown upfront
+- Streamlined bill upload flow: select shop → upload bill → automatic redirect to history
+- Removed confusing warning boxes and "how to" sections that cluttered the UI
+- Made referral code prominently displayed on Points tab for easy access
+- UI now aligns better with actual application logic and user workflow
+- All functionality preserved - no regressions introduced
+- Architect-reviewed and approved for production
+
 **October 4, 2025 - GitHub Import Successfully Configured for Replit**
 - Imported GitHub repository and fully configured for Replit environment
 - All npm dependencies installed successfully (492 packages)
