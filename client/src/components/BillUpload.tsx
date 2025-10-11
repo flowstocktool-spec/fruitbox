@@ -384,8 +384,8 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
               </div>
             )}
 
-            {/* Referral Code Section - Only show if selected and NOT using points redemption */}
-            {!referralCode && !showRedemption && (
+            {/* Referral Code Section - Only show if not using referral code prop and not redeeming points */}
+            {!referralCode && !showRedemption && !affiliateDetails && (
               <div id="referral-section" className="border border-card-border bg-accent/50 rounded-lg p-4 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -394,19 +394,6 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                       Enter a friend's code to get {referralDiscountPercentage}% welcome discount
                     </p>
                   </div>
-                  {affiliateDetails && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setAffiliateCode("");
-                        setAffiliateDetails(null);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  )}
                 </div>
                 <div className="space-y-3">
                   <div className="flex gap-2">
@@ -428,16 +415,33 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                       {loadingAffiliate ? "Verifying..." : "Verify"}
                     </Button>
                   </div>
-                  {affiliateDetails && (
-                    <div className="bg-chart-2/10 border border-chart-2/30 rounded-md p-3">
-                      <p className="text-sm font-medium text-foreground">
-                        ✓ Referred by {affiliateDetails.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {referralDiscountPercentage}% welcome discount will be applied on approval
-                      </p>
-                    </div>
-                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Show verified referral details */}
+            {affiliateDetails && !showRedemption && (
+              <div className="bg-chart-2/10 border border-chart-2/30 rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      ✓ Referred by {affiliateDetails.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {referralDiscountPercentage}% welcome discount will be applied on approval
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setAffiliateCode("");
+                      setAffiliateDetails(null);
+                    }}
+                  >
+                    Clear
+                  </Button>
                 </div>
               </div>
             )}
