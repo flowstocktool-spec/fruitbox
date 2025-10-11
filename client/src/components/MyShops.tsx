@@ -185,23 +185,6 @@ export function MyShops({ customerId }: MyShopsProps) {
                 </div>
               </div>
             </div>
-
-            {/* BillUpload Component Integration */}
-            {shopCoupon && shop.campaigns && shop.campaigns.length > 0 && (
-              <BillUpload
-                customerId={customerId}
-                couponId={shopCoupon.id}
-                campaignId={shop.campaigns?.[0]?.id}
-                pointRules={shop.campaigns[0]?.pointRules || []}
-                minPurchaseAmount={shop.campaigns[0]?.minPurchaseAmount || 0}
-                referralCode={shopCoupon.referralCode}
-                shopName={shop.shopName}
-                onSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-                  queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
-                }}
-              />
-            )}
           </CardContent>
         </Card>
         );
