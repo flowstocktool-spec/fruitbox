@@ -31,7 +31,7 @@ export function registerRoutes(app: Express): Server {
         pool: pool,
         tableName: 'user_sessions',
         createTableIfMissing: true,
-        pruneSessionInterval: 60, // Prune expired sessions every 60 seconds
+        pruneSessionInterval: false, // Disable automatic pruning to avoid auth errors
       }),
       secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
