@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -77,6 +78,10 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
     shop.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Separate shops into available and registered
+  const availableShops = filteredShops.filter(shop => !existingShopIds.includes(shop.id));
+  const registeredShops = filteredShops.filter(shop => existingShopIds.includes(shop.id));
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -90,27 +95,46 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
       </div>
 
       <div className="space-y-3">
-        {filteredShops.length === 0 ? (
+        {/* Available Shops First */}
+        {availableShops.length > 0 && (
+          <>
+            <h3 className="text-sm font-semibold text-muted-foreground px-1">Available Shops</h3>
+            {availableShops.map((shop) => (
+              <ShopCard 
+                key={shop.id} 
+                shop={shop} 
+                hasCoupon={false}
+                onRegister={() => createCouponMutation.mutate(shop.id)}
+                isPending={createCouponMutation.isPending}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Registered Shops Second */}
+        {registeredShops.length > 0 && (
+          <>
+            <h3 className="text-sm font-semibold text-muted-foreground px-1 mt-6">Registered Shops</h3>
+            {registeredShops.map((shop) => (
+              <ShopCard 
+                key={shop.id} 
+                shop={shop} 
+                hasCoupon={true}
+                onRegister={() => {}}
+                isPending={false}
+              />
+            ))}
+          </>
+        )}
+
+        {/* No shops found */}
+        {filteredShops.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
               <Store className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">No shops found</p>
             </CardContent>
           </Card>
-        ) : (
-          filteredShops.map((shop) => {
-            const hasCoupon = existingShopIds.includes(shop.id);
-
-            return (
-              <ShopCard 
-                key={shop.id} 
-                shop={shop} 
-                hasCoupon={hasCoupon}
-                onRegister={() => createCouponMutation.mutate(shop.id)}
-                isPending={createCouponMutation.isPending}
-              />
-            );
-          })
         )}
       </div>
     </div>
