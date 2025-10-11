@@ -43,7 +43,7 @@ const compressImage = async (file: File, maxWidth = 1024, quality = 0.7): Promis
 
         // Draw and compress
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         // Convert to base64 with compression
         const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
         resolve(compressedBase64);
@@ -309,7 +309,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
       }
 
       setSelectedFile(file);
-      
+
       // Create compressed preview
       try {
         const compressedUrl = await compressImage(file, 800, 0.8);
@@ -384,7 +384,7 @@ export function BillUpload({ customerId, couponId, campaignId, pointRules, minPu
                 <div className="space-y-2">
                   <div className="bg-blue-100 dark:bg-blue-900/30 rounded p-2">
                     <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">🎁 NEW CUSTOMER? Use Referral Code</p>
-                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                    <p className="text-xs text-blue-800 dark:text-purple-200">
                       If this is your first purchase, enter a friend's referral code above to get a welcome discount. Your friend will also earn points!
                     </p>
                   </div>
