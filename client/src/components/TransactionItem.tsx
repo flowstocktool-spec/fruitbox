@@ -56,14 +56,19 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         </div>
         <div>
           <p className="font-medium" data-testid={`text-transaction-type-${transaction.id}`}>
-            {transaction.type === "purchase" ? "Purchase Reward" :
+            {transaction.type === "purchase" ? (
+              transaction.pointsRedeemed && transaction.pointsRedeemed > 0 
+                ? `Purchase (${transaction.pointsRedeemed} pts redeemed)` 
+                : "Purchase Reward"
+            ) :
              transaction.type === "referral" ? "Referral Bonus" :
-             transaction.type === "redemption" ? "Points Redeemed" :
+             transaction.type === "redemption" ? "Points Redeemed for Discount" :
              transaction.type}
           </p>
           <p className="text-sm text-muted-foreground">
             {format(transaction.createdAt, "MMM d, yyyy")}
             {isPending && " • Pending"}
+            {transaction.discountAmount > 0 && ` • $${transaction.discountAmount.toFixed(2)} discount`}
           </p>
         </div>
       </div>
