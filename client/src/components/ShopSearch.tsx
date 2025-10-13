@@ -8,7 +8,7 @@ import { Search, Store, Plus, Check, ExternalLink } from "lucide-react";
 import { getShopProfiles, createCustomerCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { setLocation } from "wouter";
 
 interface ShopSearchProps {
   customerId: string;
@@ -18,7 +18,6 @@ interface ShopSearchProps {
 export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const { data: shops = [] } = useQuery({
     queryKey: ['/api/shop-profiles'],
@@ -107,7 +106,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
                 hasCoupon={false}
                 onRegister={() => createCouponMutation.mutate(shop.id)}
                 isPending={createCouponMutation.isPending}
-                navigate={navigate}
+                setLocation={setLocation}
               />
             ))}
           </>
@@ -124,7 +123,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
                 hasCoupon={true}
                 onRegister={() => {}}
                 isPending={false}
-                navigate={navigate}
+                setLocation={setLocation}
               />
             ))}
           </>
@@ -149,13 +148,13 @@ function ShopCard({
   hasCoupon, 
   onRegister,
   isPending,
-  navigate
+  setLocation
 }: { 
   shop: any; 
   hasCoupon: boolean; 
   onRegister: () => void;
   isPending: boolean;
-  navigate: (path: string) => void;
+  setLocation: (path: string) => void;
 }) {
   const isAlreadyJoined = hasCoupon; // Assuming hasCoupon implies already joined for this context
 
@@ -199,7 +198,7 @@ function ShopCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/shop/${shop.shopCode}`)}
+              onClick={() => setLocation(`/shop/${shop.shopCode}`)}
               data-testid={`button-view-shop-${shop.id}`}
             >
               <ExternalLink className="h-4 w-4 mr-1" />
