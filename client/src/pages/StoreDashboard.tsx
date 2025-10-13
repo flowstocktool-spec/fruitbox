@@ -16,8 +16,7 @@ import { Store, LogOut, Settings, TrendingUp, Users, DollarSign } from "lucide-r
 import {
   getCampaigns,
   getTransactions,
-  getShopProfile,
-  getCurrentShop
+  getShopProfile
 } from "@/lib/api";
 
 export default function StoreDashboard() {
@@ -167,7 +166,20 @@ export default function StoreDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+              {shopProfile?.logo ? (
+                <img
+                  src={shopProfile.logo}
+                  alt={shopProfile.shopName}
+                  className="h-8 w-8 sm:h-10 sm:w-10 rounded-md object-cover border flex-shrink-0"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    img.style.display = "none";
+                    const fallback = img.nextElementSibling;
+                    if (fallback) fallback.classList.remove("hidden");
+                  }}
+                />
+              ) : null}
+              <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-primary flex items-center justify-center flex-shrink-0 ${shopProfile?.logo ? "hidden" : ""}`}>
                 <Store className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
               <div className="min-w-0">
@@ -191,22 +203,22 @@ export default function StoreDashboard() {
             title="Total Revenue"
             value={`${shopProfile?.currencySymbol || '$'}${totalRevenue.toLocaleString()}`}
             icon={DollarSign}
-            trend="+12.5%"
-            description={`% from last month`}
+            trend={{ value: 12.5, isPositive: true }}
+            description={`from last month`}
           />
           <StatsCard
             title="Active Customers"
             value={totalCustomers.toString()}
             icon={Users}
-            trend="+8.2%"
-            description={`% from last month`}
+            trend={{ value: 8.2, isPositive: true }}
+            description={`from last month`}
           />
           <StatsCard
             title="Conversion Rate"
             value={`${conversionRate}%`}
             icon={TrendingUp}
-            trend="+3.1%"
-            description={`% from last month`}
+            trend={{ value: 3.1, isPositive: true }}
+            description={`from last month`}
           />
         </div>
 

@@ -10,6 +10,7 @@ import StoreDashboard from "@/pages/StoreDashboard";
 import CustomerPWA from "@/pages/CustomerPWA";
 import JoinCampaign from "@/pages/JoinCampaign";
 import JoinSharedCoupon from "@/pages/JoinSharedCoupon";
+import PublicShopProfile from "@/pages/PublicShopProfile";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/customer/:code?" component={CustomerPWA} />
       <Route path="/join/:campaignId" component={JoinCampaign} />
       <Route path="/shared-coupon/:token" component={JoinSharedCoupon} />
+      <Route path="/shop/:shopCode" component={PublicShopProfile} />
       <Route path="/:rest*" component={NotFound} />
     </Switch>
   );

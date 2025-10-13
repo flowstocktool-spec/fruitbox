@@ -409,6 +409,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get shop profile by shop code (for public profile page)
+  app.get("/api/shop-profiles/by-code/:shopCode", async (req, res) => {
+    try {
+      const [shop] = await db.select()
+        .from(shopProfiles)
+        .where(eq(shopProfiles.shopCode, req.params.shopCode))
+        .limit(1);
+
+      if (!shop) {
+        return res.status(404).json({ error: "Shop not found" });
+      }
+      res.json(shop);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get customers for a shop
   app.get("/api/shop-profiles/:shopId/customers", async (req, res) => {
     try {
