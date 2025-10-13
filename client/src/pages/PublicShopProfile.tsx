@@ -29,13 +29,20 @@ export default function PublicShopProfile() {
     },
   });
 
-  const { data: campaigns = [] } = useQuery({
-    queryKey: ['/api/campaigns', { storeId: shop?.id }],
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+    queryKey: ['/api/campaigns', shop?.id],
     queryFn: async () => {
       if (!shop?.id) return [];
-      const response = await fetch(`/api/campaigns?storeId=${shop.id}`);
-      if (!response.ok) return [];
-      return response.json();
+      const response = await fetch(`/api/campaigns?storeId=${shop.id}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch campaigns:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      console.log('Campaigns fetched for shop:', shop.id, data);
+      return data;
     },
     enabled: !!shop?.id,
   });
@@ -70,6 +77,10 @@ export default function PublicShopProfile() {
   }
 
   const activeCampaigns = campaigns.filter((c: any) => c.isActive);
+  
+  console.log('Shop data:', shop);
+  console.log('All campaigns:', campaigns);
+  console.log('Active campaigns:', activeCampaigns);
   const businessHours = shop.businessHours || {};
   const socialLinks = shop.socialLinks || {};
 
@@ -220,7 +231,16 @@ export default function PublicShopProfile() {
         {/* Content Sections */}
         <div className="px-4 pb-6 space-y-4">
           {/* Active Campaigns & Offers */}
-          {activeCampaigns.length > 0 && (
+          {campaignsLoading ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="ml-3 text-muted-foreground">Loading campaigns...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : activeCampaigns.length > 0 ? (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
@@ -313,6 +333,13 @@ export default function PublicShopProfile() {
                     )}
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Gift className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No active campaigns at the moment</p>
               </CardContent>
             </Card>
           )}
