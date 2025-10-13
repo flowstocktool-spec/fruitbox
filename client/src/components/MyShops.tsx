@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Store, TrendingUp, ExternalLink } from "lucide-react";
+import { Store, TrendingUp, ExternalLink, Tag } from "lucide-react";
 import { getCustomerShops, getCustomerCoupons } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { BillUpload } from "@/components/BillUpload"; // Assuming BillUpload is imported from here
