@@ -8,7 +8,7 @@ import { Search, Store, Plus, Check, ExternalLink } from "lucide-react";
 import { getShopProfiles, createCustomerCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { setLocation } from "wouter";
+import { useLocation } from "wouter";
 
 interface ShopSearchProps {
   customerId: string;
@@ -18,6 +18,7 @@ interface ShopSearchProps {
 export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { data: shops = [] } = useQuery({
     queryKey: ['/api/shop-profiles'],
