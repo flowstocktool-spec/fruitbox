@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
   Store, MapPin, Phone, Mail, Globe, Clock, Share2, 
-  Award, TrendingUp, ExternalLink, ArrowLeft, Star, Users
+  Award, TrendingUp, ExternalLink, ArrowLeft, Star, Users,
+  Gift, Tag, Percent
 } from "lucide-react";
 import { SiFacebook, SiInstagram, SiX, SiLinkedin, SiTiktok, SiYoutube } from "react-icons/si";
 import { useLocation } from "wouter";
@@ -98,196 +99,195 @@ export default function PublicShopProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      {/* Header with back button */}
-      <div className="bg-white/80 dark:bg-gray-950/80 border-b sticky top-0 z-50 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+    <div className="min-h-screen bg-background">
+      {/* Fixed Header */}
+      <div className="bg-card/95 dark:bg-card/95 border-b sticky top-0 z-50 backdrop-blur-lg">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon"
             onClick={() => navigate("/")}
             data-testid="button-back"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            <ArrowLeft className="h-5 w-5" />
           </Button>
+          <div className="flex-1">
+            <h2 className="font-bold text-lg" data-testid="text-shop-name">{shop.shopName}</h2>
+            {shop.category && (
+              <p className="text-xs text-muted-foreground" data-testid="badge-category">{shop.category}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
-        {/* Hero Section - Instagram/Facebook style */}
-        <Card className="overflow-hidden border-0 shadow-2xl">
+      <div className="max-w-5xl mx-auto">
+        {/* Hero Section */}
+        <div className="relative">
           {/* Cover Image */}
-          <div className="h-48 sm:h-64 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 relative">
-            <div className="absolute inset-0 bg-black/20"></div>
-          </div>
+          <div className="h-56 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500"></div>
           
-          {/* Profile Section */}
-          <CardContent className="relative pt-0 pb-6 px-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end -mt-16 sm:-mt-20">
-              {/* Profile Picture */}
-              {shop.logo ? (
-                <img
-                  src={shop.logo}
-                  alt={shop.shopName}
-                  className="h-28 w-28 sm:h-36 sm:w-36 rounded-2xl border-4 border-white dark:border-gray-950 bg-white object-cover shadow-2xl"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.classList.remove("hidden");
-                  }}
-                />
-              ) : null}
-              <div className={`h-28 w-28 sm:h-36 sm:w-36 rounded-2xl border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-2xl ${shop.logo ? "hidden" : ""}`}>
-                <Store className="h-14 w-14 sm:h-20 sm:w-20 text-white" />
-              </div>
-              
-              {/* Shop Info */}
-              <div className="flex-1 mt-4 sm:mt-0 sm:pb-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold font-heading mb-1" data-testid="text-shop-name">
-                      {shop.shopName}
-                    </h1>
-                    {shop.category && (
-                      <p className="text-muted-foreground text-sm" data-testid="badge-category">
-                        {shop.category}
-                      </p>
-                    )}
+          {/* Profile Info Card */}
+          <div className="px-4 pb-4">
+            <div className="bg-card rounded-2xl shadow-xl -mt-16 p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Profile Picture */}
+                <div className="flex-shrink-0">
+                  {shop.logo ? (
+                    <img
+                      src={shop.logo}
+                      alt={shop.shopName}
+                      className="h-32 w-32 rounded-full border-4 border-card bg-card object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.classList.remove("hidden");
+                      }}
+                    />
+                  ) : null}
+                  <div className={`h-32 w-32 rounded-full border-4 border-card bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center ${shop.logo ? "hidden" : ""}`}>
+                    <Store className="h-16 w-16 text-white" />
                   </div>
-                  
-                  {/* Action Button */}
-                  <Button 
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg w-full sm:w-auto"
-                    onClick={() => navigate("/")}
-                    data-testid="button-get-started"
-                  >
-                    Join Rewards
-                  </Button>
                 </div>
                 
-                {/* Stats Row */}
-                <div className="flex items-center gap-6 mt-4">
-                  <div className="text-center">
-                    <div className="text-xl font-bold">{activeCampaigns.length}</div>
-                    <div className="text-xs text-muted-foreground">Programs</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      4.8
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-2xl font-bold mb-1">{shop.shopName}</h1>
+                      {shop.businessType && (
+                        <Badge variant="outline" className="mb-2" data-testid="badge-business-type">
+                          {shop.businessType === "physical" && "📍 In-Store"}
+                          {shop.businessType === "online" && "🌐 Online"}
+                          {shop.businessType === "both" && "🔄 Hybrid"}
+                        </Badge>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground">Rating</div>
+                    <Button 
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      onClick={() => navigate("/")}
+                      data-testid="button-get-started"
+                    >
+                      Join Rewards
+                    </Button>
                   </div>
-                  {shop.businessType && (
-                    <div className="text-center">
-                      <Badge variant="outline" className="text-xs" data-testid="badge-business-type">
-                        {shop.businessType === "physical" && "In-Store"}
-                        {shop.businessType === "online" && "Online"}
-                        {shop.businessType === "both" && "Hybrid"}
-                      </Badge>
+
+                  {/* Stats */}
+                  <div className="flex gap-6 mb-3">
+                    <div>
+                      <span className="font-bold text-lg">{activeCampaigns.length}</span>
+                      <span className="text-sm text-muted-foreground ml-1">Rewards</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="font-bold text-lg">4.8</span>
+                      <span className="text-sm text-muted-foreground ml-1">Rating</span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {shop.description && (
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2" data-testid="text-description">
+                      {shop.description}
+                    </p>
+                  )}
+
+                  {/* Social Links */}
+                  {Object.keys(socialLinks).some(key => socialLinks[key]) && (
+                    <div className="flex items-center gap-2">
+                      {Object.entries(socialLinks).map(([platform, url]) => {
+                        if (!url) return null;
+                        return (
+                          <a
+                            key={platform}
+                            href={url as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-full hover:bg-muted transition-colors ${getSocialColor(platform)}`}
+                            data-testid={`link-social-${platform}`}
+                          >
+                            {getSocialIcon(platform)}
+                          </a>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-
-                {/* Description */}
-                {shop.description && (
-                  <p className="text-muted-foreground mt-4 text-sm leading-relaxed" data-testid="text-description">
-                    {shop.description}
-                  </p>
-                )}
-
-                {/* Social Links */}
-                {Object.keys(socialLinks).some(key => socialLinks[key]) && (
-                  <div className="flex items-center gap-2 mt-4">
-                    {Object.entries(socialLinks).map(([platform, url]) => {
-                      if (!url) return null;
-                      return (
-                        <a
-                          key={platform}
-                          href={url as string}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`p-2 rounded-full hover:bg-muted transition-all ${getSocialColor(platform)}`}
-                          data-testid={`link-social-${platform}`}
-                        >
-                          {getSocialIcon(platform)}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column - Info */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Active Campaigns */}
-            {activeCampaigns.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Award className="h-5 w-5 text-primary" />
-                    Reward Programs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {activeCampaigns.map((campaign: any) => (
-                    <div key={campaign.id} className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30 border border-green-200 dark:border-green-800" data-testid={`campaign-${campaign.id}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-base">{campaign.name}</h4>
-                        <Badge className="bg-green-600">Active</Badge>
-                      </div>
-                      {campaign.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{campaign.description}</p>
-                      )}
-                      
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="bg-white dark:bg-gray-900 rounded-lg p-2">
-                          <p className="text-xs text-muted-foreground">New customer</p>
-                          <p className="font-bold text-green-600">{(campaign as any).referralDiscountPercentage}% OFF</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-900 rounded-lg p-2">
-                          <p className="text-xs text-muted-foreground">Min. purchase</p>
-                          <p className="font-bold">{shop.currencySymbol}{campaign.minPurchaseAmount}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Contact Information */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Contact & Location
-                </CardTitle>
+        {/* Content Sections */}
+        <div className="px-4 pb-6 space-y-4">
+          {/* Reward Programs */}
+          {activeCampaigns.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Active Rewards</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                {activeCampaigns.map((campaign: any) => (
+                  <div key={campaign.id} className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800" data-testid={`campaign-${campaign.id}`}>
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold">{campaign.name}</h4>
+                      <Badge className="bg-green-600 hover:bg-green-700">Active</Badge>
+                    </div>
+                    {campaign.description && (
+                      <p className="text-sm text-muted-foreground mb-3">{campaign.description}</p>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Percent className="h-4 w-4 text-green-600" />
+                          <p className="text-xs text-muted-foreground">New Customer</p>
+                        </div>
+                        <p className="font-bold text-green-600">{campaign.referralDiscountPercentage}% OFF</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Tag className="h-4 w-4 text-blue-600" />
+                          <p className="text-xs text-muted-foreground">Min. Purchase</p>
+                        </div>
+                        <p className="font-bold">{shop.currencySymbol}{campaign.minPurchaseAmount}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Contact Information */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Contact</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
                 {shop.address && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-address">
+                  <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-address">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">Address</p>
-                      <p className="text-muted-foreground text-sm">{shop.address}</p>
+                      <p className="text-sm text-muted-foreground">{shop.address}</p>
                     </div>
                   </div>
                 )}
                 
                 {shop.phone && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-phone">
+                  <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-phone">
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">Phone</p>
-                      <a href={`tel:${shop.phone}`} className="text-primary hover:underline text-sm">
+                      <a href={`tel:${shop.phone}`} className="text-sm text-primary hover:underline">
                         {shop.phone}
                       </a>
                     </div>
@@ -295,11 +295,11 @@ export default function PublicShopProfile() {
                 )}
                 
                 {shop.email && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-email">
+                  <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-email">
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">Email</p>
-                      <a href={`mailto:${shop.email}`} className="text-primary hover:underline text-sm">
+                      <a href={`mailto:${shop.email}`} className="text-sm text-primary hover:underline break-all">
                         {shop.email}
                       </a>
                     </div>
@@ -307,34 +307,32 @@ export default function PublicShopProfile() {
                 )}
                 
                 {shop.website && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-website">
+                  <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors" data-testid="contact-website">
                     <Globe className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">Website</p>
                       <a 
                         href={shop.website} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                        className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
                       >
                         {shop.website}
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       </a>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
 
-          {/* Right Column - Business Hours */}
-          <div>
-            <Card className="shadow-lg sticky top-20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            {/* Business Hours */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary" />
-                  Business Hours
-                </CardTitle>
+                  <CardTitle className="text-lg">Hours</CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 {Object.keys(businessHours).length > 0 ? (
@@ -348,7 +346,7 @@ export default function PublicShopProfile() {
                       return (
                         <div 
                           key={day} 
-                          className={`flex justify-between items-center py-2 px-3 rounded-lg transition-colors ${
+                          className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
                             isToday ? 'bg-primary/10 font-semibold' : 'hover:bg-muted/50'
                           }`}
                           data-testid={`hours-${day}`}
@@ -362,7 +360,7 @@ export default function PublicShopProfile() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm text-center py-4">No business hours set</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No hours set</p>
                 )}
               </CardContent>
             </Card>
