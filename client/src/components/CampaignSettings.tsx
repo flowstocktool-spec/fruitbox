@@ -167,7 +167,7 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
                   Add Range
                 </Button>
               </div>
-              
+
               <div className="space-y-3">
                 {pointRules.map((rule, index) => (
                   <div key={index} className="border rounded-lg p-3 bg-muted/30">
@@ -260,6 +260,20 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
               required
             />
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="termsAndConditions">Special Offers & Terms</Label>
+            <Textarea
+              id="termsAndConditions"
+              value={formData.termsAndConditions || ''}
+              onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
+              placeholder="e.g., Christmas Special: Buy 1 Get 1 Free on selected items"
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Add special promotions or terms & conditions
+            </p>
+          </div>
 
           <div className="border-t pt-4">
             <Label className="text-sm font-semibold">Points Redemption Rules</Label>
@@ -296,18 +310,6 @@ export function CampaignSettings({ campaign, open, onOpenChange }: CampaignSetti
             <p className="text-xs text-muted-foreground mt-2">
               {formData.pointsRedemptionValue} points = {formData.pointsRedemptionDiscount}% off
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="termsAndConditions">Terms & Conditions</Label>
-            <Textarea
-              id="termsAndConditions"
-              value={formData.termsAndConditions}
-              onChange={(e) =>
-                setFormData({ ...formData, termsAndConditions: e.target.value })
-              }
-              rows={4}
-            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

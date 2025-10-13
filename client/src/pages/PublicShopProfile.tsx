@@ -219,42 +219,98 @@ export default function PublicShopProfile() {
 
         {/* Content Sections */}
         <div className="px-4 pb-6 space-y-4">
-          {/* Reward Programs */}
+          {/* Active Campaigns & Offers */}
           {activeCampaigns.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Gift className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Active Rewards</CardTitle>
+                  <CardTitle className="text-lg">Active Campaigns & Offers</CardTitle>
                 </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Check out our latest deals and rewards programs
+                </p>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {activeCampaigns.map((campaign: any) => (
                   <div key={campaign.id} className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800" data-testid={`campaign-${campaign.id}`}>
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold">{campaign.name}</h4>
-                      <Badge className="bg-green-600 hover:bg-green-700">Active</Badge>
+                    {/* Campaign Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-green-900 dark:text-green-100">{campaign.name}</h4>
+                        {campaign.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{campaign.description}</p>
+                        )}
+                      </div>
+                      <Badge className="bg-green-600 hover:bg-green-700 ml-2">Active</Badge>
                     </div>
-                    {campaign.description && (
-                      <p className="text-sm text-muted-foreground mb-3">{campaign.description}</p>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
+
+                    {/* Points Earning System */}
+                    <div className="bg-white dark:bg-gray-900 rounded-lg p-3 mb-3">
+                      <h5 className="font-semibold text-sm text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Earn Points
+                      </h5>
+                      <div className="space-y-1">
+                        {campaign.pointRules && campaign.pointRules.length > 0 ? (
+                          campaign.pointRules.map((rule: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between text-xs bg-green-50 dark:bg-green-950/50 rounded px-2 py-1.5">
+                              <span className="font-medium text-green-800 dark:text-green-200">
+                                Spend {shop.currencySymbol}{rule.minAmount} - {shop.currencySymbol}{rule.maxAmount}
+                              </span>
+                              <span className="font-bold text-green-600 dark:text-green-400">
+                                +{rule.points} pts
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No earning rules configured</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Benefits Grid */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3">
+                        <div className="flex items-center gap-1 mb-1">
                           <Percent className="h-4 w-4 text-green-600" />
                           <p className="text-xs text-muted-foreground">New Customer</p>
                         </div>
                         <p className="font-bold text-green-600">{campaign.referralDiscountPercentage}% OFF</p>
                       </div>
-                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-3">
+                        <div className="flex items-center gap-1 mb-1">
                           <Tag className="h-4 w-4 text-blue-600" />
                           <p className="text-xs text-muted-foreground">Min. Purchase</p>
                         </div>
                         <p className="font-bold">{shop.currencySymbol}{campaign.minPurchaseAmount}</p>
                       </div>
                     </div>
+
+                    {/* Redeem Points */}
+                    <div className="bg-white dark:bg-gray-900 rounded-lg p-3">
+                      <h5 className="font-semibold text-sm text-orange-900 dark:text-orange-100 mb-2 flex items-center gap-2">
+                        <Award className="h-4 w-4 text-orange-600" />
+                        Redeem Points
+                      </h5>
+                      <div className="flex items-center justify-between text-xs bg-orange-50 dark:bg-orange-950/50 rounded px-2 py-1.5">
+                        <span className="font-medium text-orange-800 dark:text-orange-200">
+                          {campaign.pointsRedemptionValue || 100} points
+                        </span>
+                        <span className="font-bold text-orange-600 dark:text-orange-400">
+                          = {campaign.pointsRedemptionDiscount || 10}% discount
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Terms & Conditions */}
+                    {campaign.termsAndConditions && (
+                      <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-semibold">Terms:</span> {campaign.termsAndConditions}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </CardContent>
