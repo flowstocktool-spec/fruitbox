@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Store, Tag, TrendingUp } from "lucide-react";
+import { Store, TrendingUp, ExternalLink } from "lucide-react";
 import { getCustomerShops, getCustomerCoupons } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { BillUpload } from "@/components/BillUpload"; // Assuming BillUpload is imported from here
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 interface MyShopsProps {
   customerId: string;
@@ -15,6 +16,7 @@ interface MyShopsProps {
 export function MyShops({ customerId }: MyShopsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation(); // Import navigate from wouter
   const { data: shops = [], isLoading, isError, error } = useQuery({
     queryKey: ['/api/customers', customerId, 'shops'],
     queryFn: () => getCustomerShops(customerId),
@@ -185,6 +187,15 @@ export function MyShops({ customerId }: MyShopsProps) {
                 </div>
               </div>
             </div>
+            {/* Button to view public shop profile */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate(`/shops/${shop.id}/public`)} // Navigate to the public shop profile page
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View Public Profile
+            </Button>
           </CardContent>
         </Card>
         );

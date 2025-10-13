@@ -1,14 +1,14 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Store, Plus, Check } from "lucide-react";
+import { Search, Store, Plus, Check, ExternalLink } from "lucide-react";
 import { getShopProfiles, createCustomerCoupon } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface ShopSearchProps {
   customerId: string;
@@ -18,6 +18,7 @@ interface ShopSearchProps {
 export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { data: shops = [] } = useQuery({
     queryKey: ['/api/shop-profiles'],
@@ -106,6 +107,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
                 hasCoupon={false}
                 onRegister={() => createCouponMutation.mutate(shop.id)}
                 isPending={createCouponMutation.isPending}
+                navigate={navigate}
               />
             ))}
           </>
@@ -122,6 +124,7 @@ export function ShopSearch({ customerId, existingShopIds }: ShopSearchProps) {
                 hasCoupon={true}
                 onRegister={() => {}}
                 isPending={false}
+                navigate={navigate}
               />
             ))}
           </>
@@ -145,13 +148,17 @@ function ShopCard({
   shop, 
   hasCoupon, 
   onRegister,
-  isPending 
+  isPending,
+  navigate
 }: { 
   shop: any; 
   hasCoupon: boolean; 
   onRegister: () => void;
   isPending: boolean;
+  navigate: (path: string) => void;
 }) {
+  const isAlreadyJoined = hasCoupon; // Assuming hasCoupon implies already joined for this context
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
@@ -178,21 +185,43 @@ function ShopCard({
         </div>
       </CardHeader>
       <CardContent>
-        {hasCoupon ? (
-          <Button variant="outline" disabled className="w-full">
-            <Check className="h-4 w-4 mr-2" />
-            Registered
-          </Button>
-        ) : (
-          <Button 
-            onClick={onRegister}
-            disabled={isPending}
-            className="bg-green-600 hover:bg-green-700 w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Register as Affiliate
-          </Button>
-        )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Store className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium">{shop.shopName}</p>
+              <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/shop/${shop.shopCode}`)}
+              data-testid={`button-view-shop-${shop.id}`}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />
+              View
+            </Button>
+            {isAlreadyJoined ? (
+              <Badge variant="secondary" className="gap-1">
+                <Check className="h-3 w-3" />
+                Registered
+              </Badge>
+            ) : (
+              <Button 
+                onClick={onRegister}
+                disabled={isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Register as Affiliate
+              </Button>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
