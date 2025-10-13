@@ -164,7 +164,12 @@ function ShopCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-base">{shop.shopName}</CardTitle>
+            <CardTitle 
+              className="text-base cursor-pointer text-primary hover:underline transition-all"
+              onClick={() => setLocation(`/shop/${shop.shopCode}`)}
+            >
+              {shop.shopName}
+            </CardTitle>
             {shop.description && (
               <CardDescription className="mt-1">{shop.description}</CardDescription>
             )}

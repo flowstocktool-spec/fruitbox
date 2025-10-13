@@ -81,10 +81,13 @@ export function MyShops({ customerId }: MyShopsProps) {
             <CardHeader>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => navigate(`/shop/${shop.shopCode}`)}
+                  >
                     <Store className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{shop.shopName}</p>
+                      <p className="font-medium text-primary hover:underline">{shop.shopName}</p>
                       <p className="text-xs text-muted-foreground">{shop.shopCode}</p>
                     </div>
                   </div>
