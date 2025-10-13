@@ -16,6 +16,25 @@ export const stores = pgTable("stores", {
   password: text("password").notNull(),
 });
 
+export const businessHoursSchema = z.object({
+  monday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  tuesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  wednesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  thursday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  friday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  saturday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+  sunday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().default(false) }).optional(),
+});
+
+export const socialLinksSchema = z.object({
+  facebook: z.string().optional(),
+  instagram: z.string().optional(),
+  twitter: z.string().optional(),
+  linkedin: z.string().optional(),
+  tiktok: z.string().optional(),
+  youtube: z.string().optional(),
+});
+
 export const shopProfiles = pgTable("shop_profiles", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
   shopName: text("shop_name").notNull(),
@@ -24,6 +43,15 @@ export const shopProfiles = pgTable("shop_profiles", {
   password: text("password").notNull(),
   description: text("description"),
   logo: text("logo"),
+  category: text("category"), // e.g., Restaurant, Retail, Grocery
+  businessType: text("business_type"), // e.g., Physical Store, Online Store, Both
+  phone: text("phone"),
+  email: text("email"), // Support/contact email
+  address: text("address"),
+  website: text("website"),
+  taxId: text("tax_id"), // Business registration/tax ID
+  businessHours: jsonb("business_hours").$type<z.infer<typeof businessHoursSchema>>(),
+  socialLinks: jsonb("social_links").$type<z.infer<typeof socialLinksSchema>>(),
   currencySymbol: text("currency_symbol").notNull().default("$"),
   createdAt: timestamp("created_at").defaultNow(),
 });
